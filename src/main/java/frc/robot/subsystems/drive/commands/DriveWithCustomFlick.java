@@ -32,17 +32,10 @@ public class DriveWithCustomFlick extends Command {
 	private final double headingTolerance = Units.degreesToRadians(1.0);
 	private final PIDController headingPID;
 
-	public static Supplier<Optional<Rotation2d>> headingFromJoystick(Joystick joystick, Supplier<Rotation2d> forwardDirectionSupplier) {
+	public static Supplier<Optional<Rotation2d>> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
 		return new Supplier<Optional<Rotation2d>>() {
 			private final Timer preciseTurnTimer = new Timer();
 			private final double preciseTurnTimeThreshold = 0.5;
-			private final Rotation2d[] snapPoints = new Rotation2d[]{
-				Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
-				Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
-				Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(135))),
-				Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-				Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
-			};
 			@Override
 			public Optional<Rotation2d> get() {
 				Function<Rotation2d, Optional<Rotation2d>> outputFilter = (i) -> Optional.of(i.minus(forwardDirectionSupplier.get()));
@@ -54,6 +47,7 @@ public class DriveWithCustomFlick extends Command {
 				if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
 					return outputFilter.apply(joyHeading);
 				}
+				var snapPoints = snapPointsSupplier.get();
 				int smallestDistanceIndex = 0;
 				double smallestDistance = Double.MAX_VALUE;
 				for(int i = 0; i < snapPoints.length; i++) {

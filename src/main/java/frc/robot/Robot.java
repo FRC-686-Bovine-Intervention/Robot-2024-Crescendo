@@ -8,14 +8,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import edu.wpi.first.wpilibj.TimedRobot;
+import org.littletonrobotics.junction.LogFileUtil;
+import org.littletonrobotics.junction.LoggedRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGReader;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
-public class Robot extends TimedRobot {
+public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
 
-  private RobotContainer m_robotContainer;
+  private RobotContainer robotContainer;
 
   @Override
   public void robotInit() {
@@ -29,21 +35,20 @@ public class Robot extends TimedRobot {
     switch (BuildConstants.DIRTY) {
       case 0:
         Logger.recordMetadata("GitDirty", "All changes committed");
-        break;
+      break;
       case 1:
         Logger.recordMetadata("GitDirty", "Uncomitted changes");
-        break;
+      break;
       default:
         Logger.recordMetadata("GitDirty", "Unknown");
-        break;
+      break;
     }
 
     // Set up data receivers & replay source
-    System.out.println("[Init Robot] Configuring AdvantageKit for " + RobotType.getRobot().name());
-    switch (RobotType.getRobot()) {
+    System.out.println("[Init Robot] Configuring AdvantageKit for " + RobotType.getMode().name() + " " + RobotType.getRobot().name());
+    switch (RobotType.getMode()) {
       // Running on a real robot, log to a USB stick
-      case ROBOT_2023_COMP:
-      case ROBOT_2023_PRAC:
+      case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/media/sda1/"));
         Logger.addDataReceiver(new NT4Publisher());
       break;
@@ -104,6 +109,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    robotContainer.robotPeriodic();
   }
 
   @Override
@@ -117,7 +123,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    m_autonomousCommand = robotContainer.getAutonomousCommand();
 
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();

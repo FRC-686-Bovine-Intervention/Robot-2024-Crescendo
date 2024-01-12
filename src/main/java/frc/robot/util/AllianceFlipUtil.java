@@ -13,7 +13,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.FieldConstants;
@@ -28,7 +27,7 @@ public class AllianceFlipUtil {
     CenterPointFlip,
     MirrorFlip,
   }
-  public static final FieldFlipType defaultFlipType = FieldFlipType.CenterPointFlip;
+  public static final FieldFlipType defaultFlipType = FieldFlipType.MirrorFlip;
 
   /** Flips a translation to the correct side of the field based on the current alliance color. */
   public static Translation2d apply(Translation2d translation) {

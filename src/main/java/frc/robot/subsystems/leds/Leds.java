@@ -2,7 +2,6 @@ package frc.robot.subsystems.leds;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 import com.ctre.phoenix.led.CANdle;
 import com.ctre.phoenix.led.CANdle.LEDStripType;
@@ -30,6 +29,7 @@ import frc.robot.util.led.strips.hardware.SimulatedStrip;
 
 public class Leds extends VirtualSubsystem {
     private final LEDManager ledManager = LEDManager.getInstance();
+    @SuppressWarnings("unused")
     private final LEDStrip onboardLEDs;
     private final LEDStrip offboardLEDs;
 
@@ -66,7 +66,7 @@ public class Leds extends VirtualSubsystem {
 
         this.runners = new AnimationRunner[]{
             new AnimationRunner(
-                DriverStation.getMatchType() != MatchType.None && () -> DriverStation.isTeleopEnabled() && DriverStation.getMatchTime() <= 30),
+                () -> DriverStation.getMatchType() != MatchType.None && DriverStation.isTeleopEnabled() && DriverStation.getMatchTime() <= 30,
                 new EndgameTimerAnimation(
                     10,
                     offboardLEDs

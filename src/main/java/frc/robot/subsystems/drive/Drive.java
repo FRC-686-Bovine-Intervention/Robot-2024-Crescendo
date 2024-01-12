@@ -10,8 +10,15 @@ package frc.robot.subsystems.drive;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
+
+import com.pathplanner.lib.commands.FollowPathHolonomic;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -23,8 +30,10 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
@@ -98,8 +107,8 @@ public class Drive extends SubsystemBase {
             }
 
             // Clear setpoint logs
-            // Logger.recordOutput("SwerveStates/Setpoints", new double[] {});
-            // Logger.recordOutput("SwerveStates/SetpointsOptimized", new double[] {});
+            Logger.recordOutput("SwerveStates/Setpoints", new double[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new double[] {});
 
         } else if (isCharacterizing) {
             // Run in characterization mode
@@ -108,8 +117,8 @@ public class Drive extends SubsystemBase {
             }
 
             // Clear setpoint logs
-            // Logger.recordOutput("SwerveStates/Setpoints", new double[] {});
-            // Logger.recordOutput("SwerveStates/SetpointsOptimized", new double[] {});
+            Logger.recordOutput("SwerveStates/Setpoints", new double[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new double[] {});
 
         } else {
             /**
@@ -139,8 +148,8 @@ public class Drive extends SubsystemBase {
             }
 
             // Log setpoint states
-            // Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-            // Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedStates);
+            Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedStates);
         }
 
         // Log measured states
@@ -148,7 +157,7 @@ public class Drive extends SubsystemBase {
         for (int i = 0; i < DriveConstants.numDriveModules; i++) {
             measuredStates[i] = modules[i].getState();
         }
-        // Logger.recordOutput("SwerveStates/Measured", measuredStates);
+        Logger.recordOutput("SwerveStates/Measured", measuredStates);
         lastMeasuredStates = measuredStates;
 
         // Update odometry
@@ -480,5 +489,33 @@ public class Drive extends SubsystemBase {
             direction = Optional.of(CardinalDirection.RIGHT);
         }
         return direction;
+    }
+
+    private static final LoggedTunableNumber tP = new LoggedTunableNumber("AutoDrive/tP", 1);
+    private static final LoggedTunableNumber tI = new LoggedTunableNumber("AutoDrive/tI", 0);
+    private static final LoggedTunableNumber tD = new LoggedTunableNumber("AutoDrive/tD", 0);
+    private static final LoggedTunableNumber rP = new LoggedTunableNumber("AutoDrive/rP", 1.5);
+    private static final LoggedTunableNumber rI = new LoggedTunableNumber("AutoDrive/rI", 0);
+    private static final LoggedTunableNumber rD = new LoggedTunableNumber("AutoDrive/rD", 0);
+    private static final Supplier<HolonomicPathFollowerConfig> configSup = () -> {
+        return new HolonomicPathFollowerConfig(
+            new PIDConstants(
+                tP.get(),
+                tI.get(),
+                tD.get()
+            ),
+            new PIDConstants(
+                rP.get(),
+                rI.get(),
+                rD.get()
+            ),
+            DriveConstants.maxDriveSpeedMetersPerSec,
+            0.46,
+            new ReplanningConfig()
+        );
+    };
+
+    public Command followPath(PathPlannerPath path) {
+        return new FollowPathHolonomic(path, this::getPose, this::getChassisSpeeds, this::driveVelocity, configSup.get(), () -> DriverStation.getAlliance().equals(Optional.of(Alliance.Red)), this);
     }
 }
