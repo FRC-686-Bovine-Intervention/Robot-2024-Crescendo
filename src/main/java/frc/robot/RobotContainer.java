@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.auto.AutoSelector;
@@ -28,7 +29,12 @@ import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIONeo550;
+import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.leds.Leds;
+import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.controllers.XboxController;
@@ -36,6 +42,8 @@ import frc.robot.util.controllers.XboxController;
 public class RobotContainer {
     // Subsystems
     private final Drive drive;
+    private final Intake intake;
+    // private final Pivot pivot;
     @SuppressWarnings("unused")
     private final Leds ledSystem;
 
@@ -46,6 +54,7 @@ public class RobotContainer {
     // Controller
     private final XboxController driveController = new XboxController(0);
     // private final CommandJoystick buttonBoard = new CommandJoystick(1);
+    private final CommandJoystick simJoystick = new CommandJoystick(2);
 
     public RobotContainer() {
         System.out.println("[Init RobotContainer] Creating " + RobotType.getMode().name() + " " + RobotType.getRobot().name());
@@ -58,6 +67,7 @@ public class RobotContainer {
                     new ModuleIO550Falcon(DriveModulePosition.BACK_LEFT),
                     new ModuleIO550Falcon(DriveModulePosition.BACK_RIGHT)
                 );
+                intake = new Intake(new IntakeIONeo550());
                 ledSystem = new Leds(
                     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
                 );
@@ -70,6 +80,7 @@ public class RobotContainer {
                     new ModuleIOSim(),
                     new ModuleIOSim()
                 );
+                intake = new Intake(new IntakeIOSim(simJoystick.button(1), simJoystick.button(2)));
                 ledSystem = null;
             break;
             default:
@@ -81,6 +92,7 @@ public class RobotContainer {
                     new ModuleIO() {},
                     new ModuleIO() {}
                 );
+                intake = new Intake(new IntakeIO() {});
                 ledSystem = null;
             break;
         }
@@ -100,7 +112,7 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        driveController.a().onTrue(DriverAutoCommands.followTestPath(drive));
+        driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
     }
 
 
@@ -145,6 +157,8 @@ public class RobotContainer {
                 driveController.leftBumper()
             )
         );
+
+        intake.setDefaultCommand(intake.doNothing(simJoystick.button(3)));
     }
 
     private void configureAutos() {

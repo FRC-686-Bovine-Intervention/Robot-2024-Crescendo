@@ -1,0 +1,101 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot.subsystems.pivot;
+
+import org.littletonrobotics.junction.Logger;
+
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
+import frc.robot.util.LoggedTunableNumber;
+
+public class Pivot extends SubsystemBase {
+  private final PivotIO pivotIO;
+  private final PivotIOInputsAutoLogged input = new PivotIOInputsAutoLogged();
+
+  public static double POS_ZERO = 0;
+  public static double POS_AMP = 10;
+
+  private final LoggedTunableNumber kP = new LoggedTunableNumber("Pivot/PID/kP", 0);
+  private final LoggedTunableNumber kI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
+  private final LoggedTunableNumber kD = new LoggedTunableNumber("Pivot/PID/kD", 0);
+  private final LoggedTunableNumber kV = new LoggedTunableNumber("Pivot/PID/kV", 0);
+  private final LoggedTunableNumber kA = new LoggedTunableNumber("Pivot/PID/kA", 0);
+  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 0);
+  
+  private final ProfiledPIDController pivotPID =  new ProfiledPIDController(
+    kP.get(),
+    kI.get(),
+    kD.get(),
+    new Constraints(
+        kV.get(),
+        kA.get()
+    )
+  );
+
+  private void updateTunables() {
+    if(kP.hasChanged(hashCode()) || kI.hasChanged(hashCode()) || kD.hasChanged(hashCode())) {
+        pivotPID.setPID(kP.get(), kI.get(), kD.get());
+    }
+    if(kV.hasChanged(hashCode()) || kA.hasChanged(hashCode())) {
+        pivotPID.setConstraints(new Constraints(kV.get(), kA.get()));
+    }
+    if(toleranceDeg.hasChanged(hashCode())) {
+        pivotPID.setTolerance(Units.degreesToRadians(toleranceDeg.get()));
+    }
+  }
+
+  public Pivot(PivotIO pivotIO) {
+    this.pivotIO = pivotIO;
+  }
+
+  @Override
+  public void periodic() {
+    pivotIO.updateInputs(input);
+    Logger.processInputs("Pivot", input);
+    updateTunables();
+  }
+
+  private final LoggedTunableNumber manualPivotVolts = new LoggedTunableNumber("Pivot/Manual Arm Volts", 2);
+  public Command movePivotManually(double dir) {
+    return new StartEndCommand(
+        () -> pivotIO.setPivotVoltage(manualPivotVolts.get() * dir),
+        () -> pivotIO.setPivotVoltage(0),
+        this
+    ).withName("Manual | Volts: " + (manualPivotVolts.get() * dir));
+  }
+
+  public Command setArmPos(double angleRad) {
+    return new ProfiledPIDCommand(
+      pivotPID,
+      () -> input.pivotPositionRad,
+      angleRad,
+      (output, setpoint) -> pivotIO.setPivotVoltage(output),
+      this
+    ).withName("PID | Angle: " + Units.radiansToDegrees(angleRad) + " degrees");
+  }
+
+  public Command gotoArmPos(double angleRad) {
+    return Commands.runOnce(() -> setArmPos(angleRad).schedule());
+  }
+
+  public Command gotoArmPosWithWait(double angleRad) {
+    return gotoArmPos(angleRad).andThen(waitUntilAtGoal());
+  }
+
+  public Command waitUntilAtGoal() {
+      return new WaitUntilCommand(pivotPID::atGoal);
+  }
+
+  public boolean isAtAngle(double angleRad) {
+    return Math.abs(input.pivotPositionRad - angleRad) <= Units.degreesToRadians(toleranceDeg.get());
+  }
+}
