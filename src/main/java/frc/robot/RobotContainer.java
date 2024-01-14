@@ -35,6 +35,9 @@ import frc.robot.subsystems.intake.IntakeIONeo550;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.pivot.Pivot;
+import frc.robot.subsystems.pivot.PivotIO;
+import frc.robot.subsystems.pivot.PivotIOFalcon;
+import frc.robot.subsystems.pivot.PivotIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.controllers.XboxController;
@@ -43,7 +46,7 @@ public class RobotContainer {
     // Subsystems
     private final Drive drive;
     private final Intake intake;
-    // private final Pivot pivot;
+    private final Pivot pivot;
     @SuppressWarnings("unused")
     private final Leds ledSystem;
 
@@ -68,6 +71,7 @@ public class RobotContainer {
                     new ModuleIO550Falcon(DriveModulePosition.BACK_RIGHT)
                 );
                 intake = new Intake(new IntakeIONeo550());
+                pivot = new Pivot(new PivotIOFalcon());
                 ledSystem = new Leds(
                     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
                 );
@@ -81,6 +85,7 @@ public class RobotContainer {
                     new ModuleIOSim()
                 );
                 intake = new Intake(new IntakeIOSim(simJoystick.button(1), simJoystick.button(2)));
+                pivot = new Pivot(new PivotIOSim());
                 ledSystem = null;
             break;
             default:
@@ -93,6 +98,7 @@ public class RobotContainer {
                     new ModuleIO() {}
                 );
                 intake = new Intake(new IntakeIO() {});
+                pivot = new Pivot(new PivotIO() {});
                 ledSystem = null;
             break;
         }
@@ -113,6 +119,8 @@ public class RobotContainer {
 
     private void configureButtonBindings() {
         driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
+        driveController.b().whileTrue(pivot.movePivotManually(-1));
+        driveController.x().whileTrue(pivot.movePivotManually(1));
     }
 
 
@@ -158,7 +166,7 @@ public class RobotContainer {
             )
         );
 
-        intake.setDefaultCommand(intake.doNothing(simJoystick.button(3)));
+        intake.setDefaultCommand(intake.doNothing(() -> pivot.isAtAngle(0)));
     }
 
     private void configureAutos() {

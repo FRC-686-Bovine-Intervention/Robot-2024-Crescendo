@@ -64,13 +64,13 @@ public class Pivot extends SubsystemBase {
     updateTunables();
   }
 
-  private final LoggedTunableNumber manualPivotVolts = new LoggedTunableNumber("Pivot/Manual Arm Volts", 2);
+  private final LoggedTunableNumber manualPivotVolts = new LoggedTunableNumber("Pivot/Manual Arm Volts", 5);
   public Command movePivotManually(double dir) {
     return new StartEndCommand(
         () -> pivotIO.setPivotVoltage(manualPivotVolts.get() * dir),
         () -> pivotIO.setPivotVoltage(0),
         this
-    ).withName("Manual | Volts: " + (manualPivotVolts.get() * dir));
+    ).withName("Pivot/Manual | " + (manualPivotVolts.get() * dir) + " Volts");
   }
 
   public Command setArmPos(double angleRad) {
@@ -80,7 +80,7 @@ public class Pivot extends SubsystemBase {
       angleRad,
       (output, setpoint) -> pivotIO.setPivotVoltage(output),
       this
-    ).withName("PID | Angle: " + Units.radiansToDegrees(angleRad) + " degrees");
+    ).withName("Pivot/PID | Angle: " + Units.radiansToDegrees(angleRad) + " degrees");
   }
 
   public Command gotoArmPos(double angleRad) {

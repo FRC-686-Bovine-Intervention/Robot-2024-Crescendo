@@ -10,14 +10,20 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
 
 public class IntakeIONeo550 implements IntakeIO {
-    private final CANSparkMax intakeMotor = null;
-    private final CANSparkMax beltMotor = null;
+    private final CANSparkMax intakeMotor;
+    private final CANSparkMax beltMotor;
 
-    private final DigitalInput bottomSensor = new DigitalInput(0);
-    private final DigitalInput topSensor = new DigitalInput(1);
+    private final DigitalInput bottomSensor;
+    private final DigitalInput topSensor;
     
     // set up the motors with the CAN ID
-    public IntakeIONeo550() {}
+    public IntakeIONeo550() {
+        intakeMotor = null;
+        beltMotor = null;
+
+        bottomSensor = new DigitalInput(0);
+        topSensor = new DigitalInput(1);
+    }
 
     @Override
     public void updateInputs(IntakeIOInputs inputs) {

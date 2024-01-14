@@ -27,7 +27,7 @@ public class Intake extends SubsystemBase {
   private boolean intakeReversed;
 
   public Intake(IntakeIO intakeIO) {
-    this.intakeIO = intakeIO; 
+    this.intakeIO = intakeIO;
   }
 
   private void startIntake() {
@@ -44,8 +44,6 @@ public class Intake extends SubsystemBase {
   public void periodic() {
     intakeIO.updateInputs(inputs);
     Logger.processInputs("Intake", inputs);
-
-    if (getCurrentCommand() != null) System.out.println(getCurrentCommand().getName());
   }
 
   public Command deliverToTop() {
@@ -57,7 +55,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName("DeliverToTop");
+    ).withName("Intake/DeliverToTop");
   }
 
   public Command feed() {
@@ -69,7 +67,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> !inputs.noteAtTop,
       this
-    ).withName("Feed");
+    ).withName("Intake/Feed");
   }
 
   public Command intake(Supplier<ChassisSpeeds> driveSpeedRobotRelative) {
@@ -89,26 +87,26 @@ public class Intake extends SubsystemBase {
 
         Logger.recordOutput("Intake/Volts", intakeVoltage.get() * (intakeReversed ? -1 : 1));
       },
-      (interrupted) -> {
-        if (interrupted && inputs.noteAtBottom && !inputs.noteAtTop) {
-          deliverToTop().schedule();
-        }
-      },
+      (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName("Intake");
+    ).withName("Intake/Intake");
   }
 
   public Command doNothing(BooleanSupplier pivotInLoadingPos) {
     return Commands.run(
       () -> {
-        stopIntake();
-
         if (pivotInLoadingPos.getAsBoolean() && inputs.noteAtTop) {
           feed().schedule();
         }
-      }, 
+
+        if (inputs.noteAtBottom && !inputs.noteAtTop) {
+          deliverToTop().schedule();
+        }
+
+        stopIntake();
+      },
       this
-    ).withName("Default");
+    ).withName("Intake/Default");
   }
 }

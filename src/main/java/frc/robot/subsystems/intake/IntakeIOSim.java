@@ -23,8 +23,8 @@ public class IntakeIOSim implements IntakeIO {
 
     @Override
     public void updateInputs(IntakeIOInputs inputs) {
-        intakeMotor.update(0.05);
-        beltMotor.update(0.05);
+        intakeMotor.update(0.02);
+        beltMotor.update(0.02);
         inputs.intakeVelocityRadPerSec = intakeMotor.getAngularVelocityRadPerSec();
         inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
         inputs.intakeAppliedVolts = 0;
