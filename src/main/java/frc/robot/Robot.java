@@ -17,6 +17,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 
 public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
@@ -80,7 +81,9 @@ public class Robot extends LoggedRobot {
         commandCounts.put(name, count);
         // Logger.recordOutput(
         //         "Commands/Unique/" + name + "_" + Integer.toHexString(command.hashCode()), active.booleanValue());
-        Logger.recordOutput("Commands/All/" + name, count > 0);
+        for(Subsystem subsystem : command.getRequirements()) {
+          Logger.recordOutput("Commands/" + subsystem.getName() + "/" + name, count > 0);
+        }
     };
 
     CommandScheduler.getInstance()

@@ -72,7 +72,7 @@ public class Pivot extends SubsystemBase {
         () -> pivotIO.setPivotVoltage(manualPivotVolts.get() * dir),
         () -> pivotIO.setPivotVoltage(0),
         this
-    ).withName("Pivot/Manual | " + (manualPivotVolts.get() * dir) + " Volts");
+    ).withName("Manual | " + (manualPivotVolts.get() * dir) + " Volts");
   }
 
   public Command setArmPos(double angleRad) {
@@ -82,7 +82,7 @@ public class Pivot extends SubsystemBase {
       angleRad,
       (output, setpoint) -> pivotIO.setPivotVoltage(output),
       this
-    ).withName("Pivot/PID | Angle: " + Units.radiansToDegrees(angleRad) + " degrees");
+    ).withName("PID | Angle: " + Units.radiansToDegrees(angleRad) + " degrees");
   }
 
   public Command gotoArmPos(double angleRad) {

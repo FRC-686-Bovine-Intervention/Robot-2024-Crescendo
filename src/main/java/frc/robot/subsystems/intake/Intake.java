@@ -69,7 +69,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName("Intake/Secure Note");
+    ).withName("Secure Note");
   }
 
   public Command feedToKicker() {
@@ -81,7 +81,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> !inputs.noteAtTop,
       this
-    ).withName("Intake/Feed");
+    ).withName("Feed");
   }
 
   public Command intake(Supplier<ChassisSpeeds> driveSpeedRobotRelative) {
@@ -102,7 +102,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName("Intake/Intake");
+    ).withName("Intake");
   }
 
   public Command outtake() {
@@ -114,7 +114,7 @@ public class Intake extends SubsystemBase {
         stopIntake();
       },
       this
-    ).withName("Intake/Outtake");
+    ).withName("Outtake");
   }
 
   public Command doNothing() {
@@ -128,7 +128,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> false,
       this
-    ).withName("Intake/Default");
+    ).withName("Default");
   }
 
   private void runDefaultCommand() {

@@ -64,7 +64,7 @@ public class DriveWithCustomFlick extends Command {
 
 	public DriveWithCustomFlick(Drive drive, Joystick translationalJoystick, Supplier<Optional<Rotation2d>> headingSupplier, BooleanSupplier precisionSupplier) {
 		addRequirements(drive);
-		setName("Drive/DriveWithCustomFlick");
+		setName("DriveWithCustomFlick");
 		this.drive = drive;
         this.translationalJoystick = translationalJoystick;
         this.headingSupplier = headingSupplier;

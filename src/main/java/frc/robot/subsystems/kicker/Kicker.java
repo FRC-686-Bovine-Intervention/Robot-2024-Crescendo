@@ -40,7 +40,7 @@ public class Kicker extends SubsystemBase {
       },
       () -> inputs.notePresent,
       this
-    ).withName("Kicker/Feed In");
+    ).withName("Feed In");
   }
 
   public Command kick() {
@@ -54,6 +54,6 @@ public class Kicker extends SubsystemBase {
       },
       () -> !inputs.notePresent,
       this
-    ).withName("Kicker/Kick");
+    ).withName("Kick");
   }
 }
