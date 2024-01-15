@@ -6,6 +6,7 @@ package frc.robot.subsystems.kicker;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -18,7 +19,8 @@ public class Kicker extends SubsystemBase {
   private final LoggedTunableNumber kickerVolts = new LoggedTunableNumber("Kicker/Kicker Voltage", 2);
 
   public Kicker(KickerIO kickerIO) {
-    this.kickerIO = kickerIO;    
+    this.kickerIO = kickerIO;
+    SmartDashboard.putData("Subsystems/Kicker", this);   
   }
 
   @Override
@@ -27,7 +29,21 @@ public class Kicker extends SubsystemBase {
     Logger.processInputs("Kicker", inputs);
   }
 
-  public Command feedToShooter() {
+  public Command feedIn() {
+    return new FunctionalCommand(
+      () -> {},
+      () -> {
+        kickerIO.setKickerVoltage(kickerVolts.get());
+      },
+      (interrupted) -> {
+        kickerIO.setKickerVoltage(0);
+      },
+      () -> inputs.notePresent,
+      this
+    ).withName("Kicker/Feed In");
+  }
+
+  public Command kick() {
     return new FunctionalCommand(
       () -> {},
       () -> {
@@ -38,6 +54,6 @@ public class Kicker extends SubsystemBase {
       },
       () -> !inputs.notePresent,
       this
-    ).withName("Kicker/FeedToShooter");
+    ).withName("Kicker/Kick");
   }
 }

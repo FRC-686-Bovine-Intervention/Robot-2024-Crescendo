@@ -4,11 +4,14 @@
 
 package frc.robot.subsystems.shooter;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Shooter extends SubsystemBase {
   /** Creates a new Shooter. */
-  public Shooter() {}
+  public Shooter() {
+    SmartDashboard.putData("Subsystems/Shooter", this);
+  }
 
   @Override
   public void periodic() {

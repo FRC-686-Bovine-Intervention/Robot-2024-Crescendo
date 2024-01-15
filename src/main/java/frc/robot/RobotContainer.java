@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.auto.AutoSelector;
@@ -129,7 +130,6 @@ public class RobotContainer {
         driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().whileTrue(pivot.movePivotManually(-1));
         driveController.x().whileTrue(pivot.movePivotManually(1));
-        driveController.y().whileTrue(kicker.feedToShooter());
     }
 
 
@@ -175,7 +175,8 @@ public class RobotContainer {
             )
         );
 
-        intake.setDefaultCommand(intake.doNothing(() -> pivot.isAtAngle(0)));
+        intake.setDefaultCommand(intake.doNothing());
+        new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
     private void configureAutos() {

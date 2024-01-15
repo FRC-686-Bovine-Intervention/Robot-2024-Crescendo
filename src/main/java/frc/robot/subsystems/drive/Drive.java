@@ -32,7 +32,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
@@ -74,7 +74,7 @@ public class Drive extends SubsystemBase {
         System.out.println("[Init Drive] Instantiating Drive");
         this.gyroIO = gyroIO;
         System.out.println("[Init Drive] Gyro IO: " + this.gyroIO.getClass().getSimpleName());
-        Shuffleboard.getTab("Drive").add("Drive Subsystem", this);
+        SmartDashboard.putData("Subsystems/Drive", this);
         ModuleIO[] moduleIOs = new ModuleIO[]{flModuleIO, frModuleIO, blModuleIO, brModuleIO};
         for(DriveModulePosition position : DriveModulePosition.values()) {
             System.out.println("[Init Drive] Instantiating Module " + position.name() + " with Module IO: " + moduleIOs[position.ordinal()].getClass().getSimpleName());

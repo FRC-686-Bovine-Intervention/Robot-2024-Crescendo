@@ -4,12 +4,12 @@
 
 package frc.robot.subsystems.intake;
 
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
@@ -28,6 +28,15 @@ public class Intake extends SubsystemBase {
 
   public Intake(IntakeIO intakeIO) {
     this.intakeIO = intakeIO;
+    SmartDashboard.putData("Subsystems/Intake", this);
+  }
+
+  public boolean hasNote() {
+    return inputs.noteAtBottom || inputs.noteAtTop;
+  }
+
+  public boolean noteReady() {
+    return inputs.noteAtTop;
   }
 
   private void startIntake() {
@@ -37,7 +46,7 @@ public class Intake extends SubsystemBase {
 
   private void startOuttake() {
     intakeIO.setBeltVoltage(-beltVoltage.get());
-    intakeIO.setIntakeVoltage(intakeVoltage.get() * (intakeReversed ? 1 : -1));
+    intakeIO.setIntakeVoltage(-intakeVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
   private void stopIntake() {
@@ -51,7 +60,7 @@ public class Intake extends SubsystemBase {
     Logger.processInputs("Intake", inputs);
   }
 
-  public Command deliverToTop() {
+  public Command secureNote() {
     return new FunctionalCommand(
       () -> {},
       () -> {
@@ -60,7 +69,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName("Intake/DeliverToTop");
+    ).withName("Intake/Secure Note");
   }
 
   public Command feedToKicker() {
@@ -105,16 +114,16 @@ public class Intake extends SubsystemBase {
         stopIntake();
       },
       this
-    );
+    ).withName("Intake/Outtake");
   }
 
-  public Command doNothing(BooleanSupplier pivotInLoadingPos) {
+  public Command doNothing() {
     return new FunctionalCommand(
       () -> {
-        runDefaultCommand(pivotInLoadingPos);
+        runDefaultCommand();
       },
       () -> {
-        runDefaultCommand(pivotInLoadingPos);
+        runDefaultCommand();
       },
       (interrupted) -> {},
       () -> false,
@@ -122,13 +131,9 @@ public class Intake extends SubsystemBase {
     ).withName("Intake/Default");
   }
 
-  private void runDefaultCommand(BooleanSupplier pivotInLoadingPos) {
-    if (pivotInLoadingPos.getAsBoolean() && inputs.noteAtTop) {
-      feedToKicker().schedule();
-    }
-
+  private void runDefaultCommand() {
     if (inputs.noteAtBottom && !inputs.noteAtTop) {
-      deliverToTop().schedule();
+      secureNote().schedule();
     }
 
     stopIntake();

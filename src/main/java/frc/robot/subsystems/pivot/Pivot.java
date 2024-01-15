@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
@@ -21,8 +22,8 @@ public class Pivot extends SubsystemBase {
   private final PivotIO pivotIO;
   private final PivotIOInputsAutoLogged input = new PivotIOInputsAutoLogged();
 
-  public static double POS_ZERO = 0;
-  public static double POS_AMP = 10;
+  public static final double POS_ZERO = 0;
+  public static final double POS_AMP = 10;
 
   private final LoggedTunableNumber kP = new LoggedTunableNumber("Pivot/PID/kP", 0);
   private final LoggedTunableNumber kI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
@@ -55,6 +56,7 @@ public class Pivot extends SubsystemBase {
 
   public Pivot(PivotIO pivotIO) {
     this.pivotIO = pivotIO;
+    SmartDashboard.putData("Subsystems/Pivot", this);
   }
 
   @Override
@@ -97,5 +99,9 @@ public class Pivot extends SubsystemBase {
 
   public boolean isAtAngle(double angleRad) {
     return Math.abs(input.pivotPositionRad - angleRad) <= Units.degreesToRadians(toleranceDeg.get());
+  }
+
+  public boolean readyToFeed() {
+    return isAtAngle(POS_ZERO);
   }
 }
