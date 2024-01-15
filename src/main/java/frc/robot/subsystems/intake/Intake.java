@@ -13,6 +13,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LoggedTunableNumber;
 
@@ -33,6 +34,11 @@ public class Intake extends SubsystemBase {
   private void startIntake() {
     intakeIO.setBeltVoltage(beltVoltage.get());
     intakeIO.setIntakeVoltage(intakeVoltage.get() * (intakeReversed ? -1 : 1));
+  }
+
+  private void startOuttake() {
+    intakeIO.setBeltVoltage(-beltVoltage.get());
+    intakeIO.setIntakeVoltage(intakeVoltage.get() * (intakeReversed ? 1 : -1));
   }
 
   private void stopIntake() {
@@ -58,7 +64,7 @@ public class Intake extends SubsystemBase {
     ).withName("Intake/DeliverToTop");
   }
 
-  public Command feed() {
+  public Command feedToKicker() {
     return new FunctionalCommand(
       () -> {},
       () -> {
@@ -84,8 +90,6 @@ public class Intake extends SubsystemBase {
           intakeReversed = false;
         }    
         startIntake();
-
-        Logger.recordOutput("Intake/Volts", intakeVoltage.get() * (intakeReversed ? -1 : 1));
       },
       (interrupted) -> {},
       () -> inputs.noteAtTop,
@@ -93,11 +97,23 @@ public class Intake extends SubsystemBase {
     ).withName("Intake/Intake");
   }
 
+  public Command outtake() {
+    return new StartEndCommand(
+      () -> {
+        startOuttake();
+      },
+      () -> {
+        stopIntake();
+      },
+      this
+    );
+  }
+
   public Command doNothing(BooleanSupplier pivotInLoadingPos) {
     return Commands.run(
       () -> {
         if (pivotInLoadingPos.getAsBoolean() && inputs.noteAtTop) {
-          feed().schedule();
+          feedToKicker().schedule();
         }
 
         if (inputs.noteAtBottom && !inputs.noteAtTop) {

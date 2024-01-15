@@ -7,6 +7,7 @@ package frc.robot.subsystems.pivot;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import frc.robot.Constants;
 
 public class PivotIOSim implements PivotIO {
     private final SingleJointedArmSim pivotSim = new SingleJointedArmSim(DCMotor.getFalcon500(1).withReduction(25), 4, 1, Units.inchesToMeters(11.876), 0, Units.degreesToRadians(41.353), false, 0);
@@ -15,7 +16,7 @@ public class PivotIOSim implements PivotIO {
 
     @Override
     public void updateInputs(PivotIOInputs inputs) {
-        pivotSim.update(0.02);
+        pivotSim.update(Constants.dtSeconds);
 
         inputs.pivotPositionRad = pivotSim.getAngleRads();
         inputs.pivotVelocityRadPerSec = pivotSim.getVelocityRadPerSec();

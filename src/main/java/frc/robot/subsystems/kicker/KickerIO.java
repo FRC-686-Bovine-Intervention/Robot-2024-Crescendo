@@ -4,5 +4,19 @@
 
 package frc.robot.subsystems.kicker;
 
-/** Add your docs here. */
-public interface KickerIO {}
+import org.littletonrobotics.junction.AutoLog;
+
+public interface KickerIO {
+    @AutoLog
+    public static class KickerIOInputs {
+        public boolean notePresent;
+
+        public double kickedAppliedVolts;
+        public double kickerCurrentAmps;
+        public double kickerTempCelcius;
+    }
+
+    public default void updateInputs(KickerIOInputs inputs) {}
+
+    public default void setKickerVoltage(double volts) {}
+}

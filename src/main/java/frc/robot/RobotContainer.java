@@ -33,6 +33,10 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIONeo550;
 import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.kicker.Kicker;
+import frc.robot.subsystems.kicker.KickerIO;
+import frc.robot.subsystems.kicker.KickerIONeo550;
+import frc.robot.subsystems.kicker.KickerIOSim;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.pivot.PivotIO;
@@ -47,6 +51,7 @@ public class RobotContainer {
     private final Drive drive;
     private final Intake intake;
     private final Pivot pivot;
+    private final Kicker kicker;
     @SuppressWarnings("unused")
     private final Leds ledSystem;
 
@@ -72,6 +77,7 @@ public class RobotContainer {
                 );
                 intake = new Intake(new IntakeIONeo550());
                 pivot = new Pivot(new PivotIOFalcon());
+                kicker = new Kicker(new KickerIONeo550());
                 ledSystem = new Leds(
                     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
                 );
@@ -86,6 +92,7 @@ public class RobotContainer {
                 );
                 intake = new Intake(new IntakeIOSim(simJoystick.button(1), simJoystick.button(2)));
                 pivot = new Pivot(new PivotIOSim());
+                kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 ledSystem = null;
             break;
             default:
@@ -99,6 +106,7 @@ public class RobotContainer {
                 );
                 intake = new Intake(new IntakeIO() {});
                 pivot = new Pivot(new PivotIO() {});
+                kicker = new Kicker(new KickerIO() {});
                 ledSystem = null;
             break;
         }
@@ -121,6 +129,7 @@ public class RobotContainer {
         driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().whileTrue(pivot.movePivotManually(-1));
         driveController.x().whileTrue(pivot.movePivotManually(1));
+        driveController.y().whileTrue(kicker.feedToShooter());
     }
 
 

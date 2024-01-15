@@ -8,6 +8,7 @@ import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import frc.robot.Constants;
 
 public class IntakeIOSim implements IntakeIO {
     private final DCMotorSim intakeMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
@@ -23,8 +24,9 @@ public class IntakeIOSim implements IntakeIO {
 
     @Override
     public void updateInputs(IntakeIOInputs inputs) {
-        intakeMotor.update(0.02);
-        beltMotor.update(0.02);
+        intakeMotor.update(Constants.dtSeconds);
+        beltMotor.update(Constants.dtSeconds);
+        
         inputs.intakeVelocityRadPerSec = intakeMotor.getAngularVelocityRadPerSec();
         inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
         inputs.intakeAppliedVolts = 0;
