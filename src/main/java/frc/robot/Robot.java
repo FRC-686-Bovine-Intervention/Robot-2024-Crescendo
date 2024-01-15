@@ -28,6 +28,7 @@ public class Robot extends LoggedRobot {
   public void robotInit() {
     System.out.println("[Init Robot] Recording AdvantageKit Metadata");
     Logger.recordMetadata("Robot", RobotType.getRobot().name());
+    Logger.recordMetadata("Mode", RobotType.getMode().name());
     Logger.recordMetadata("ProjectName", BuildConstants.MAVEN_NAME);
     Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
     Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
