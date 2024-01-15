@@ -11,7 +11,6 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -110,19 +109,28 @@ public class Intake extends SubsystemBase {
   }
 
   public Command doNothing(BooleanSupplier pivotInLoadingPos) {
-    return Commands.run(
+    return new FunctionalCommand(
       () -> {
-        if (pivotInLoadingPos.getAsBoolean() && inputs.noteAtTop) {
-          feedToKicker().schedule();
-        }
-
-        if (inputs.noteAtBottom && !inputs.noteAtTop) {
-          deliverToTop().schedule();
-        }
-
-        stopIntake();
+        runDefaultCommand(pivotInLoadingPos);
       },
+      () -> {
+        runDefaultCommand(pivotInLoadingPos);
+      },
+      (interrupted) -> {},
+      () -> false,
       this
     ).withName("Intake/Default");
+  }
+
+  private void runDefaultCommand(BooleanSupplier pivotInLoadingPos) {
+    if (pivotInLoadingPos.getAsBoolean() && inputs.noteAtTop) {
+      feedToKicker().schedule();
+    }
+
+    if (inputs.noteAtBottom && !inputs.noteAtTop) {
+      deliverToTop().schedule();
+    }
+
+    stopIntake();
   }
 }
