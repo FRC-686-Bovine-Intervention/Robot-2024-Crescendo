@@ -4,17 +4,23 @@
 
 package frc.robot.subsystems.shooter;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Shooter extends SubsystemBase {
-  /** Creates a new Shooter. */
-  public Shooter() {
+  private final ShooterIO shooterIO;
+  private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
+
+  public Shooter(ShooterIO shooterIO) {
+    this.shooterIO = shooterIO;
     SmartDashboard.putData("Subsystems/Shooter", this);
   }
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
+    shooterIO.updateInputs(inputs);
+    Logger.processInputs("Shooter", inputs);
   }
 }
