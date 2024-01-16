@@ -11,7 +11,6 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -20,7 +19,7 @@ import frc.robot.util.LoggedTunableNumber;
 
 public class Pivot extends SubsystemBase {
   private final PivotIO pivotIO;
-  private final PivotIOInputsAutoLogged input = new PivotIOInputsAutoLogged();
+  private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
   public static final double POS_ZERO = 0;
   public static final double POS_AMP = 10;
@@ -61,8 +60,8 @@ public class Pivot extends SubsystemBase {
 
   @Override
   public void periodic() {
-    pivotIO.updateInputs(input);
-    Logger.processInputs("Pivot", input);
+    pivotIO.updateInputs(inputs);
+    Logger.processInputs("Pivot", inputs);
     updateTunables();
   }
 
@@ -72,33 +71,35 @@ public class Pivot extends SubsystemBase {
         () -> pivotIO.setPivotVoltage(manualPivotVolts.get() * dir),
         () -> pivotIO.setPivotVoltage(0),
         this
-    ).withName("Manual | " + (manualPivotVolts.get() * dir) + " Volts");
+    ).withName("Manual");
   }
 
-  public Command setArmPos(double angleRad) {
+  public Command gotoAmp() {
     return new ProfiledPIDCommand(
       pivotPID,
-      () -> input.pivotPositionRad,
-      angleRad,
+      () -> inputs.pivotPositionRad,
+      POS_AMP,
       (output, setpoint) -> pivotIO.setPivotVoltage(output),
       this
-    ).withName("PID | Angle: " + Units.radiansToDegrees(angleRad) + " degrees");
+    ).withName("Go to Amp");
   }
 
-  public Command gotoArmPos(double angleRad) {
-    return Commands.runOnce(() -> setArmPos(angleRad).schedule());
+  public Command gotoZero() {
+    return new ProfiledPIDCommand(
+      pivotPID,
+      () -> inputs.pivotPositionRad,
+      POS_ZERO,
+      (output, setpoint) -> pivotIO.setPivotVoltage(output),
+      this
+    ).withName("Go to Zero");
   }
 
-  public Command gotoArmPosWithWait(double angleRad) {
-    return gotoArmPos(angleRad).andThen(waitUntilAtGoal());
-  }
-
-  public Command waitUntilAtGoal() {
+  public Command waitUntilAtPos() {
       return new WaitUntilCommand(pivotPID::atGoal);
   }
 
   public boolean isAtAngle(double angleRad) {
-    return Math.abs(input.pivotPositionRad - angleRad) <= Units.degreesToRadians(toleranceDeg.get());
+    return Math.abs(inputs.pivotPositionRad - angleRad) <= Units.degreesToRadians(toleranceDeg.get());
   }
 
   public boolean readyToFeed() {
