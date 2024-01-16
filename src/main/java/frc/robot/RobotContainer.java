@@ -45,6 +45,7 @@ import frc.robot.subsystems.pivot.PivotIOFalcon;
 import frc.robot.subsystems.pivot.PivotIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
+import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.XboxController;
 
 public class RobotContainer {
@@ -62,7 +63,8 @@ public class RobotContainer {
 
     // Controller
     private final XboxController driveController = new XboxController(0);
-    // private final CommandJoystick buttonBoard = new CommandJoystick(1);
+    @SuppressWarnings("unused")
+    private final ButtonBoard3x3 buttonBoard = new ButtonBoard3x3(1);
     private final CommandJoystick simJoystick = new CommandJoystick(2);
 
     public RobotContainer() {
@@ -208,6 +210,7 @@ public class RobotContainer {
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();
         Logger.recordOutput("Mechanism2d/Robot Side Profile", robotSideProfile);
+        // System.out.printf("\nAng: %f, Mag: %f", buttonBoard.joystick.radsFromPosXCCW(), buttonBoard.joystick.magnitude());
     }
 
     public void enabledInit() {

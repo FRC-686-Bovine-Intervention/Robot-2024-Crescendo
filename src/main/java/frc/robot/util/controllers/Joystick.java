@@ -164,6 +164,10 @@ public class Joystick {
             return new Axis(() -> MathUtil.applyDeadband(getAsDouble(), deadband));
         }
 
+        public Axis abs() {
+            return new Axis(() -> Math.abs(getAsDouble()));
+        }
+
         public Trigger aboveThreshold(double threshold) {
             return aboveThreshold(threshold, CommandScheduler.getInstance().getDefaultButtonLoop());
         }
