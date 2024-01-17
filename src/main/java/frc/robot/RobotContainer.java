@@ -43,6 +43,10 @@ import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.pivot.PivotIO;
 import frc.robot.subsystems.pivot.PivotIOFalcon;
 import frc.robot.subsystems.pivot.PivotIOSim;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOFalcon;
+import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.controllers.ButtonBoard3x3;
@@ -54,6 +58,7 @@ public class RobotContainer {
     private final Intake intake;
     private final Pivot pivot;
     private final Kicker kicker;
+    private final Shooter shooter;
     @SuppressWarnings("unused")
     private final Leds ledSystem;
 
@@ -81,6 +86,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIONeo550());
                 pivot = new Pivot(new PivotIOFalcon());
                 kicker = new Kicker(new KickerIONeo550());
+                shooter = new Shooter(new ShooterIOFalcon());
                 ledSystem = new Leds(
                     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
                 );
@@ -96,6 +102,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOSim(simJoystick.button(1), simJoystick.button(2)));
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
+                shooter = new Shooter(new ShooterIOSim(simJoystick.button(3)));
                 ledSystem = null;
             break;
             default:
@@ -110,6 +117,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIO() {});
                 pivot = new Pivot(new PivotIO() {});
                 kicker = new Kicker(new KickerIO() {});
+                shooter = new Shooter(new ShooterIO() {});
                 ledSystem = null;
             break;
         }

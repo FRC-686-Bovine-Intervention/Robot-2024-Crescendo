@@ -11,12 +11,20 @@ public interface ShooterIO {
     public static class ShooterIOInputs {
         public boolean notePresent;
 
-        public double shooterAppliedVolts;
-        public double shooterCurrentAmps;
-        public double shooterTempCelcius;
+        public double leftRotationsPerSecond;
+        public double leftAppliedVolts;
+        public double leftCurrentAmps;
+        public double leftTempCelcius;
+
+        public double rightRotationsPerSecond;
+        public double rightAppliedVolts;
+        public double rightCurrentAmps;
+        public double rightTempCelcius;
     }
 
     public default void updateInputs(ShooterIOInputs inputs) {}
 
-    public default void setShooterVoltage(double volts) {}
+    public default void setLeftVoltage(double volts) {}
+
+    public default void setRightVoltage(double volts) {}
 }
