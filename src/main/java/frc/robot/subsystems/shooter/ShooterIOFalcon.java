@@ -4,9 +4,13 @@
 
 package frc.robot.subsystems.shooter;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.util.LoggedTunableNumber;
 
 public class ShooterIOFalcon implements ShooterIO {
     private final TalonFX leftMotor;
@@ -14,12 +18,54 @@ public class ShooterIOFalcon implements ShooterIO {
 
     private final DigitalInput sensor;
 
+    private final TalonFXConfiguration motorConfiguration;
+
+    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0);
+    private final LoggedTunableNumber kI = new LoggedTunableNumber("Shooter/PID/kI", 0);
+    private final LoggedTunableNumber kD = new LoggedTunableNumber("Shooter/PID/kD", 0);
+    private final LoggedTunableNumber kV = new LoggedTunableNumber("Shooter/PID/kV", 0);
+    private final LoggedTunableNumber kA = new LoggedTunableNumber("Shooter/PID/kA", 0);
+    private final LoggedTunableNumber kG = new LoggedTunableNumber("Shooter/PID/kG", 0);
+    private final LoggedTunableNumber kS = new LoggedTunableNumber("Shooter/PID/kS", 0);
+
     public ShooterIOFalcon() {
         leftMotor = null;
         rightMotor = null;
 
+        motorConfiguration = new TalonFXConfiguration();
+        motorConfiguration.Slot0.GravityType = GravityTypeValue.Elevator_Static;
+        
+        applyMotorConfig();
+
         sensor = new DigitalInput(0);
     }
+
+    private void applyMotorConfig() {
+        leftMotor.getConfigurator().apply(motorConfiguration);
+        rightMotor.getConfigurator().apply(motorConfiguration);
+    }
+
+    private void updateTunables() {
+        if(
+            kP.hasChanged(hashCode()) ||
+            kI.hasChanged(hashCode()) ||
+            kD.hasChanged(hashCode()) ||
+            kV.hasChanged(hashCode()) ||
+            kA.hasChanged(hashCode()) ||
+            kG.hasChanged(hashCode()) ||
+            kS.hasChanged(hashCode())
+        ) {
+            motorConfiguration.Slot0.kP = kP.get();
+            motorConfiguration.Slot0.kI = kI.get();
+            motorConfiguration.Slot0.kD = kD.get();
+            motorConfiguration.Slot0.kV = kV.get();
+            motorConfiguration.Slot0.kA = kA.get();
+            motorConfiguration.Slot0.kG = kG.get();
+            motorConfiguration.Slot0.kS = kS.get();
+
+            applyMotorConfig();
+        }
+    } 
 
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
@@ -34,13 +80,38 @@ public class ShooterIOFalcon implements ShooterIO {
         inputs.rightAppliedVolts = rightMotor.getSupplyVoltage().getValue();
         inputs.rightCurrentAmps = rightMotor.getSupplyCurrent().getValue();
         inputs.rightTempCelcius = rightMotor.getDeviceTemp().getValue();
+
+        updateTunables();
     }
 
-    public void setLeftVoltage(double volts) {
-        leftMotor.setVoltage(volts);
+    private final boolean kEnableFOC = true;
+    private final double kAcceleration = 1;
+    private final double kFeedForward = 0;
+    private final int kPIDSlot = 0;
+    private final boolean kOverrideBrakeDurNeutral = true;
+    private final boolean kLimitForwardMotion = true;
+    private final boolean kLimitReverseMotion = true;
+
+    private final VelocityDutyCycle request = new VelocityDutyCycle(
+        0,
+        kAcceleration,
+        kEnableFOC,
+        kFeedForward,
+        kPIDSlot,
+        kOverrideBrakeDurNeutral,
+        kLimitForwardMotion,
+        kLimitReverseMotion
+    );
+
+    @Override
+    public void setLeftVelocity(double rps) {
+        request.withVelocity(rps);
+        leftMotor.setControl(request);
     }
 
-    public void setRightVoltage(double volts) {
-        rightMotor.setVoltage(volts);
+    @Override
+    public void setRightVelocity(double rps) {
+        request.withVelocity(rps);
+        rightMotor.setControl(request);
     }
 }
