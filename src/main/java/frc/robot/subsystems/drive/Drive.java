@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.drive;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -70,6 +71,11 @@ public class Drive extends SubsystemBase {
 
     private Twist2d fieldVelocity = new Twist2d();
 
+    private final Timer currentSpikeTimer = new Timer();
+    private static final LoggedTunableNumber currentSpikeThreshold = new LoggedTunableNumber("Drive/Current Spike Threshold", 0); 
+    private static final LoggedTunableNumber currentSpikeTime = new LoggedTunableNumber("Drive/Current Spike Time", 0);
+    private final ArrayList<Module> spikeModules = new ArrayList<>();
+
     public Drive(GyroIO gyroIO, ModuleIO flModuleIO, ModuleIO frModuleIO, ModuleIO blModuleIO, ModuleIO brModuleIO) {
         System.out.println("[Init Drive] Instantiating Drive");
         this.gyroIO = gyroIO;
@@ -97,6 +103,23 @@ public class Drive extends SubsystemBase {
         Logger.processInputs("Drive/Gyro", gyroInputs);
         for (var module : modules) {
             module.periodic();
+        }
+
+        for (var module : modules) {
+            if (Math.abs(module.getCurrentAmps()) >= currentSpikeThreshold.get()) {
+                if (!spikeModules.contains(module)) {
+                    spikeModules.add(module);
+                }
+            } else {
+                spikeModules.remove(module);
+            }
+        }
+
+        if (!spikeModules.isEmpty()) {
+            currentSpikeTimer.start();
+        } else {
+            currentSpikeTimer.stop();
+            currentSpikeTimer.reset();
         }
 
         // Run modules
@@ -489,6 +512,10 @@ public class Drive extends SubsystemBase {
             direction = Optional.of(CardinalDirection.RIGHT);
         }
         return direction;
+    }
+
+    public boolean collisionDetected() {
+        return currentSpikeTimer.hasElapsed(currentSpikeTime.get());
     }
 
     private static final LoggedTunableNumber tP = new LoggedTunableNumber("AutoDrive/tP", 1);
