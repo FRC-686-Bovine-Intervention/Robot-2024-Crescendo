@@ -26,6 +26,14 @@ public class Intake extends SubsystemBase {
 
   private boolean intakeReversed;
 
+  public static enum IntakeCommand {
+    DEFAULT,
+    INTAKE,
+    OUTTAKE,
+    SECURE_NOTE,
+    FEED_TO_KICKER,
+  };
+
   public Intake(IntakeIO intakeIO) {
     this.intakeIO = intakeIO;
     SmartDashboard.putData("Subsystems/Intake", this);
@@ -69,7 +77,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName("Secure Note");
+    ).withName(IntakeCommand.FEED_TO_KICKER.name());
   }
 
   public Command feedToKicker() {
@@ -81,7 +89,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> !inputs.noteAtTop,
       this
-    ).withName("Feed");
+    ).withName(IntakeCommand.FEED_TO_KICKER.name());
   }
 
   public Command intake(Supplier<ChassisSpeeds> driveSpeedRobotRelative) {
@@ -102,7 +110,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName("Intake");
+    ).withName(IntakeCommand.INTAKE.name());
   }
 
   public Command outtake() {
@@ -114,7 +122,7 @@ public class Intake extends SubsystemBase {
         stopIntake();
       },
       this
-    ).withName("Outtake");
+    ).withName(IntakeCommand.OUTTAKE.name());
   }
 
   public Command doNothing() {
@@ -128,7 +136,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> false,
       this
-    ).withName("Default");
+    ).withName(IntakeCommand.DEFAULT.name());
   }
 
   private void runDefaultCommand() {
@@ -137,5 +145,9 @@ public class Intake extends SubsystemBase {
     }
 
     stopIntake();
+  }
+
+  public IntakeCommand getIntakeCommand() {
+    return IntakeCommand.valueOf(getCurrentCommand().getName());
   }
 }
