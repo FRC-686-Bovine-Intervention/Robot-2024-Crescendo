@@ -147,6 +147,10 @@ public class Intake extends SubsystemBase {
     stopIntake();
   }
 
+  public boolean getIntakeReversed() {
+    return intakeReversed;
+  }
+
   public IntakeCommand getIntakeCommand() {
     return IntakeCommand.valueOf(getCurrentCommand().getName());
   }
