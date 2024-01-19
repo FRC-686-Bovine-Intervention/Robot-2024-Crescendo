@@ -6,13 +6,19 @@ package frc.robot.subsystems.kicker;
 
 import java.util.function.BooleanSupplier;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.Constants;
 
 public class KickerIOSim implements KickerIO {
-    private final DCMotorSim kickerMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
+    private final DCMotorSim leftMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
+    private final DCMotorSim rightMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
+
     private final BooleanSupplier notePresent;
+
+    private double leftAppliedVolts = 0;
+    private double rightAppliedVolts = 0;
     
     public KickerIOSim(BooleanSupplier notePresent) {
         this.notePresent = notePresent;
@@ -20,16 +26,28 @@ public class KickerIOSim implements KickerIO {
 
     @Override
     public void updateInputs(KickerIOInputs inputs) {
-        kickerMotor.update(Constants.dtSeconds);
+        leftMotor.update(Constants.dtSeconds);
+        rightMotor.update(Constants.dtSeconds);
         
         inputs.notePresent = notePresent.getAsBoolean();
-        inputs.kickerCurrentAmps = kickerMotor.getCurrentDrawAmps();
-        inputs.kickedAppliedVolts = 0;
-        inputs.kickerTempCelcius = 0; 
+
+        inputs.leftVelocityRadPerSec = leftMotor.getAngularVelocityRadPerSec();
+        inputs.leftCurrentAmps = leftMotor.getCurrentDrawAmps();
+        inputs.leftAppliedVolts = leftAppliedVolts;
+        inputs.leftTempCelcius = 0; 
+
+        inputs.rightVelocityRadPerSec = rightMotor.getAngularVelocityRadPerSec();
+        inputs.rightCurrentAmps = rightMotor.getCurrentDrawAmps();
+        inputs.rightAppliedVolts = rightAppliedVolts;
+        inputs.rightTempCelcius = 0;
     }
 
     @Override
     public void setKickerVoltage(double volts) {
-        kickerMotor.setInputVoltage(volts);
+        leftAppliedVolts = MathUtil.clamp(volts, -12, 12);
+        rightAppliedVolts = MathUtil.clamp(volts, -12, 12);
+        
+        leftMotor.setInputVoltage(leftAppliedVolts);
+        rightMotor.setInputVoltage(rightAppliedVolts);
     }
 }

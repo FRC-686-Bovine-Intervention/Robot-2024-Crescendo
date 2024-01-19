@@ -11,9 +11,15 @@ public interface KickerIO {
     public static class KickerIOInputs {
         public boolean notePresent;
 
-        public double kickedAppliedVolts;
-        public double kickerCurrentAmps;
-        public double kickerTempCelcius;
+        public double leftVelocityRadPerSec;
+        public double leftAppliedVolts;
+        public double leftCurrentAmps;
+        public double leftTempCelcius;
+
+        public double rightVelocityRadPerSec;
+        public double rightAppliedVolts;
+        public double rightCurrentAmps;
+        public double rightTempCelcius;
     }
 
     public default void updateInputs(KickerIOInputs inputs) {}

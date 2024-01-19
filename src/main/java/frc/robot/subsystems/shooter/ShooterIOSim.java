@@ -6,6 +6,7 @@ package frc.robot.subsystems.shooter;
 
 import java.util.function.BooleanSupplier;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
@@ -45,6 +46,9 @@ public class ShooterIOSim implements ShooterIO {
         )
     );
 
+    private double leftAppliedVolts = 0;
+    private double rightAppliedVolts = 0;
+
     private void updateTunables() {
         if(kP.hasChanged(hashCode()) || kI.hasChanged(hashCode()) || kD.hasChanged(hashCode())) {
             leftMotorPID.setPID(kP.get(), kI.get(), kD.get());
@@ -64,12 +68,12 @@ public class ShooterIOSim implements ShooterIO {
 
         inputs.leftRotationsPerSecond = Units.radiansToRotations(leftMotor.getAngularVelocityRadPerSec());
         inputs.leftCurrentAmps = leftMotor.getCurrentDrawAmps();
-        inputs.leftAppliedVolts = 0;
+        inputs.leftAppliedVolts = leftAppliedVolts;
         inputs.leftTempCelcius = 0;
 
         inputs.rightRotationsPerSecond = Units.radiansToRotations(rightMotor.getAngularVelocityRadPerSec());
         inputs.rightCurrentAmps = rightMotor.getCurrentDrawAmps();
-        inputs.rightAppliedVolts = 0;
+        inputs.rightAppliedVolts = rightAppliedVolts;
         inputs.rightTempCelcius = 0;
 
         updateTunables();
@@ -77,11 +81,17 @@ public class ShooterIOSim implements ShooterIO {
 
     @Override
     public void setLeftVelocity(double rps) {
-        leftMotor.setInputVoltage(leftMotorPID.calculate(Units.radiansToRotations(leftMotor.getAngularVelocityRadPerSec()), rps));
+        var volts = leftMotorPID.calculate(Units.radiansToRotations(leftMotor.getAngularVelocityRadPerSec()), rps);
+        leftAppliedVolts = MathUtil.clamp(volts, -12, 12);
+            
+        leftMotor.setInputVoltage(leftAppliedVolts);
     }
 
     @Override
     public void setRightVelocity(double rps) {
-        rightMotor.setInputVoltage(rightMotorPID.calculate(Units.radiansToRotations(rightMotor.getAngularVelocityRadPerSec()), rps));
+        var volts = rightMotorPID.calculate(Units.radiansToRotations(rightMotor.getAngularVelocityRadPerSec()), rps);
+        rightAppliedVolts = MathUtil.clamp(volts, -12, 12);
+        
+        rightMotor.setInputVoltage(rightAppliedVolts);
     }
 }

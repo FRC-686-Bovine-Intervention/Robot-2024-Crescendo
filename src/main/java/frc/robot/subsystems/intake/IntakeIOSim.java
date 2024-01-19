@@ -6,6 +6,7 @@ package frc.robot.subsystems.intake;
 
 import java.util.function.BooleanSupplier;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.Constants;
@@ -16,6 +17,9 @@ public class IntakeIOSim implements IntakeIO {
 
     private final BooleanSupplier noteAtBottom;
     private final BooleanSupplier noteAtTop;
+
+    private double intakeAppliedVolts = 0;
+    private double beltAppliedVolts = 0;
 
     public IntakeIOSim(BooleanSupplier noteAtBottom, BooleanSupplier noteAtTop) {
         this.noteAtBottom = noteAtBottom;
@@ -29,12 +33,12 @@ public class IntakeIOSim implements IntakeIO {
         
         inputs.intakeVelocityRadPerSec = intakeMotor.getAngularVelocityRadPerSec();
         inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
-        inputs.intakeAppliedVolts = 0;
+        inputs.intakeAppliedVolts = intakeAppliedVolts;
         inputs.intakeTempCelcius = 0;
 
         inputs.beltVelocityRadPerSec = beltMotor.getAngularVelocityRadPerSec();
         inputs.beltCurrentAmps = beltMotor.getCurrentDrawAmps();
-        inputs.beltAppliedVolts = 0;
+        inputs.beltAppliedVolts = beltAppliedVolts;
         inputs.beltTempCelcius = 0;
         
         inputs.noteAtBottom = noteAtBottom.getAsBoolean();
@@ -42,12 +46,16 @@ public class IntakeIOSim implements IntakeIO {
     }
 
     @Override
-    public void setIntakeVoltage(double voltage) {
-        intakeMotor.setInputVoltage(voltage);
+    public void setIntakeVoltage(double volts) {
+        intakeAppliedVolts = MathUtil.clamp(volts, -12, 12);
+
+        intakeMotor.setInputVoltage(intakeAppliedVolts);
     }
 
     @Override
-    public void setBeltVoltage(double voltage) {
-        beltMotor.setInputVoltage(voltage);
+    public void setBeltVoltage(double volts) {
+        beltAppliedVolts = MathUtil.clamp(volts, -12, 12);
+
+        beltMotor.setInputVoltage(beltAppliedVolts);
     }
 }
