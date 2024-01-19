@@ -27,6 +27,7 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIO550Falcon;
 import frc.robot.subsystems.drive.ModuleIOSim;
+import frc.robot.subsystems.drive.commands.AutoAim;
 import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
@@ -140,6 +141,16 @@ public class RobotContainer {
         driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().whileTrue(pivot.movePivotManually(-1));
         driveController.x().whileTrue(pivot.movePivotManually(1));
+        driveController.rightBumper().toggleOnTrue(
+            new AutoAim(
+                drive,
+                driveController.leftStick
+                    .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
+                    .radialSensitivity(0.75)
+                    .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit),
+                driveController.leftBumper()
+            )
+        );
     }
 
 

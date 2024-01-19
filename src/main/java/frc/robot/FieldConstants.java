@@ -23,4 +23,5 @@ public final class FieldConstants {
   public static final double fieldLength = Units.inchesToMeters(648);
   public static final double fieldWidth =  Units.inchesToMeters(324);
 
+  public static final Translation2d speakerCenter = new Translation2d(0.240581, 5.547755);
 }
