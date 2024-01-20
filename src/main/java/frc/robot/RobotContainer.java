@@ -48,6 +48,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.controllers.ButtonBoard3x3;
@@ -59,7 +60,10 @@ public class RobotContainer {
     private final Intake intake;
     private final Pivot pivot;
     private final Kicker kicker;
+    @SuppressWarnings("unused")
     private final Shooter shooter;
+    @SuppressWarnings("unused")
+    private final NoteVision noteVision;
     @SuppressWarnings("unused")
     private final Leds ledSystem;
 
@@ -77,20 +81,33 @@ public class RobotContainer {
         System.out.println("[Init RobotContainer] Creating " + RobotType.getMode().name() + " " + RobotType.getRobot().name());
         switch(RobotType.getMode()) {
             case REAL:
+                // drive = new Drive(
+                //     new GyroIOPigeon2(),
+                //     new ModuleIO550Falcon(DriveModulePosition.FRONT_LEFT),
+                //     new ModuleIO550Falcon(DriveModulePosition.FRONT_RIGHT),
+                //     new ModuleIO550Falcon(DriveModulePosition.BACK_LEFT),
+                //     new ModuleIO550Falcon(DriveModulePosition.BACK_RIGHT)
+                // );
+                // intake = new Intake(new IntakeIONeo550());
+                // pivot = new Pivot(new PivotIOFalcon());
+                // kicker = new Kicker(new KickerIONeo550());
+                // shooter = new Shooter(new ShooterIOFalcon());
+                noteVision = new NoteVision();
                 drive = new Drive(
-                    new GyroIOPigeon2(),
-                    new ModuleIO550Falcon(DriveModulePosition.FRONT_LEFT),
-                    new ModuleIO550Falcon(DriveModulePosition.FRONT_RIGHT),
-                    new ModuleIO550Falcon(DriveModulePosition.BACK_LEFT),
-                    new ModuleIO550Falcon(DriveModulePosition.BACK_RIGHT)
+                    new GyroIO() {},
+                    new ModuleIOSim(),
+                    new ModuleIOSim(),
+                    new ModuleIOSim(),
+                    new ModuleIOSim()
                 );
-                intake = new Intake(new IntakeIONeo550());
-                pivot = new Pivot(new PivotIOFalcon());
-                kicker = new Kicker(new KickerIONeo550());
-                shooter = new Shooter(new ShooterIOFalcon());
-                ledSystem = new Leds(
-                    () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
-                );
+                intake = null;
+                kicker = null;
+                shooter = null;
+                pivot = null;
+                ledSystem = null;
+                // ledSystem = new Leds(
+                //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
+                // );
             break;
             case SIM:
                 drive = new Drive(
@@ -104,6 +121,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim(simJoystick.button(3)));
+                noteVision = null;
                 ledSystem = null;
             break;
             default:
@@ -119,18 +137,19 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIO() {});
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
+                noteVision = null;
                 ledSystem = null;
             break;
         }
 
-        System.out.println("[Init RobotContainer] Configuring Button Bindings");
-        configureButtonBindings();
+        // System.out.println("[Init RobotContainer] Configuring Button Bindings");
+        // configureButtonBindings();
 
-        System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
-        configureSubsystems();
+        // System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
+        // configureSubsystems();
 
-        System.out.println("[Init RobotContainer] Configuring Autonomous Modes");
-        configureAutos();
+        // System.out.println("[Init RobotContainer] Configuring Autonomous Modes");
+        // configureAutos();
 
         if (Constants.tuningMode) {
             new Alert("Tuning mode active, do not use in competition.", AlertType.INFO).set(true);
