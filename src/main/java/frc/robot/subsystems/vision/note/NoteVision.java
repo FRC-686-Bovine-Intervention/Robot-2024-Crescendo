@@ -27,7 +27,8 @@ public class NoteVision extends VirtualSubsystem {
     private static final LoggedTunableNumber posUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.8);
     private static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
     private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/confidenceDecayPerSecond", 1);
-
+    private static final LoggedTunableNumber pitchThreshold = new LoggedTunableNumber("Vision/Pitch Threshold", 0.0);
+        
     @Override
     public void periodic() {
         var photonFrameTargets = 
@@ -35,6 +36,7 @@ public class NoteVision extends VirtualSubsystem {
             .getLatestResult()
             .targets
             .stream()
+            .filter((target) -> (robotToCam.getRotation().getY() + target.getPitch()) < pitchThreshold.get())
             .map(TrackedNote::new)
             .toList();
         var connections = new ArrayList<PhotonMemoryConnection>();
