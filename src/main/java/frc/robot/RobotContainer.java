@@ -145,8 +145,8 @@ public class RobotContainer {
         // System.out.println("[Init RobotContainer] Configuring Button Bindings");
         // configureButtonBindings();
 
-        // System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
-        // configureSubsystems();
+        System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
+        configureSubsystems();
 
         // System.out.println("[Init RobotContainer] Configuring Autonomous Modes");
         // configureAutos();
@@ -215,8 +215,8 @@ public class RobotContainer {
             )
         );
 
-        intake.setDefaultCommand(intake.doNothing());
-        new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        // intake.setDefaultCommand(intake.doNothing());
+        // new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
     private void configureAutos() {

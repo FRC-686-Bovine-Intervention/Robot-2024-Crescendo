@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Constants;
 import frc.robot.RobotState;
+import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.VirtualSubsystem;
 
 public class NoteVision extends VirtualSubsystem {
@@ -22,10 +23,10 @@ public class NoteVision extends VirtualSubsystem {
     private static final PhotonCamera cam = new PhotonCamera("TestCam");
     private static final Transform3d robotToCam = new Transform3d(new Translation3d(0, 0, 0.73), new Rotation3d());
 
-    private static final double updateDistanceThreshold = 5;
-    private static final double posUpdatingFilteringFactor = 0.8;
-    private static final double confidencePerAreaPercent = 1;
-    private static final double confidenceDecayPerSecond = 1;
+    private static final LoggedTunableNumber updateDistanceThreshold = new LoggedTunableNumber("Vision/updateDistanceThreshold", 5);
+    private static final LoggedTunableNumber posUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.8);
+    private static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
+    private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/confidenceDecayPerSecond", 1);
 
     @Override
     public void periodic() {
@@ -40,7 +41,7 @@ public class NoteVision extends VirtualSubsystem {
         noteMemories.forEach(
             (memory) -> photonFrameTargets.forEach(
                 (target) -> {
-                    if(memory.fieldPos.getDistance(target.fieldPos) < updateDistanceThreshold) {
+                    if(memory.fieldPos.getDistance(target.fieldPos) < updateDistanceThreshold.get()) {
                         connections.add(new PhotonMemoryConnection(memory, target));
                     }
                 }
@@ -64,8 +65,13 @@ public class NoteVision extends VirtualSubsystem {
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
 
-        Logger.recordOutput("Vision/Photon Frame Targets", photonFrameTargets.toArray(Translation2d[]::new));
-        Logger.recordOutput("Vision/Note Memories", noteMemories.toArray(Translation2d[]::new));
+        Logger.recordOutput("Vision/Photon Frame Targets", photonFrameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
+        Logger.recordOutput("Vision/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
+        Logger.recordOutput("Vision/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
+    }
+
+    private static Pose3d targetToPose(TrackedNote note) {
+        return new Pose3d(new Translation3d(note.fieldPos.getX(), note.fieldPos.getY(), 0), new Rotation3d(0, Units.degreesToRadians(-90), 0));
     }
 
     private static record PhotonMemoryConnection(TrackedNote memory, TrackedNote photonFrameTarget) {
@@ -98,16 +104,16 @@ public class NoteVision extends VirtualSubsystem {
                 .toPose2d()
                 .getTranslation();
 
-            this.confidence = target.getArea() * confidencePerAreaPercent;
+            this.confidence = target.getArea() * confidencePerAreaPercent.get();
         }
 
         public void updatePosWithFiltering(TrackedNote newNote) {
-            this.fieldPos = fieldPos.interpolate(newNote.fieldPos, posUpdatingFilteringFactor);
+            this.fieldPos = fieldPos.interpolate(newNote.fieldPos, posUpdatingFilteringFactor.get());
             this.confidence = newNote.confidence;
         }
 
         public void decayConfidence() {
-            this.confidence -= confidenceDecayPerSecond * Constants.dtSeconds;
+            this.confidence -= confidenceDecayPerSecond.get() * Constants.dtSeconds;
         }
     }
 }
