@@ -10,10 +10,14 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.RobotState;
 import frc.robot.subsystems.vision.note.NoteVision.TrackedNote;
+import frc.robot.util.LoggedTunableNumber;
 
 public class NoteVisionIOPhotonVision implements NoteVisionIO {
     private static final PhotonCamera cam = new PhotonCamera("TestCam");
     private static final Transform3d robotToCam = new Transform3d(new Translation3d(0, 0, 0.73), new Rotation3d());
+    
+    private static final LoggedTunableNumber targetPitchThreshold = new LoggedTunableNumber("Vision/Pitch Threshold", 0.0);
+
 
     @Override
     public void updateInputs(NoteVisionIOInputs inputs) {
@@ -22,6 +26,7 @@ public class NoteVisionIOPhotonVision implements NoteVisionIO {
             .getLatestResult()
             .targets
             .stream()
+            .filter((target) -> (robotToCam.getRotation().getY() + target.getPitch()) < targetPitchThreshold.get())
             .map(NoteVisionIOPhotonVision::resultToTargets)
             .toArray(TrackedNote[]::new);
     }

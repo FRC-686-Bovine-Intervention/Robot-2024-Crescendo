@@ -14,6 +14,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
 import frc.robot.Constants;
+import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.VirtualSubsystem;
 
@@ -27,6 +28,9 @@ public class NoteVision extends VirtualSubsystem {
     private static final LoggedTunableNumber posUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.8);
     public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
     private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/confidenceDecayPerSecond", 1);
+    private static final LoggedTunableNumber FOVYawThreshold = new LoggedTunableNumber("Vision/FOVYawThreshold", 0.5);     
+    private static final LoggedTunableNumber FOVDistanceThreshold = new LoggedTunableNumber("Vision/FOVDistanceThreshold", 2);
+
 
     public NoteVision(NoteVisionIO io) {
         this.io = io;
@@ -61,7 +65,7 @@ public class NoteVision extends VirtualSubsystem {
                 connection.photonFrameTarget == confirmedConnection.photonFrameTarget
             );
         }
-        unusedMemories.forEach((memory) -> memory.decayConfidence());
+        unusedMemories.forEach((memory) -> memory.decayConfidence(memory.isWithinView() ? 10 : 1));
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
 
@@ -94,8 +98,14 @@ public class NoteVision extends VirtualSubsystem {
             this.confidence = newNote.confidence;
         }
 
-        public void decayConfidence() {
-            this.confidence -= confidenceDecayPerSecond.get() * Constants.dtSeconds;
+        public boolean isWithinView() {
+            return false;
+                // Math.abs() < FOVYawThreshold.get() &&
+                // fieldPos.getDistance(new Pose3d(RobotState.getInstance().getPose()).toPose2d().getTranslation()) < FOVDistanceThreshold.get();
+        }
+
+        public void decayConfidence(double rate) {
+            this.confidence -= confidenceDecayPerSecond.get() * rate * Constants.dtSeconds;
         }
 
         public static final TrackedNoteStruct struct = new TrackedNoteStruct();
