@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.util.Color;
 import frc.robot.Constants;
-import frc.robot.Robot;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.led.animation.EndgameTimerAnimation;
 import frc.robot.util.led.animation.FillAnimation;
@@ -25,7 +24,6 @@ import frc.robot.util.led.functions.Gradient.BasicGradient.InterpolationStyle;
 import frc.robot.util.led.functions.TilingFunction;
 import frc.robot.util.led.strips.LEDStrip;
 import frc.robot.util.led.strips.hardware.CANdleStrip;
-import frc.robot.util.led.strips.hardware.SimulatedStrip;
 
 public class Leds extends VirtualSubsystem {
     private final LEDManager ledManager = LEDManager.getInstance();
@@ -35,34 +33,41 @@ public class Leds extends VirtualSubsystem {
 
     private final AnimationRunner[] runners;
 
-    public Leds(BooleanSupplier robotAutonomous) {
+    public Leds(
+        BooleanSupplier robotAutonomous, 
+        BooleanSupplier intaking, BooleanSupplier intakeReversed, BooleanSupplier intakeSecuring, BooleanSupplier intakeSecured, 
+        BooleanSupplier kickerFeeding, BooleanSupplier kickerLoaded
+    ) {
         System.out.println("[Init Leds] Instantiating Leds");
-        if(Robot.isReal()) {
-            var m_candle = new CANdle(Constants.CANDevices.candleCanID, "rio");
-            var candleStrip = new CANdleStrip(m_candle, 60*2);
+        var m_candle = new CANdle(Constants.CANDevices.candleCanID, "rio");
+        var candleStrip = new CANdleStrip(m_candle, 60*2);
 
-            ledManager.register(candleStrip);
+        ledManager.register(candleStrip);
 
-            onboardLEDs = candleStrip.getOnboardLEDs();
-            offboardLEDs = candleStrip.getOffboardLEDs();
-            
-            CANdleConfiguration configAll = new CANdleConfiguration();
-            configAll.statusLedOffWhenActive = true;
-            configAll.disableWhenLOS = false;
-            configAll.stripType = LEDStripType.GRB;
-            configAll.brightnessScalar = 0.5;
-            configAll.vBatOutputMode = VBatOutputMode.Modulated;
-            m_candle.configFactoryDefault();
-            m_candle.clearAnimation(0);
-            m_candle.configAllSettings(configAll, 100);
-        } else {
-            var m_addressable = new SimulatedStrip(0, 60*2+8);
+        onboardLEDs = candleStrip.getOnboardLEDs();
+        offboardLEDs = candleStrip.getOffboardLEDs();
+        
+        CANdleConfiguration configAll = new CANdleConfiguration();
+        configAll.statusLedOffWhenActive = true;
+        configAll.disableWhenLOS = false;
+        configAll.stripType = LEDStripType.GRB;
+        configAll.brightnessScalar = 0.5;
+        configAll.vBatOutputMode = VBatOutputMode.Modulated;
+        m_candle.configFactoryDefault();
+        m_candle.clearAnimation(0);
+        m_candle.configAllSettings(configAll, 100);
 
-            ledManager.register(m_addressable);
+        // Assuming ccw circular pattern
+        var shooterStrip = offboardLEDs.substrip(0, 12);
+        var rightStrip = offboardLEDs.substrip(12, 24);
+        var frontStrip = offboardLEDs.substrip(24, 36);
+        var leftStrip = offboardLEDs.substrip(36, 48);
 
-            onboardLEDs = m_addressable.substrip(0, 8);
-            offboardLEDs = m_addressable.substrip(8);
-        }
+        var sideStrips = leftStrip.reverse().parallel(rightStrip);
+
+        var leftRingStrip = frontStrip.substrip(6).concat(leftStrip).concat(shooterStrip.substrip(0, 6)).reverse();
+        var rightRingStrip = shooterStrip.substrip(6).concat(rightStrip).concat(frontStrip.substrip(0, 6));
+        var sideRingStrips = leftRingStrip.parallel(rightRingStrip);
 
         this.runners = new AnimationRunner[]{
             new AnimationRunner(
@@ -88,7 +93,58 @@ public class Leds extends VirtualSubsystem {
                 new FillAnimation(
                     1,
                     () -> (DriverStation.isDSAttached() ? Color.kGreen : Color.kOrange),
-                    offboardLEDs.substrip(0, 10)
+                    offboardLEDs.substrip(0, 2)
+                )
+            ),
+
+            new AnimationRunner(
+                () -> !intakeReversed.getAsBoolean() && (intaking.getAsBoolean() || intakeSecuring.getAsBoolean()), 
+                new ScrollingAnimation(
+                    0,
+                    (x) -> InterpolationStyle.Linear.interpolate(x, intakeSecuring.getAsBoolean() ? new Color[]{Color.kBlue, Color.kYellow} : new Color[]{Color.kRed, Color.kYellow}),
+                    TilingFunction.Sinusoidal,
+                    5,
+                    2,
+                    sideRingStrips
+                )
+            ),
+            new AnimationRunner(
+                () -> intakeReversed.getAsBoolean() && (intaking.getAsBoolean() || intakeSecuring.getAsBoolean()), 
+                new ScrollingAnimation(
+                    0,
+                    (x) -> InterpolationStyle.Linear.interpolate(x, intakeSecuring.getAsBoolean() ? new Color[]{Color.kBlue, Color.kYellow} : new Color[]{Color.kRed, Color.kYellow}),
+                    TilingFunction.Sinusoidal,
+                    -5,
+                    2,
+                    sideRingStrips
+                )
+            ),
+            new AnimationRunner(
+                intakeSecured, 
+                new FillAnimation(
+                    0, 
+                    Color.kBlue,
+                    sideRingStrips
+                )
+            ),
+            
+            new AnimationRunner(
+                kickerFeeding, 
+                new ScrollingAnimation(
+                    0, 
+                    new BasicGradient(InterpolationStyle.Linear, Color.kBlue, Color.kGreen), 
+                    TilingFunction.Sinusoidal, 
+                    5, 
+                    2, 
+                    sideRingStrips
+                )
+            ),
+            new AnimationRunner(
+                kickerLoaded, 
+                new FillAnimation(
+                    0, 
+                    Color.kGreen, 
+                    sideRingStrips
                 )
             ),
         };

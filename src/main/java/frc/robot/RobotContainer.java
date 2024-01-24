@@ -49,6 +49,8 @@ import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.note.NoteVision;
+import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
+import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.controllers.ButtonBoard3x3;
@@ -92,7 +94,7 @@ public class RobotContainer {
                 // pivot = new Pivot(new PivotIOFalcon());
                 // kicker = new Kicker(new KickerIONeo550());
                 // shooter = new Shooter(new ShooterIOFalcon());
-                noteVision = new NoteVision();
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision());
                 drive = new Drive(
                     new GyroIO() {},
                     new ModuleIOSim(),
@@ -121,7 +123,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim(simJoystick.button(3)));
-                noteVision = null;
+                noteVision = new NoteVision(new NoteVisionIOSim());
                 ledSystem = null;
             break;
             default:

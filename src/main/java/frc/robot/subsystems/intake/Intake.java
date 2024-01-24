@@ -108,7 +108,7 @@ public class Intake extends SubsystemBase {
         startIntake();
       },
       (interrupted) -> {},
-      () -> inputs.noteAtTop,
+      () -> inputs.noteAtBottom,
       this
     ).withName(IntakeCommand.INTAKE.name());
   }

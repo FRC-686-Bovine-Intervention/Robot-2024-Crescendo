@@ -1,47 +1,45 @@
 package frc.robot.subsystems.vision.note;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.littletonrobotics.junction.Logger;
-import org.photonvision.PhotonCamera;
-import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.util.struct.Struct;
+import edu.wpi.first.util.struct.StructSerializable;
 import frc.robot.Constants;
-import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.VirtualSubsystem;
 
 public class NoteVision extends VirtualSubsystem {
-    private final ArrayList<TrackedNote> noteMemories = new ArrayList<>();
+    private final NoteVisionIO io;
+    private final NoteVisionIOInputsAutoLogged inputs = new NoteVisionIOInputsAutoLogged();
 
-    private static final PhotonCamera cam = new PhotonCamera("TestCam");
-    private static final Transform3d robotToCam = new Transform3d(new Translation3d(0, 0, 0.73), new Rotation3d());
+    private final ArrayList<TrackedNote> noteMemories = new ArrayList<>();
 
     private static final LoggedTunableNumber updateDistanceThreshold = new LoggedTunableNumber("Vision/updateDistanceThreshold", 5);
     private static final LoggedTunableNumber posUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.8);
-    private static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
+    public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
     private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/confidenceDecayPerSecond", 1);
-    private static final LoggedTunableNumber pitchThreshold = new LoggedTunableNumber("Vision/Pitch Threshold", 0.0);
-        
+
+    public NoteVision(NoteVisionIO io) {
+        this.io = io;
+    }
+
     @Override
     public void periodic() {
-        var photonFrameTargets = 
-            cam
-            .getLatestResult()
-            .targets
-            .stream()
-            .filter((target) -> (robotToCam.getRotation().getY() + target.getPitch()) < pitchThreshold.get())
-            .map(TrackedNote::new)
-            .toList();
+        io.updateInputs(inputs);
+        Logger.processInputs("NoteVision", inputs);
+        var frameTargets = Arrays.asList(inputs.trackedNotes);
         var connections = new ArrayList<PhotonMemoryConnection>();
         noteMemories.forEach(
-            (memory) -> photonFrameTargets.forEach(
+            (memory) -> frameTargets.forEach(
                 (target) -> {
                     if(memory.fieldPos.getDistance(target.fieldPos) < updateDistanceThreshold.get()) {
                         connections.add(new PhotonMemoryConnection(memory, target));
@@ -51,7 +49,7 @@ public class NoteVision extends VirtualSubsystem {
         );
         connections.sort((a, b) -> (int) Math.signum(a.getDistance() - b.getDistance()));
         var unusedMemories = new ArrayList<>(noteMemories);
-        var unusedTargets = new ArrayList<>(photonFrameTargets);
+        var unusedTargets = new ArrayList<>(frameTargets);
         while(!connections.isEmpty()) {
             var confirmedConnection = connections.get(0);
             confirmedConnection.memory.updatePosWithFiltering(confirmedConnection.photonFrameTarget);
@@ -67,7 +65,7 @@ public class NoteVision extends VirtualSubsystem {
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
 
-        Logger.recordOutput("Vision/Photon Frame Targets", photonFrameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
+        Logger.recordOutput("Vision/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
         Logger.recordOutput("Vision/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
         Logger.recordOutput("Vision/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
     }
@@ -82,31 +80,13 @@ public class NoteVision extends VirtualSubsystem {
         }
     }
 
-    public static class TrackedNote {
+    public static class TrackedNote implements StructSerializable {
         public Translation2d fieldPos;
         public double confidence;
 
-        public TrackedNote(PhotonTrackedTarget target) {
-            var targetCamViewTransform = robotToCam.plus(
-                new Transform3d(
-                    new Translation3d(),
-                    new Rotation3d(
-                        0,
-                        Units.degreesToRadians(-target.getPitch()),
-                        Units.degreesToRadians(-target.getYaw())
-                    )
-                )
-            );
-            var distOut = targetCamViewTransform.getTranslation().getZ() / Math.tan(targetCamViewTransform.getRotation().getY());
-            var distOff = distOut * Math.tan(targetCamViewTransform.getRotation().getZ());
-            var camToTargetTranslation = new Translation3d(distOut, distOff, -robotToCam.getZ());
-            this.fieldPos = new Pose3d(RobotState.getInstance().getPose())
-                .transformBy(robotToCam)
-                .transformBy(new Transform3d(camToTargetTranslation, new Rotation3d()))
-                .toPose2d()
-                .getTranslation();
-
-            this.confidence = target.getArea() * confidencePerAreaPercent.get();
+        public TrackedNote(Translation2d fieldPos, double confidence) {
+            this.fieldPos = fieldPos;
+            this.confidence = confidence;
         }
 
         public void updatePosWithFiltering(TrackedNote newNote) {
@@ -116,6 +96,47 @@ public class NoteVision extends VirtualSubsystem {
 
         public void decayConfidence() {
             this.confidence -= confidenceDecayPerSecond.get() * Constants.dtSeconds;
+        }
+
+        public static final TrackedNoteStruct struct = new TrackedNoteStruct();
+        public static class TrackedNoteStruct implements Struct<TrackedNote> {
+            @Override
+            public Class<TrackedNote> getTypeClass() {
+                return TrackedNote.class;
+            }
+
+            @Override
+            public String getTypeString() {
+                return "struct:TrackedNote";
+            }
+
+            @Override
+            public int getSize() {
+                return kSizeDouble + Translation2d.struct.getSize();
+            }
+
+            @Override
+            public String getSchema() {
+                return "Translation2d fieldPos;double confidence";
+            }
+
+            @Override
+            public Struct<?>[] getNested() {
+                return new Struct<?>[] {Translation2d.struct};
+            }
+
+            @Override
+            public TrackedNote unpack(ByteBuffer bb) {
+                var fieldPos = Translation2d.struct.unpack(bb);
+                var confidence = bb.getDouble();
+                return new TrackedNote(fieldPos, confidence);
+            }
+
+            @Override
+            public void pack(ByteBuffer bb, TrackedNote value) {
+                Translation2d.struct.pack(bb, value.fieldPos);
+                bb.putDouble(value.confidence);
+            }
         }
     }
 }
