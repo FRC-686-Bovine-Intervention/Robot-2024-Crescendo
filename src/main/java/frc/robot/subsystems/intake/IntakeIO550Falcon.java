@@ -4,20 +4,21 @@
 
 package frc.robot.subsystems.intake;
 
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
 
-public class IntakeIONeo550 implements IntakeIO {
+public class IntakeIO550Falcon implements IntakeIO {
     private final CANSparkMax intakeMotor;
-    private final CANSparkMax beltMotor;
+    private final TalonFX beltMotor;
 
     private final DigitalInput bottomSensor;
     private final DigitalInput topSensor;
     
     // set up the motors with the CAN ID
-    public IntakeIONeo550() {
+    public IntakeIO550Falcon() {
         intakeMotor = null;
         beltMotor = null;
 
@@ -32,13 +33,13 @@ public class IntakeIONeo550 implements IntakeIO {
         inputs.intakeCurrentAmps = intakeMotor.getOutputCurrent();
         inputs.intakeTempCelcius = intakeMotor.getMotorTemperature();
 
-        inputs.beltVelocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(beltMotor.getEncoder().getVelocity());
-        inputs.beltAppliedVolts = beltMotor.getAppliedOutput();
-        inputs.beltCurrentAmps = beltMotor.getOutputCurrent();
-        inputs.beltTempCelcius = beltMotor.getMotorTemperature();
+        inputs.beltVelocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(beltMotor.getVelocity().getValue());
+        inputs.beltAppliedVolts = beltMotor.getSupplyVoltage().getValue();
+        inputs.beltCurrentAmps = beltMotor.getSupplyCurrent().getValue();
+        inputs.beltTempCelcius = beltMotor.getDeviceTemp().getValue();
 
-        inputs.noteAtBottom = bottomSensor.get();
-        inputs.noteAtTop = topSensor.get();
+        inputs.noteAtBottom = !bottomSensor.get();
+        inputs.noteAtTop = !topSensor.get();
     }
     
     @Override
