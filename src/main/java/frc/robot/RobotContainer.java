@@ -10,22 +10,20 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
-import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
-import frc.robot.subsystems.drive.ModuleIO550Falcon;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.AutoAim;
 import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
@@ -33,26 +31,23 @@ import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
-import frc.robot.subsystems.intake.IntakeIONeo550;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.kicker.KickerIO;
-import frc.robot.subsystems.kicker.KickerIONeo550;
 import frc.robot.subsystems.kicker.KickerIOSim;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.pivot.PivotIO;
-import frc.robot.subsystems.pivot.PivotIOFalcon;
 import frc.robot.subsystems.pivot.PivotIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
-import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
+import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.XboxController;
 
@@ -144,8 +139,8 @@ public class RobotContainer {
             break;
         }
 
-        // System.out.println("[Init RobotContainer] Configuring Button Bindings");
-        // configureButtonBindings();
+        System.out.println("[Init RobotContainer] Configuring Button Bindings");
+        configureButtonBindings();
 
         System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
         configureSubsystems();
@@ -159,9 +154,9 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
-        driveController.b().whileTrue(pivot.movePivotManually(-1));
-        driveController.x().whileTrue(pivot.movePivotManually(1));
+        // driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
+        // driveController.b().whileTrue(pivot.movePivotManually(-1));
+        // driveController.x().whileTrue(pivot.movePivotManually(1));
         driveController.rightBumper().toggleOnTrue(
             new AutoAim(
                 drive,
@@ -169,7 +164,13 @@ public class RobotContainer {
                     .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
                     .radialSensitivity(0.75)
                     .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit),
-                driveController.leftBumper()
+                driveController.leftBumper(),
+                () -> {
+                    var timeScalar = 1;
+                    var chassisOffset = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds().times(timeScalar), drive.getPose().getRotation());
+                    var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
+                    return AllianceFlipUtil.apply(FieldConstants.speakerCenter).minus(translationalOffset);
+                }
             )
         );
     }
