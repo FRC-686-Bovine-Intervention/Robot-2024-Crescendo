@@ -15,7 +15,9 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathHolonomic;
+import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
@@ -95,6 +97,23 @@ public class Drive extends SubsystemBase {
         Pose2d initialPoseMeters = new Pose2d();
         RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
         prevGyroYaw = getPose().getRotation();
+
+        // initialize PathPlanner-Lib AutoBuilder
+        AutoBuilder.configureHolonomic(
+            this::getPose,
+            this::setPose,
+            this::getChassisSpeeds,
+            this::driveVelocity,
+            Drive.configSup.get(),
+            () -> {
+                var alliance = DriverStation.getAlliance();
+                if (alliance.isPresent()) {
+                    return alliance.get() == DriverStation.Alliance.Red;
+                }
+                return false;
+            },
+            this
+        );
     }
 
     public void periodic() {
@@ -542,7 +561,22 @@ public class Drive extends SubsystemBase {
         );
     };
 
+    public static final LoggedTunableNumber kAutoDriveMaxVelocity = new LoggedTunableNumber("Drive/kAutoDriveMaxVelocity", 3.0);
+    public static final LoggedTunableNumber kMaxAcceleration = new LoggedTunableNumber("Drive/kMaxAcceleration", 4.0);
+    public static final LoggedTunableNumber kMaxAngularVelocity = new LoggedTunableNumber("Drive/kMaxAngularVelocity", Units.degreesToRadians(540));
+    public static final LoggedTunableNumber kMaxAngularAcceleration = new LoggedTunableNumber("Drive/kMaxAngularAcceleration", Units.degreesToRadians(720));
+    private static final PathConstraints pathConstraints = new PathConstraints(
+        kAutoDriveMaxVelocity.get(),
+        kMaxAcceleration.get(),
+        kMaxAngularVelocity.get(),
+        kMaxAngularAcceleration.get()
+    );
+
     public Command followPath(PathPlannerPath path) {
         return new FollowPathHolonomic(path, this::getPose, this::getChassisSpeeds, this::driveVelocity, configSup.get(), () -> DriverStation.getAlliance().equals(Optional.of(Alliance.Red)), this);
+    }
+
+    public Command driveTo(Pose2d fieldPos) {
+        return AutoBuilder.pathfindToPose(fieldPos, pathConstraints, 0, 0);
     }
 }
