@@ -3,6 +3,7 @@ package frc.robot.subsystems.vision.note;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -65,13 +66,21 @@ public class NoteVision extends VirtualSubsystem {
                 connection.photonFrameTarget == confirmedConnection.photonFrameTarget
             );
         }
-        unusedMemories.forEach((memory) -> memory.decayConfidence(memory.isWithinView() ? 10 : 1));
+        unusedMemories.forEach((memory) -> {
+            if(RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) > 1) {
+                memory.decayConfidence(memory.isWithinView() ? 10 : 1);
+            }
+        });
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
 
         Logger.recordOutput("Vision/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
         Logger.recordOutput("Vision/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
         Logger.recordOutput("Vision/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
+    }
+
+    public List<TrackedNote> getTrackedNotes() {
+        return noteMemories;
     }
 
     private static Pose3d targetToPose(TrackedNote note) {

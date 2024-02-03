@@ -18,13 +18,12 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.AutoSelector.AutoRoutine;
+import frc.robot.commands.AutoIntake;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -50,11 +49,13 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.note.NoteVision;
+import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
+import frc.robot.util.controllers.Joystick;
 import frc.robot.util.controllers.XboxController;
 
 public class RobotContainer {
@@ -76,6 +77,7 @@ public class RobotContainer {
 
     // Controller
     private final XboxController driveController = new XboxController(0);
+    private final Joystick driveJoystick;
     @SuppressWarnings("unused")
     private final ButtonBoard3x3 buttonBoard = new ButtonBoard3x3(1);
     private final CommandJoystick simJoystick = new CommandJoystick(2);
@@ -95,7 +97,7 @@ public class RobotContainer {
                 // pivot = new Pivot(new PivotIOFalcon());
                 // kicker = new Kicker(new KickerIONeo550());
                 // shooter = new Shooter(new ShooterIOFalcon());
-                // noteVision = new NoteVision(new NoteVisionIOPhotonVision());
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision());
                 // drive = new Drive(
                 //     new GyroIO() {},
                 //     new ModuleIOSim(),
@@ -107,7 +109,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(driveController.povLeft().negate()));
                 shooter = null;
-                noteVision = null;
+                // noteVision = null;
                 ledSystem = null;
                 // ledSystem = new Leds(
                 //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
@@ -146,6 +148,11 @@ public class RobotContainer {
             break;
         }
 
+        driveJoystick = driveController.leftStick
+            .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
+            .radialSensitivity(0.75)
+            .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
+
         System.out.println("[Init RobotContainer] Configuring Button Bindings");
         configureButtonBindings();
 
@@ -168,10 +175,7 @@ public class RobotContainer {
         driveController.rightBumper().toggleOnTrue(
             new AutoAim(
                 drive,
-                driveController.leftStick
-                    .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
-                    .radialSensitivity(0.75)
-                    .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit),
+                driveJoystick,
                 driveController.leftBumper(),
                 () -> {
                     var timeScalar = 1;
@@ -179,6 +183,14 @@ public class RobotContainer {
                     var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
                     return AllianceFlipUtil.apply(FieldConstants.speakerCenter).minus(translationalOffset);
                 }
+            )
+        );
+        driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
+            new AutoIntake(
+                driveJoystick,
+                drive,
+                intake,
+                noteVision
             )
         );
 
