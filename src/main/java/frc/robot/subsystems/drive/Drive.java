@@ -41,6 +41,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.RobotState;
+import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Drive extends SubsystemBase {
@@ -105,13 +106,7 @@ public class Drive extends SubsystemBase {
             this::getChassisSpeeds,
             this::driveVelocity,
             Drive.configSup.get(),
-            () -> {
-                var alliance = DriverStation.getAlliance();
-                if (alliance.isPresent()) {
-                    return alliance.get() == DriverStation.Alliance.Red;
-                }
-                return false;
-            },
+            AllianceFlipUtil::shouldFlip,
             this
         );
     }
