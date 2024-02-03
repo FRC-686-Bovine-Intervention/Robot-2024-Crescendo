@@ -20,8 +20,8 @@ public class Intake extends SubsystemBase {
   private final IntakeIO intakeIO;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
 
-  private final LoggedTunableNumber intakeVoltage = new LoggedTunableNumber("Intake/Intake Voltage", 5);
-  private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Belt Voltage", 5);
+  private final LoggedTunableNumber intakeVoltage = new LoggedTunableNumber("Intake/Intake Voltage", 6);
+  private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Belt Voltage", 6);
   private final LoggedTunableNumber reverseSpeedThresold = new LoggedTunableNumber("Intake/Reverse Speed Threshold", 0.1);
 
   private boolean intakeReversed;
@@ -49,17 +49,17 @@ public class Intake extends SubsystemBase {
 
   private void startIntake() {
     intakeIO.setBeltVoltage(beltVoltage.get());
-    intakeIO.setIntakeVoltage(intakeVoltage.get() * (intakeReversed ? -1 : 1));
+    intakeIO.setRollerVoltage(intakeVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
   private void startOuttake() {
     intakeIO.setBeltVoltage(-beltVoltage.get());
-    intakeIO.setIntakeVoltage(-intakeVoltage.get() * (intakeReversed ? -1 : 1));
+    intakeIO.setRollerVoltage(-intakeVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
   private void stopIntake() {
     intakeIO.setBeltVoltage(0);
-    intakeIO.setIntakeVoltage(0);
+    intakeIO.setRollerVoltage(0);
   }
 
   @Override
@@ -77,7 +77,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName(IntakeCommand.FEED_TO_KICKER.name());
+    ).withName(IntakeCommand.SECURE_NOTE.name());
   }
 
   public Command feedToKicker() {

@@ -50,19 +50,9 @@ public final class Constants {
         public static final int backRightDriveMotorID  = 31;
         public static final int backRightTurnMotorID   = 32;
 
-        // Arm
-        public static final String armCanBusName = "rio";
-
-        // | Elbow
-        public static final int armMotorID          = 51;
-        public static final int armEncoderID        = 52;
-
-        // | Manipulator
-        public static final int manipMotorID        = 53;
-
-        // Bunny Intake
-        public static final int bunnyIntakeMotorID  = 61;
-
+        // Intake
+        public static final int intakeBeltMotorID   = 51;
+        public static final int intakeRollerMotorID = 52;
 
         public static final int pigeonCanID = 0;
         public static final int candleCanID = 0;

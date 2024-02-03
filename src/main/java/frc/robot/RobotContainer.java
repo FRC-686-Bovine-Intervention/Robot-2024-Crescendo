@@ -20,12 +20,16 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
+import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
+import frc.robot.subsystems.drive.ModuleIO550Falcon;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.AutoAim;
 import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
@@ -33,6 +37,7 @@ import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOFalcon550;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.kicker.KickerIO;
@@ -45,7 +50,6 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.note.NoteVision;
-import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
@@ -80,26 +84,27 @@ public class RobotContainer {
         System.out.println("[Init RobotContainer] Creating " + RobotType.getMode().name() + " " + RobotType.getRobot().name());
         switch(RobotType.getMode()) {
             case REAL:
-                // drive = new Drive(
-                //     new GyroIOPigeon2(),
-                //     new ModuleIO550Falcon(DriveModulePosition.FRONT_LEFT),
-                //     new ModuleIO550Falcon(DriveModulePosition.FRONT_RIGHT),
-                //     new ModuleIO550Falcon(DriveModulePosition.BACK_LEFT),
-                //     new ModuleIO550Falcon(DriveModulePosition.BACK_RIGHT)
-                // );
-                // intake = new Intake(new IntakeIONeo550());
+                drive = new Drive(
+                    new GyroIOPigeon2(),
+                    new ModuleIO550Falcon(DriveModulePosition.FRONT_LEFT),
+                    new ModuleIO550Falcon(DriveModulePosition.FRONT_RIGHT),
+                    new ModuleIO550Falcon(DriveModulePosition.BACK_LEFT),
+                    new ModuleIO550Falcon(DriveModulePosition.BACK_RIGHT)
+                );
+                intake = new Intake(new IntakeIOFalcon550());
                 // pivot = new Pivot(new PivotIOFalcon());
                 // kicker = new Kicker(new KickerIONeo550());
                 // shooter = new Shooter(new ShooterIOFalcon());
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision());
-                drive = new Drive(
-                    new GyroIO() {},
-                    new ModuleIOSim(),
-                    new ModuleIOSim(),
-                    new ModuleIOSim(),
-                    new ModuleIOSim()
-                );
-                intake = null;
+                // noteVision = new NoteVision(new NoteVisionIOPhotonVision());
+                // drive = new Drive(
+                //     new GyroIO() {},
+                //     new ModuleIOSim(),
+                //     new ModuleIOSim(),
+                //     new ModuleIOSim(),
+                //     new ModuleIOSim()
+                // );
+                noteVision = null;
+                // intake = null;
                 kicker = null;
                 shooter = null;
                 pivot = null;
@@ -156,7 +161,8 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        // driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
+        driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
+        driveController.b().whileTrue(intake.outtake());
         // driveController.b().whileTrue(pivot.movePivotManually(-1));
         // driveController.x().whileTrue(pivot.movePivotManually(1));
         driveController.rightBumper().toggleOnTrue(
@@ -222,8 +228,8 @@ public class RobotContainer {
             )
         );
 
-        // intake.setDefaultCommand(intake.doNothing());
-        // new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        intake.setDefaultCommand(intake.doNothing());
+        new Trigger(driveController.povUp()).and(intake::noteReady).onTrue(intake.feedToKicker()/* SuperCommands.feedToKicker(intake, kicker) */);
     }
 
     private void configureAutos() {

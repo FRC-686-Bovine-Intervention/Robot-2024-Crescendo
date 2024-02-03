@@ -12,44 +12,37 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.Constants;
 
 public class IntakeIOSim implements IntakeIO {
-    private final DCMotorSim intakeMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
-    private final DCMotorSim beltMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);;
+    private final DCMotorSim rollerMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
+    private final DCMotorSim beltMotor = new DCMotorSim(DCMotor.getFalcon500(1), 1, 1);;
 
-    private final BooleanSupplier noteAtBottom;
-    private final BooleanSupplier noteAtTop;
+    private final BooleanSupplier bottomSensor;
+    private final BooleanSupplier topSensor;
 
-    private double intakeAppliedVolts = 0;
+    private double rollerAppliedVolts = 0;
     private double beltAppliedVolts = 0;
 
     public IntakeIOSim(BooleanSupplier noteAtBottom, BooleanSupplier noteAtTop) {
-        this.noteAtBottom = noteAtBottom;
-        this.noteAtTop = noteAtTop;
+        this.bottomSensor = noteAtBottom;
+        this.topSensor = noteAtTop;
     }
 
     @Override
     public void updateInputs(IntakeIOInputs inputs) {
-        intakeMotor.update(Constants.dtSeconds);
+        rollerMotor.update(Constants.dtSeconds);
         beltMotor.update(Constants.dtSeconds);
         
-        inputs.intakeVelocityRadPerSec = intakeMotor.getAngularVelocityRadPerSec();
-        inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
-        inputs.intakeAppliedVolts = intakeAppliedVolts;
-        inputs.intakeTempCelcius = 0;
-
-        inputs.beltVelocityRadPerSec = beltMotor.getAngularVelocityRadPerSec();
-        inputs.beltCurrentAmps = beltMotor.getCurrentDrawAmps();
-        inputs.beltAppliedVolts = beltAppliedVolts;
-        inputs.beltTempCelcius = 0;
+        inputs.rollerMotor.updateFrom(rollerMotor, rollerAppliedVolts);
+        inputs.beltMotor.updateFrom(beltMotor, beltAppliedVolts);
         
-        inputs.noteAtBottom = noteAtBottom.getAsBoolean();
-        inputs.noteAtTop = noteAtTop.getAsBoolean();
+        inputs.noteAtBottom = bottomSensor.getAsBoolean();
+        inputs.noteAtTop = topSensor.getAsBoolean();
     }
 
     @Override
-    public void setIntakeVoltage(double volts) {
-        intakeAppliedVolts = MathUtil.clamp(volts, -12, 12);
+    public void setRollerVoltage(double volts) {
+        rollerAppliedVolts = MathUtil.clamp(volts, -12, 12);
 
-        intakeMotor.setInputVoltage(intakeAppliedVolts);
+        rollerMotor.setInputVoltage(rollerAppliedVolts);
     }
 
     @Override
