@@ -152,8 +152,8 @@ public class RobotContainer {
         System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
         configureSubsystems();
 
-        // System.out.println("[Init RobotContainer] Configuring Autonomous Modes");
-        // configureAutos();
+        System.out.println("[Init RobotContainer] Configuring Autonomous Modes");
+        configureAutos();
 
         if (Constants.tuningMode) {
             new Alert("Tuning mode active, do not use in competition.", AlertType.INFO).set(true);
