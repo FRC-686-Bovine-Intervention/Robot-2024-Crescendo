@@ -22,7 +22,7 @@ import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 
-public class ModuleIO550Falcon implements ModuleIO {
+public class ModuleIOFalcon550 implements ModuleIO {
     private final TalonFX  driveMotor;
     private final CANSparkMax turnMotor;
     private final AbsoluteEncoder turnAbsoluteEncoder;
@@ -30,7 +30,7 @@ public class ModuleIO550Falcon implements ModuleIO {
     private final double initialOffsetRadians;
     private final InvertedValue driveInverted;
 
-    public ModuleIO550Falcon(DriveModulePosition position) {
+    public ModuleIOFalcon550(DriveModulePosition position) {
         driveMotor = new TalonFX(position.driveMotorID, CANDevices.driveCanBusName);
         turnMotor = new CANSparkMax(position.turnMotorID, MotorType.kBrushless);
         turnAbsoluteEncoder = turnMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
@@ -63,16 +63,15 @@ public class ModuleIO550Falcon implements ModuleIO {
     }
 
     public void updateInputs(ModuleIOInputs inputs) {
+        inputs.driveMotor.positionRad =       Units.rotationsToRadians(driveMotor.getPosition().getValue()) / DriveConstants.driveWheelGearReduction;
+        inputs.driveMotor.velocityRadPerSec = Units.rotationsToRadians(driveMotor.getVelocity().getValue()) / DriveConstants.driveWheelGearReduction;
+        inputs.driveMotor.appliedVolts =      driveMotor.getSupplyVoltage().getValue();
+        inputs.driveMotor.currentAmps =       driveMotor.getSupplyCurrent().getValue();
 
-        inputs.drivePositionRad =       Units.rotationsToRadians(driveMotor.getPosition().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveVelocityRadPerSec = Units.rotationsToRadians(driveMotor.getVelocity().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveAppliedVolts =      driveMotor.getSupplyVoltage().getValue();
-        inputs.driveCurrentAmps =       driveMotor.getSupplyCurrent().getValue();
-
-        inputs.turnPositionRad =        MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians;
-        inputs.turnVelocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
-        inputs.turnAppliedVolts =       turnMotor.getAppliedOutput();
-        inputs.turnCurrentAmps =        turnMotor.getOutputCurrent();
+        inputs.turnMotor.positionRad =        MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians;
+        inputs.turnMotor.velocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
+        inputs.turnMotor.appliedVolts =       turnMotor.getAppliedOutput();
+        inputs.turnMotor.currentAmps =        turnMotor.getOutputCurrent();
     }
 
     public void zeroEncoders() {

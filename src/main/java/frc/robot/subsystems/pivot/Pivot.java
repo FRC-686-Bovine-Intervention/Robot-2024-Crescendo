@@ -77,7 +77,7 @@ public class Pivot extends SubsystemBase {
   public Command gotoAmp() {
     return new ProfiledPIDCommand(
       pivotPID,
-      () -> inputs.pivotPositionRad,
+      () -> inputs.pivotEncoder.positionRad,
       POS_AMP,
       (output, setpoint) -> pivotIO.setPivotVoltage(output),
       this
@@ -87,7 +87,7 @@ public class Pivot extends SubsystemBase {
   public Command gotoZero() {
     return new ProfiledPIDCommand(
       pivotPID,
-      () -> inputs.pivotPositionRad,
+      () -> inputs.pivotEncoder.positionRad,
       POS_ZERO,
       (output, setpoint) -> pivotIO.setPivotVoltage(output),
       this
@@ -99,7 +99,7 @@ public class Pivot extends SubsystemBase {
   }
 
   public boolean isAtAngle(double angleRad) {
-    return Math.abs(inputs.pivotPositionRad - angleRad) <= Units.degreesToRadians(toleranceDeg.get());
+    return Math.abs(inputs.pivotEncoder.positionRad - angleRad) <= Units.degreesToRadians(toleranceDeg.get());
   }
 
   public boolean readyToFeed() {

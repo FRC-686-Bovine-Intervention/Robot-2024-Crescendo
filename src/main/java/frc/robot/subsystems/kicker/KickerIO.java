@@ -6,20 +6,15 @@ package frc.robot.subsystems.kicker;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import frc.robot.util.loggerUtil.LoggedMotor;
+
 public interface KickerIO {
     @AutoLog
     public static class KickerIOInputs {
         public boolean notePresent;
 
-        public double leftVelocityRadPerSec;
-        public double leftAppliedVolts;
-        public double leftCurrentAmps;
-        public double leftTempCelcius;
-
-        public double rightVelocityRadPerSec;
-        public double rightAppliedVolts;
-        public double rightCurrentAmps;
-        public double rightTempCelcius;
+        public LoggedMotor leftMotor = new LoggedMotor();
+        public LoggedMotor rightMotor = new LoggedMotor();
     }
 
     public default void updateInputs(KickerIOInputs inputs) {}

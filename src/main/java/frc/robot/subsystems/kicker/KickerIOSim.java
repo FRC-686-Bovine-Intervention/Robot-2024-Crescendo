@@ -15,13 +15,13 @@ public class KickerIOSim implements KickerIO {
     private final DCMotorSim leftMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
     private final DCMotorSim rightMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
 
-    private final BooleanSupplier notePresent;
+    private final BooleanSupplier sensor;
 
     private double leftAppliedVolts = 0;
     private double rightAppliedVolts = 0;
     
     public KickerIOSim(BooleanSupplier notePresent) {
-        this.notePresent = notePresent;
+        this.sensor = notePresent;
     }
 
     @Override
@@ -29,17 +29,10 @@ public class KickerIOSim implements KickerIO {
         leftMotor.update(Constants.dtSeconds);
         rightMotor.update(Constants.dtSeconds);
         
-        inputs.notePresent = notePresent.getAsBoolean();
+        inputs.notePresent = sensor.getAsBoolean();
 
-        inputs.leftVelocityRadPerSec = leftMotor.getAngularVelocityRadPerSec();
-        inputs.leftCurrentAmps = leftMotor.getCurrentDrawAmps();
-        inputs.leftAppliedVolts = leftAppliedVolts;
-        inputs.leftTempCelcius = 0; 
-
-        inputs.rightVelocityRadPerSec = rightMotor.getAngularVelocityRadPerSec();
-        inputs.rightCurrentAmps = rightMotor.getCurrentDrawAmps();
-        inputs.rightAppliedVolts = rightAppliedVolts;
-        inputs.rightTempCelcius = 0;
+        inputs.leftMotor.updateFrom(leftMotor);
+        inputs.rightMotor.updateFrom(rightMotor);
     }
 
     @Override

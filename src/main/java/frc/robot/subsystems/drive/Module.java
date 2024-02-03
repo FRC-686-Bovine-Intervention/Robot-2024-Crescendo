@@ -93,7 +93,7 @@ public class Module {
         double velocityRadPerSec = optimizedState.speedMetersPerSecond / wheelRadius.get();
         io.setDriveVoltage(
                 driveFeedforward.calculate(velocityRadPerSec)
-                        + driveFeedback.calculate(inputs.driveVelocityRadPerSec, velocityRadPerSec));
+                        + driveFeedback.calculate(inputs.driveMotor.velocityRadPerSec, velocityRadPerSec));
 
         return optimizedState;
     }
@@ -121,26 +121,26 @@ public class Module {
 
     /** Returns the current turn angle of the module. */
     public Rotation2d getAngle() {
-        return new Rotation2d(MathUtil.angleModulus(inputs.turnPositionRad));
+        return new Rotation2d(MathUtil.angleModulus(inputs.turnMotor.positionRad));
     }
 
     /** Returns the current drive position of the module in radians. */
     public double getPositionRadians() {
-        return inputs.drivePositionRad;
+        return inputs.driveMotor.positionRad;
     }
 
     /** Returns the current drive position of the module in meters. */
     public double getPositionMeters() {
-        return inputs.drivePositionRad * wheelRadius.get();
+        return inputs.driveMotor.positionRad * wheelRadius.get();
     }
 
     /** Returns the current drive velocity of the module in meters per second. */
     public double getVelocityMetersPerSec() {
-        return inputs.driveVelocityRadPerSec * wheelRadius.get();
+        return inputs.driveMotor.velocityRadPerSec * wheelRadius.get();
     }
 
     public double getCurrentAmps() {
-        return inputs.driveCurrentAmps;
+        return inputs.driveMotor.currentAmps;
     }
 
     /** Returns the module position (turn angle and drive position). */
@@ -162,7 +162,7 @@ public class Module {
 
     /** Returns the drive velocity in radians/sec. */
     public double getCharacterizationVelocity() {
-        return inputs.driveVelocityRadPerSec;
+        return inputs.driveMotor.velocityRadPerSec;
     }
 
     /** Returns the drive wheel radius. */

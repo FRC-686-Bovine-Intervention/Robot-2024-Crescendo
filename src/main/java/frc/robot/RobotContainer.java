@@ -29,7 +29,7 @@ import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
-import frc.robot.subsystems.drive.ModuleIO550Falcon;
+import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.AutoAim;
 import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
@@ -86,10 +86,10 @@ public class RobotContainer {
             case REAL:
                 drive = new Drive(
                     new GyroIOPigeon2(),
-                    new ModuleIO550Falcon(DriveModulePosition.FRONT_LEFT),
-                    new ModuleIO550Falcon(DriveModulePosition.FRONT_RIGHT),
-                    new ModuleIO550Falcon(DriveModulePosition.BACK_LEFT),
-                    new ModuleIO550Falcon(DriveModulePosition.BACK_RIGHT)
+                    new ModuleIOFalcon550(DriveModulePosition.FRONT_LEFT),
+                    new ModuleIOFalcon550(DriveModulePosition.FRONT_RIGHT),
+                    new ModuleIOFalcon550(DriveModulePosition.BACK_LEFT),
+                    new ModuleIOFalcon550(DriveModulePosition.BACK_RIGHT)
                 );
                 intake = new Intake(new IntakeIOFalcon550());
                 // pivot = new Pivot(new PivotIOFalcon());
@@ -103,11 +103,11 @@ public class RobotContainer {
                 //     new ModuleIOSim(),
                 //     new ModuleIOSim()
                 // );
-                noteVision = null;
                 // intake = null;
-                kicker = null;
+                pivot = new Pivot(new PivotIOSim());
+                kicker = new Kicker(new KickerIOSim(driveController.povLeft()));
                 shooter = null;
-                pivot = null;
+                noteVision = null;
                 ledSystem = null;
                 // ledSystem = new Leds(
                 //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
@@ -163,8 +163,8 @@ public class RobotContainer {
     private void configureButtonBindings() {
         driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().whileTrue(intake.outtake());
-        // driveController.b().whileTrue(pivot.movePivotManually(-1));
-        // driveController.x().whileTrue(pivot.movePivotManually(1));
+        driveController.povUp().whileTrue(pivot.movePivotManually(-1));
+        driveController.povDown().whileTrue(pivot.movePivotManually(1));
         driveController.rightBumper().toggleOnTrue(
             new AutoAim(
                 drive,
@@ -182,7 +182,7 @@ public class RobotContainer {
             )
         );
 
-        driveController.x().onTrue(drive.driveTo(new Pose2d(0, 0, new Rotation2d(0, 0))));
+        // driveController.x().onTrue(drive.driveTo(new Pose2d(0, 0, new Rotation2d(0, 0))));
     }
 
 
@@ -229,7 +229,7 @@ public class RobotContainer {
         );
 
         intake.setDefaultCommand(intake.doNothing());
-        new Trigger(driveController.povUp()).and(intake::noteReady).onTrue(intake.feedToKicker()/* SuperCommands.feedToKicker(intake, kicker) */);
+        new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
     private void configureAutos() {

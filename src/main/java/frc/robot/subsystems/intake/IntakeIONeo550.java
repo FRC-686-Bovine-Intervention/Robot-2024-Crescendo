@@ -7,13 +7,14 @@ package frc.robot.subsystems.intake;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.Constants.DIOPorts;
 
 public class IntakeIONeo550 implements IntakeIO {
     private final CANSparkMax rollerMotor = null;
     private final CANSparkMax beltMotor = null;
 
-    private final DigitalInput bottomSensor = new DigitalInput(0);
-    private final DigitalInput topSensor = new DigitalInput(1);
+    private final DigitalInput bottomSensor = new DigitalInput(DIOPorts.intakeBottomSensorPort);
+    private final DigitalInput topSensor = new DigitalInput(DIOPorts.intakeTopSensorPort);
     
     public IntakeIONeo550() {
         

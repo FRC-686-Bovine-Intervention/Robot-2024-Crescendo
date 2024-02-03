@@ -9,6 +9,9 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import frc.robot.Constants;
 
 public class LoggedMotor implements StructSerializable {
     public double positionRad = Double.NaN;
@@ -16,8 +19,6 @@ public class LoggedMotor implements StructSerializable {
     public double appliedVolts = Double.NaN;
     public double currentAmps = Double.NaN;
     public double tempCelsius = Double.NaN;
-
-    public LoggedMotor() {}
 
     public void updateFrom(TalonFX talon) {
         this.positionRad = Units.rotationsToRadians(talon.getPosition().getValueAsDouble());
@@ -40,6 +41,26 @@ public class LoggedMotor implements StructSerializable {
         this.currentAmps = sim.getCurrentDrawAmps();
     }
     public void updateFrom(DCMotorSim sim, double appliedVolts) {
+        updateFrom(sim);
+        this.appliedVolts = appliedVolts;
+    }
+
+    public void updateFrom(FlywheelSim sim) {
+        this.positionRad += sim.getAngularVelocityRadPerSec() * Constants.dtSeconds;
+        this.velocityRadPerSec = sim.getAngularVelocityRadPerSec();
+        this.currentAmps = sim.getCurrentDrawAmps();
+    }
+    public void updateFrom(FlywheelSim sim, double appliedVolts) {
+        updateFrom(sim);
+        this.appliedVolts = appliedVolts;
+    }
+
+    public void updateFrom(SingleJointedArmSim sim) {
+        this.positionRad = sim.getAngleRads();
+        this.velocityRadPerSec = sim.getVelocityRadPerSec();
+        this.currentAmps = sim.getCurrentDrawAmps();
+    }
+    public void updateFrom(SingleJointedArmSim sim, double appliedVolts) {
         updateFrom(sim);
         this.appliedVolts = appliedVolts;
     }

@@ -28,24 +28,17 @@ public class ModuleIOSim implements ModuleIO {
         turnAbsolutePositionRad = MathUtil.angleModulus(turnAbsolutePositionRad);
 
         if (zeroEncodersFlag) {
-          inputs.drivePositionRad = 0.0;
+          inputs.driveMotor.positionRad = 0.0;
           turnAbsolutePositionRad -= turnRelativePositionRad;
           turnRelativePositionRad = 0.0;
           zeroEncodersFlag = false;
         }
         
-        inputs.drivePositionRad = inputs.drivePositionRad + (driveSim.getAngularVelocityRadPerSec() * Constants.dtSeconds);
-        inputs.driveVelocityRadPerSec = driveSim.getAngularVelocityRadPerSec();
-        inputs.driveAppliedVolts = driveAppliedVolts;
-        inputs.driveCurrentAmps = Math.abs(driveSim.getCurrentDrawAmps());
-        inputs.driveTempCelcius = 0.0;
+        inputs.driveMotor.updateFrom(driveSim, turnAppliedVolts);
     
+        inputs.turnMotor.updateFrom(turnSim, turnAppliedVolts);
         inputs.turnAbsolutePositionRad = turnAbsolutePositionRad;
-        inputs.turnPositionRad = turnRelativePositionRad;
-        inputs.turnVelocityRadPerSec = turnSim.getAngularVelocityRadPerSec();
-        inputs.turnAppliedVolts = turnAppliedVolts;
-        inputs.turnCurrentAmps = Math.abs(turnSim.getCurrentDrawAmps());
-        inputs.turnTempCelcius = 0.0;
+        inputs.turnMotor.positionRad = turnRelativePositionRad;
       }
     
       public void setDriveVoltage(double volts) {

@@ -6,37 +6,25 @@ package frc.robot.subsystems.kicker;
 
 import com.revrobotics.CANSparkMax;
 
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.Constants.DIOPorts;
 
 public class KickerIONeo550 implements KickerIO {
-    private final CANSparkMax leftMotor;
-    private final CANSparkMax rightMotor;
+    private final CANSparkMax leftMotor = null;
+    private final CANSparkMax rightMotor = null;
 
-    private final DigitalInput sensor;
+    private final DigitalInput sensor = new DigitalInput(DIOPorts.kickerSensorPort);
 
     public KickerIONeo550() {
-        leftMotor = null;
-        rightMotor = null;
-
         rightMotor.follow(leftMotor, true);
-
-        sensor = new DigitalInput(0);
     }
 
     @Override
     public void updateInputs(KickerIOInputs inputs) {
         inputs.notePresent = sensor.get();
 
-        inputs.leftVelocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(leftMotor.getEncoder().getVelocity());
-        inputs.leftAppliedVolts = leftMotor.getAppliedOutput();
-        inputs.leftCurrentAmps = leftMotor.getOutputCurrent();
-        inputs.leftTempCelcius = leftMotor.getMotorTemperature();
-
-        inputs.rightVelocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(rightMotor.getEncoder().getVelocity());
-        inputs.rightAppliedVolts = rightMotor.getAppliedOutput();
-        inputs.rightCurrentAmps = rightMotor.getOutputCurrent();
-        inputs.rightTempCelcius = rightMotor.getMotorTemperature();
+        inputs.leftMotor.updateFrom(leftMotor);
+        inputs.rightMotor.updateFrom(rightMotor);
     }
 
     @Override

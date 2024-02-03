@@ -21,11 +21,8 @@ public class PivotIOSim implements PivotIO {
     public void updateInputs(PivotIOInputs inputs) {
         pivotSim.update(Constants.dtSeconds);
 
-        inputs.pivotPositionRad = pivotSim.getAngleRads();
-        inputs.pivotVelocityRadPerSec = pivotSim.getVelocityRadPerSec();
-        inputs.pivotCurrentAmps = pivotSim.getCurrentDrawAmps();
-        inputs.pivotAppliedVolts = pivotAppliedVolts;
-        inputs.pivotTempCelcius = 0;
+        inputs.pivotMotor.updateFrom(pivotSim, pivotAppliedVolts);
+        inputs.pivotEncoder.updateFrom(pivotSim);
     }
     
     @Override

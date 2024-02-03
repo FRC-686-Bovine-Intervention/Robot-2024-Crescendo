@@ -71,15 +71,8 @@ public class ShooterIOFalcon implements ShooterIO {
     public void updateInputs(ShooterIOInputs inputs) {
         inputs.notePresent = sensor.get();
 
-        inputs.leftRotationsPerSecond = leftMotor.getVelocity().getValue();
-        inputs.leftAppliedVolts = leftMotor.getSupplyVoltage().getValue();
-        inputs.leftCurrentAmps = leftMotor.getSupplyCurrent().getValue();
-        inputs.leftTempCelcius = leftMotor.getDeviceTemp().getValue();
-
-        inputs.rightRotationsPerSecond = rightMotor.getVelocity().getValue();
-        inputs.rightAppliedVolts = rightMotor.getSupplyVoltage().getValue();
-        inputs.rightCurrentAmps = rightMotor.getSupplyCurrent().getValue();
-        inputs.rightTempCelcius = rightMotor.getDeviceTemp().getValue();
+        inputs.leftMotor.updateFrom(leftMotor);
+        inputs.rightMotor.updateFrom(rightMotor);
 
         updateTunables();
     }

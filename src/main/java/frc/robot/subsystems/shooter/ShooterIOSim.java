@@ -66,15 +66,8 @@ public class ShooterIOSim implements ShooterIO {
     public void updateInputs(ShooterIOInputs inputs) {
         inputs.notePresent = notePresent.getAsBoolean();
 
-        inputs.leftRotationsPerSecond = Units.radiansToRotations(leftMotor.getAngularVelocityRadPerSec());
-        inputs.leftCurrentAmps = leftMotor.getCurrentDrawAmps();
-        inputs.leftAppliedVolts = leftAppliedVolts;
-        inputs.leftTempCelcius = 0;
-
-        inputs.rightRotationsPerSecond = Units.radiansToRotations(rightMotor.getAngularVelocityRadPerSec());
-        inputs.rightCurrentAmps = rightMotor.getCurrentDrawAmps();
-        inputs.rightAppliedVolts = rightAppliedVolts;
-        inputs.rightTempCelcius = 0;
+        inputs.leftMotor.updateFrom(leftMotor, leftAppliedVolts);
+        inputs.rightMotor.updateFrom(rightMotor, rightAppliedVolts);
 
         updateTunables();
     }

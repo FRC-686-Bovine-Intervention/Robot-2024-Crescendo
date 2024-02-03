@@ -10,7 +10,7 @@ import frc.robot.subsystems.kicker.Kicker;
 public class SuperCommands {
     public static Command feedToKicker(Intake intake, Kicker kicker) {
         return 
-            intake.feedToKicker()
+            intake.feedToKicker().asProxy()
             .alongWith(kicker.feedIn())
             .withName("Feed Into Kicker")
             .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);

@@ -61,9 +61,16 @@ public final class Constants {
     }
 
     public static final class DIOPorts {
-
+        // HID
         public static final int brakeSwitchPort = 1;
         public static final int ledSwitchPort = 2;
+
+        // Intake
+        public static final int intakeBottomSensorPort = 0;
+        public static final int intakeTopSensorPort = 1;
+
+        // Kicker
+        public static final int kickerSensorPort = 2;
     }
 
     public static final class DriveConstants {

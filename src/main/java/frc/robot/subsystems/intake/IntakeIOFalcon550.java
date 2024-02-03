@@ -12,13 +12,14 @@ import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.Constants.CANDevices;
+import frc.robot.Constants.DIOPorts;
 
 public class IntakeIOFalcon550 implements IntakeIO {
     private final CANSparkMax rollerMotor = new CANSparkMax(CANDevices.intakeRollerMotorID, MotorType.kBrushless);
     private final TalonFX beltMotor = new TalonFX(CANDevices.intakeBeltMotorID, CANDevices.driveCanBusName);
 
-    private final DigitalInput bottomSensor = new DigitalInput(0);
-    private final DigitalInput topSensor = new DigitalInput(1);
+    private final DigitalInput bottomSensor = new DigitalInput(DIOPorts.intakeBottomSensorPort);
+    private final DigitalInput topSensor = new DigitalInput(DIOPorts.intakeTopSensorPort);
     
     public IntakeIOFalcon550() {
         rollerMotor.setInverted(true);

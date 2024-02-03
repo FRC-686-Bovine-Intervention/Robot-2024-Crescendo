@@ -6,14 +6,14 @@ package frc.robot.subsystems.pivot;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import frc.robot.util.loggerUtil.LoggedEncoder;
+import frc.robot.util.loggerUtil.LoggedMotor;
+
 public interface PivotIO {
     @AutoLog
     public static class PivotIOInputs {
-        public double pivotPositionRad;
-        public double pivotVelocityRadPerSec;
-        public double pivotAppliedVolts;
-        public double pivotCurrentAmps;
-        public double pivotTempCelcius;
+        public LoggedMotor pivotMotor = new LoggedMotor();
+        public LoggedEncoder pivotEncoder = new LoggedEncoder();
     }
 
     public default void updateInputs(PivotIOInputs inputs) {}
