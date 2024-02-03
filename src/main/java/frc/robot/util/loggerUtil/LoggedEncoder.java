@@ -6,9 +6,10 @@ import com.ctre.phoenix6.hardware.CANcoder;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
+import edu.wpi.first.util.struct.StructSerializable;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 
-public class LoggedEncoder {
+public class LoggedEncoder implements StructSerializable {
     public double positionRad = Double.NaN;
     public double velocityRadPerSec = Double.NaN;
 

@@ -60,7 +60,7 @@ public class Drive extends SubsystemBase {
 
     private boolean isCharacterizing = false;
     private double characterizationVolts = 0.0;
-    private final LoggedTunableNumber rotationCorrection = new LoggedTunableNumber("Rotation Correction", 0.25);
+    private final LoggedTunableNumber rotationCorrection = new LoggedTunableNumber("Drive/Rotation Correction", 0.25);
 
     private ChassisSpeeds setpoint = new ChassisSpeeds();
     private SwerveModuleState[] lastSetpointStates = new SwerveModuleState[] {
@@ -149,8 +149,8 @@ public class Drive extends SubsystemBase {
             }
 
             // Clear setpoint logs
-            Logger.recordOutput("SwerveStates/Setpoints", new double[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new double[] {});
+            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
 
         } else if (isCharacterizing) {
             // Run in characterization mode
@@ -159,8 +159,8 @@ public class Drive extends SubsystemBase {
             }
 
             // Clear setpoint logs
-            Logger.recordOutput("SwerveStates/Setpoints", new double[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new double[] {});
+            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
 
         } else {
             /**

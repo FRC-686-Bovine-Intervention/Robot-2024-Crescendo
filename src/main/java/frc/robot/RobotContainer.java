@@ -105,7 +105,7 @@ public class RobotContainer {
                 // );
                 // intake = null;
                 pivot = new Pivot(new PivotIOSim());
-                kicker = new Kicker(new KickerIOSim(driveController.povLeft()));
+                kicker = new Kicker(new KickerIOSim(driveController.povLeft().negate()));
                 shooter = null;
                 noteVision = null;
                 ledSystem = null;
@@ -162,9 +162,9 @@ public class RobotContainer {
 
     private void configureButtonBindings() {
         driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
-        driveController.b().whileTrue(intake.outtake());
-        driveController.povUp().whileTrue(pivot.movePivotManually(-1));
-        driveController.povDown().whileTrue(pivot.movePivotManually(1));
+        driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake());
+        driveController.povUp().whileTrue(pivot.movePivotManually(1));
+        driveController.povDown().whileTrue(pivot.movePivotManually(-1));
         driveController.rightBumper().toggleOnTrue(
             new AutoAim(
                 drive,
@@ -222,14 +222,14 @@ public class RobotContainer {
                             Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
                         };
                     },
-                    () -> Rotation2d.fromDegrees(0)
+                    () -> Rotation2d.fromDegrees(180)
                 ),
                 driveController.leftBumper()
             )
         );
 
         intake.setDefaultCommand(intake.doNothing());
-        new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        // new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
     private void configureAutos() {
@@ -260,8 +260,8 @@ public class RobotContainer {
 
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();
+        Logger.recordOutput("Testbot", new Pose2d());
         Logger.recordOutput("Mechanism2d/Robot Side Profile", robotSideProfile);
-        // System.out.printf("\nAng: %f, Mag: %f", buttonBoard.joystick.radsFromPosXCCW(), buttonBoard.joystick.magnitude());
     }
 
     public void enabledInit() {

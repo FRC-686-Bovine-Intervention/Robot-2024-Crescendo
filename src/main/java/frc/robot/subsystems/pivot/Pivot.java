@@ -7,8 +7,12 @@ package frc.robot.subsystems.pivot;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
+import static edu.wpi.first.units.Units.Inches;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
@@ -63,6 +67,20 @@ public class Pivot extends SubsystemBase {
     pivotIO.updateInputs(inputs);
     Logger.processInputs("Pivot", inputs);
     updateTunables();
+    Logger.recordOutput("Mechanism3d/Shooter", 
+      new Pose3d(
+        new Translation3d(
+          Inches.of(13),
+          Inches.of(0),
+          Inches.of(22.665031)
+        ),
+        new Rotation3d(
+          0,
+          inputs.pivotEncoder.positionRad,
+          0
+        )
+      )
+    );
   }
 
   private final LoggedTunableNumber manualPivotVolts = new LoggedTunableNumber("Pivot/Manual Arm Volts", 5);
