@@ -51,6 +51,8 @@ public class Module {
         this.io = io;
         this.index = index;
         prevModulePosition = getPosition();
+        inputs.driveMotor.positionRad = 0;
+        inputs.turnMotor.positionRad = 0;
 
         turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
     }
