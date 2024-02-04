@@ -12,7 +12,20 @@
         }
     ],
     "position": [0, 0, 0],
-    "cameras": [],
+    "cameras": [
+        {
+            "name": "Apriltag Vision",
+            "rotations": [
+                {
+                    "axis": "y",
+                    "degrees": -30
+                }
+            ],
+            "position": [0.349584, 0, 0.499868],
+            "resolution": [9, 16],
+            "fov": 70
+          }
+    ],
     "components": [
         {
             "zeroedRotations": [
