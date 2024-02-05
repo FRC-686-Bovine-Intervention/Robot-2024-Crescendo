@@ -98,17 +98,6 @@ public class Drive extends SubsystemBase {
         Pose2d initialPoseMeters = new Pose2d();
         RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
         prevGyroYaw = getPose().getRotation();
-
-        // initialize PathPlanner-Lib AutoBuilder
-        AutoBuilder.configureHolonomic(
-            this::getPose,
-            this::setPose,
-            this::getChassisSpeeds,
-            this::driveVelocity,
-            Drive.configSup.get(),
-            AllianceFlipUtil::shouldFlip,
-            this
-        );
     }
 
     public void periodic() {
@@ -530,48 +519,5 @@ public class Drive extends SubsystemBase {
 
     public boolean collisionDetected() {
         return currentSpikeTimer.hasElapsed(currentSpikeTime.get());
-    }
-
-    private static final LoggedTunableNumber tP = new LoggedTunableNumber("AutoDrive/tP", 1);
-    private static final LoggedTunableNumber tI = new LoggedTunableNumber("AutoDrive/tI", 0);
-    private static final LoggedTunableNumber tD = new LoggedTunableNumber("AutoDrive/tD", 0);
-    private static final LoggedTunableNumber rP = new LoggedTunableNumber("AutoDrive/rP", 1.5);
-    private static final LoggedTunableNumber rI = new LoggedTunableNumber("AutoDrive/rI", 0);
-    private static final LoggedTunableNumber rD = new LoggedTunableNumber("AutoDrive/rD", 0);
-    private static final Supplier<HolonomicPathFollowerConfig> configSup = () -> {
-        return new HolonomicPathFollowerConfig(
-            new PIDConstants(
-                tP.get(),
-                tI.get(),
-                tD.get()
-            ),
-            new PIDConstants(
-                rP.get(),
-                rI.get(),
-                rD.get()
-            ),
-            DriveConstants.maxDriveSpeedMetersPerSec,
-            0.46,
-            new ReplanningConfig()
-        );
-    };
-
-    public static final LoggedTunableNumber kAutoDriveMaxVelocity = new LoggedTunableNumber("Drive/kAutoDriveMaxVelocity", 3.0);
-    public static final LoggedTunableNumber kMaxAcceleration = new LoggedTunableNumber("Drive/kMaxAcceleration", 4.0);
-    public static final LoggedTunableNumber kMaxAngularVelocity = new LoggedTunableNumber("Drive/kMaxAngularVelocity", Units.degreesToRadians(540));
-    public static final LoggedTunableNumber kMaxAngularAcceleration = new LoggedTunableNumber("Drive/kMaxAngularAcceleration", Units.degreesToRadians(720));
-    private static final PathConstraints pathConstraints = new PathConstraints(
-        kAutoDriveMaxVelocity.get(),
-        kMaxAcceleration.get(),
-        kMaxAngularVelocity.get(),
-        kMaxAngularAcceleration.get()
-    );
-
-    public Command followPath(PathPlannerPath path) {
-        return new FollowPathHolonomic(path, this::getPose, this::getChassisSpeeds, this::driveVelocity, configSup.get(), () -> DriverStation.getAlliance().equals(Optional.of(Alliance.Red)), this);
-    }
-
-    public Command driveTo(Pose2d fieldPos) {
-        return AutoBuilder.pathfindToPose(fieldPos, pathConstraints, 0, 0);
     }
 }

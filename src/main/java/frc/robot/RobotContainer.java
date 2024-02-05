@@ -31,6 +31,7 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.AutoAim;
+import frc.robot.subsystems.drive.commands.AutoDrive;
 import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
@@ -193,10 +194,16 @@ public class RobotContainer {
                 noteVision
             )
         );
+        driveController.x().onTrue(
+            new AutoDrive(
+                drive,
+                () -> new Pose2d(2, 2, new Rotation2d(0, 0)),
+                () -> driveController.leftStick.magnitude() > 0.1
+            )
+        );
 
         // driveController.x().onTrue(drive.driveTo(new Pose2d(0, 0, new Rotation2d(0, 0))));
     }
-
 
     private void configureSubsystems() {
         drive.setDefaultCommand(
@@ -241,6 +248,8 @@ public class RobotContainer {
         );
 
         intake.setDefaultCommand(intake.doNothing());
+
+        // intake.setDefaultCommand(intake.doNothing());
         // new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
