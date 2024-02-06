@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
+import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.commands.AutoIntake;
@@ -98,7 +99,8 @@ public class RobotContainer {
                 // pivot = new Pivot(new PivotIOFalcon());
                 // kicker = new Kicker(new KickerIONeo550());
                 // shooter = new Shooter(new ShooterIOFalcon());
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision());
+                pivot = new Pivot(new PivotIOSim());
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
                 // drive = new Drive(
                 //     new GyroIO() {},
                 //     new ModuleIOSim(),
@@ -107,7 +109,7 @@ public class RobotContainer {
                 //     new ModuleIOSim()
                 // );
                 // intake = null;
-                pivot = new Pivot(new PivotIOSim());
+                
                 kicker = new Kicker(new KickerIOSim(driveController.povLeft().negate()));
                 shooter = null;
                 // noteVision = null;
@@ -281,6 +283,7 @@ public class RobotContainer {
 
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();
+        Camera.logCameraOverrides();
         Logger.recordOutput("Testbot", new Pose2d());
         Logger.recordOutput("Mechanism2d/Robot Side Profile", robotSideProfile);
     }

@@ -4,13 +4,20 @@
 
 package frc.robot;
 
+import java.util.Arrays;
+import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.signals.InvertedValue;
 
-import edu.wpi.first.math.geometry.Quaternion;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
+import static edu.wpi.first.units.Units.*;
+import frc.robot.util.GearRatio;
 
 public final class Constants {
 
@@ -99,12 +106,13 @@ public final class Constants {
         }
 
         // weight with battery and bumpers
-        public static final double weightKg = Units.lbsToKilograms(58.0);
+        public static final double weightKg = Pounds.of(58.0).in(Kilograms);
 
-        public static final double trackWidthXMeters = Units.inchesToMeters(25.5); // distance between the front and back wheels
-        public static final double trackWidthYMeters = Units.inchesToMeters(25.5); // distance between the left and right wheels
-        public static final double wheelRadiusMeters = Units.inchesToMeters(1.5);
+        public static final double trackWidthXMeters = Inches.of(25.5).in(Meters); // distance between the front and back wheels
+        public static final double trackWidthYMeters = Inches.of(25.5).in(Meters); // distance between the left and right wheels
+        public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters);
 
+        public static final double test = GearRatio.start(14).drive(22).driven(15).drive(45).drivenToDrive();
         public static final double driveWheelGearReduction = 1.0 / ((14.0/22.0)*(15.0/45.0));
         public static final double turnWheelGearReduction = 1.0 / ((15.0/32.0)*(10.0/60.0));
 
@@ -143,27 +151,49 @@ public final class Constants {
 
     public static final class VisionConstants {
         public static enum Camera {
-            Front(
-                "Front",
-                new Transform3d(new Translation3d(95.75 / 100, 0, 13.25 / 100), new Rotation3d(0, 0, Units.degreesToRadians(180))),
-                new Transform3d(new Translation3d(0.7695, 0.1391, -0.1402), new Rotation3d(new Quaternion(0.022, 0.1079, 0.0035, -0.9939)))
+            AprilTagVision(
+                "",
+                new Transform3d(
+                    new Translation3d(
+                        Meters.of(0.349584),
+                        Meters.of(0),
+                        Meters.of(0.499868)
+                    ),
+                    new Rotation3d(
+                        Units.degreesToRadians(0),
+                        Units.degreesToRadians(30),
+                        Units.degreesToRadians(0)
+                    )
+                )
             ),
-            Back(
-                "Back",
-                new Transform3d(new Translation3d(-95.75 / 100, 0, 13.25 / 100), new Rotation3d(0, 0, Units.degreesToRadians(0))),
-                new Transform3d(new Translation3d(1.171, 0.0415, -0.2687), new Rotation3d(new Quaternion(0.0197, 0.1799, 0, -0.9835)))
-            ),
-            Limelight(
-                "limelight",
-                new Transform3d(new Translation3d(-95.75 / 100, 0, 13.25 / 100), new Rotation3d(0, 0, Units.degreesToRadians(0))),
-                new Transform3d(new Translation3d(1.171, 0.0415, -0.2687), new Rotation3d(new Quaternion(0.0197, 0.1799, 0, -0.9835)))
+            NoteVision(
+                "Testcam",
+                new Transform3d(new Translation3d(-0.3675, 0.1975, 0.185), new Rotation3d(0,0,Units.degreesToRadians(180)))
             ),
             ;
             public final String hardwareName;
-            public final Transform3d robotToCamera;
-            Camera(String hardwareName, Transform3d robotToCalibTag, Transform3d cameraToCalibTag) {
+            private final Transform3d intermediateToCamera;
+            private Supplier<Transform3d> robotToIntermediate;
+            private static final Transform3d nullTransform = new Transform3d();
+            Camera(String hardwareName, Transform3d finalToCamera) {
                 this.hardwareName = hardwareName;
-                this.robotToCamera = robotToCalibTag.plus(cameraToCalibTag.inverse());
+                this.intermediateToCamera = finalToCamera;
+                this.robotToIntermediate = () -> nullTransform;
+            }
+            private static Transform3d robotToCameraFromCalibTag(Transform3d robotToCalibTag, Transform3d cameraToCalibTag) {
+                return robotToCalibTag.plus(cameraToCalibTag.inverse());
+            }
+            public Camera withRobotToIntermediate(Supplier<Transform3d> robotToFinal) {
+                this.robotToIntermediate = robotToFinal;
+                return this;
+            }
+
+            public Transform3d getRobotToCam() {
+                return robotToIntermediate.get().plus(intermediateToCamera);
+            }
+
+            public static void logCameraOverrides() {
+                Logger.recordOutput("Camera Overrides", Arrays.stream(Camera.values()).map((cam) -> new Transform3d(new Pose3d(), new Pose3d(RobotState.getInstance().getPose())).plus(cam.getRobotToCam())).toArray(Transform3d[]::new));
             }
         }
 
@@ -212,41 +242,6 @@ public final class Constants {
         public static final double initialBalanceSpeed = 1;
 
     }
-
-
-   // public static final class LEDConstants {
-
-    //     // Ports
-    //     public static final int ledPort = 0;
-
-    //     // LED Data
-    //     public static final int armLedCount = 123;
-    //     public static final int baseLedCount = 128;
-
-    //     // Rainbow
-    //     public static final boolean dynamicRainbow = true;
-    //     public static final int dynamicRainbowSpeed = 1;
-
-    //     // Pre-Match Climb Pattern
-    //     public static final int climbSpeed = 2;
-    //     public static final int climbMaxDelay = 40;
-    //     public static final int climbMinDelay = 20;
-    //     public static final int climbMaxLength = 10;
-    //     public static final int climbMinLength = 5;
-
-    //     // Other
-    //     public static final Color activeSideFlashColor = new Color(0, 0, 0);
-    //     public static final Color intakeFlashColor = new Color(255, 255, 255);
-    //     public static final Color whistleFlashColor = new Color(255, 179, 0);
-
-    // }
-
-    public static final class OverrideConstants {
-        public static final int armBrakeModeButton = 3;
-        public static final int driveBrakeModeButton = 9;
-    }
-
-
 
     // Not the robot main function. This is called by Gradle when deploying to
     // make sure nobody deploys sim code.
