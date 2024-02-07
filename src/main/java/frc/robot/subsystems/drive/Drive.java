@@ -11,8 +11,15 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -26,10 +33,12 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.RobotState;
+import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Drive extends SubsystemBase {
@@ -86,6 +95,18 @@ public class Drive extends SubsystemBase {
         Pose2d initialPoseMeters = new Pose2d(new Translation2d(1.4,5.55), new Rotation2d(Math.PI));
         RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
         prevGyroYaw = getPose().getRotation();
+
+        if (!AutoBuilder.isConfigured()) {
+            AutoBuilder.configureHolonomic(
+                this::getPose,
+                this::setPose,
+                this::getChassisSpeeds,
+                this::driveVelocity,
+                configSup.get(),
+                AllianceFlipUtil::shouldFlip,
+                this
+            );
+        }
     }
 
     public void periodic() {
@@ -507,5 +528,44 @@ public class Drive extends SubsystemBase {
 
     public boolean collisionDetected() {
         return currentSpikeTimer.hasElapsed(currentSpikeTime.get());
+    }
+
+    private static final LoggedTunableNumber tP = new LoggedTunableNumber("AutoDrive/tP", 1);
+    private static final LoggedTunableNumber tI = new LoggedTunableNumber("AutoDrive/tI", 0);
+    private static final LoggedTunableNumber tD = new LoggedTunableNumber("AutoDrive/tD", 0);
+    private static final LoggedTunableNumber rP = new LoggedTunableNumber("AutoDrive/rP", 1.5);
+    private static final LoggedTunableNumber rI = new LoggedTunableNumber("AutoDrive/rI", 0);
+    private static final LoggedTunableNumber rD = new LoggedTunableNumber("AutoDrive/rD", 0);
+    private static final Supplier<HolonomicPathFollowerConfig> configSup = () -> {
+        return new HolonomicPathFollowerConfig(
+            new PIDConstants(
+                tP.get(),
+                tI.get(),
+                tD.get()
+            ),
+            new PIDConstants(
+                rP.get(),
+                rI.get(),
+                rD.get()
+            ),
+            DriveConstants.maxDriveSpeedMetersPerSec,
+            0.46,
+            new ReplanningConfig()
+        );
+    };
+
+    public static final LoggedTunableNumber kAutoDriveMaxVelocity = new LoggedTunableNumber("Drive/kAutoDriveMaxVelocity", 3.0);
+    public static final LoggedTunableNumber kMaxAcceleration = new LoggedTunableNumber("Drive/kMaxAcceleration", 4.0);
+    public static final LoggedTunableNumber kMaxAngularVelocity = new LoggedTunableNumber("Drive/kMaxAngularVelocity", Units.degreesToRadians(540));
+    public static final LoggedTunableNumber kMaxAngularAcceleration = new LoggedTunableNumber("Drive/kMaxAngularAcceleration", Units.degreesToRadians(720));
+    private static final PathConstraints pathConstraints = new PathConstraints(
+        kAutoDriveMaxVelocity.get(),
+        kMaxAcceleration.get(),
+        kMaxAngularVelocity.get(),
+        kMaxAngularAcceleration.get()
+    );
+
+    public Command driveTo(Pose2d pos) {
+        return AutoBuilder.pathfindToPose(pos, pathConstraints, 0, 0);
     }
 }

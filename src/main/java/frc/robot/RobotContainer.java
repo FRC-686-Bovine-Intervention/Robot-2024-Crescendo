@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.VisionConstants.Camera;
@@ -32,7 +33,6 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.AutoAim;
-import frc.robot.subsystems.drive.commands.AutoDrive;
 import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
@@ -156,11 +156,11 @@ public class RobotContainer {
             .radialSensitivity(0.75)
             .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
 
-        System.out.println("[Init RobotContainer] Configuring Button Bindings");
-        configureButtonBindings();
-
         System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
         configureSubsystems();
+
+        System.out.println("[Init RobotContainer] Configuring Button Bindings");
+        configureButtonBindings();
 
         System.out.println("[Init RobotContainer] Configuring Autonomous Modes");
         configureAutos();
@@ -196,15 +196,13 @@ public class RobotContainer {
                 noteVision
             )
         );
-        driveController.x().onTrue(
-            new AutoDrive(
-                drive,
-                () -> new Pose2d(2, 2, new Rotation2d(0, 0)),
-                () -> driveController.leftStick.magnitude() > 0.1
-            )
-        );
 
-        // driveController.x().onTrue(drive.driveTo(new Pose2d(0, 0, new Rotation2d(0, 0))));
+        driveController.x().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.speakerFront)));
+        driveController.y().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.ampFront)));
+        driveController.a().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.podiumFront)));
+        driveController.b().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.sourceFront)));
+
+        new Trigger(() -> driveController.leftStick.magnitude() > 0.1).onTrue(drive.getDefaultCommand());
     }
 
     private void configureSubsystems() {
