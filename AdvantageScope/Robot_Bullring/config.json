@@ -22,9 +22,21 @@
                 }
             ],
             "position": [0.349584, 0, 0.499868],
-            "resolution": [9, 16],
+            "resolution": [800, 1280],
+            "fov": 43.75
+        },
+        {
+            "name": "Note Vision",
+            "rotations": [
+                {
+                    "axis": "z",
+                    "degrees": 180
+                }
+            ],
+            "position": [-0.143458311, 0, 0.5310740712],
+            "resolution": [1280, 800],
             "fov": 70
-          }
+        }
     ],
     "components": [
         {

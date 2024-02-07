@@ -1,25 +1,30 @@
 package frc.robot.util;
 
 public class GearRatio {
-    private final double ratio;
+    private final double drivenToDriveRatio;
+    private final double driveToDrivenRatio;
 
     private GearRatio(double ratio) {
-        this.ratio = ratio;
+        this.drivenToDriveRatio = ratio;
+        this.driveToDrivenRatio = 1/ratio;
     }
 
     public static GearRatio start(int toothCount) {
         return new GearRatio(toothCount);
     }
     public GearRatio driven(int toothCount) {
-        return new GearRatio(ratio * toothCount);
+        return new GearRatio(drivenToDriveRatio * toothCount);
     }
     public GearRatio drive(int toothCount) {
-        return new GearRatio(ratio / toothCount);
+        return new GearRatio(drivenToDriveRatio / toothCount);
+    }
+    public GearRatio andThen(GearRatio other) {
+        return new GearRatio(drivenToDriveRatio * other.drivenToDriveRatio);
     }
     public double drivenToDrive() {
-        return ratio;
+        return drivenToDriveRatio;
     }
     public double driveToDriven() {
-        return 1/ratio;
+        return driveToDrivenRatio;
     }
 }

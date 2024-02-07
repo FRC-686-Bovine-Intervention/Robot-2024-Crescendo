@@ -40,20 +40,16 @@ public final class Constants {
 
         // Drive
         public static final String driveCanBusName = "rio";
-
-        // | Front Left: Red
+        // | Front Left
         public static final int frontLeftDriveMotorID  = 11;
         public static final int frontLeftTurnMotorID   = 12;
-
-        // | Front Right: Blue
+        // | Front Right
         public static final int frontRightDriveMotorID  = 21;
         public static final int frontRightTurnMotorID   = 22;
-
-        // | Back Left: Black
+        // | Back Left
         public static final int backLeftDriveMotorID  = 41;
         public static final int backLeftTurnMotorID   = 42;
-
-        // | Back Right: White
+        // | Back Right
         public static final int backRightDriveMotorID  = 31;
         public static final int backRightTurnMotorID   = 32;
 
@@ -61,6 +57,7 @@ public final class Constants {
         public static final int intakeBeltMotorID   = 51;
         public static final int intakeRollerMotorID = 52;
 
+        // Misc
         public static final int pigeonCanID = 0;
         public static final int candleCanID = 0;
 
@@ -105,14 +102,17 @@ public final class Constants {
             }
         }
 
-        // weight with battery and bumpers
+        /**Weight with battery and bumpers*/
         public static final double weightKg = Pounds.of(58.0).in(Kilograms);
 
-        public static final double trackWidthXMeters = Inches.of(25.5).in(Meters); // distance between the front and back wheels
-        public static final double trackWidthYMeters = Inches.of(25.5).in(Meters); // distance between the left and right wheels
+        /**Distance between the front and back wheels*/
+        public static final double trackWidthXMeters = Inches.of(25.5).in(Meters);
+        /**Distance between the left and right wheels*/
+        public static final double trackWidthYMeters = Inches.of(25.5).in(Meters);
         public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters);
 
-        public static final double test = GearRatio.start(14).drive(22).driven(15).drive(45).drivenToDrive();
+        public static final GearRatio driveWheelGearRatio = GearRatio.start(14).drive(22).driven(15).drive(45);
+        public static final GearRatio turnWheelGearRatio = GearRatio.start(15).drive(32).driven(10).drive(60);
         public static final double driveWheelGearReduction = 1.0 / ((14.0/22.0)*(15.0/45.0));
         public static final double turnWheelGearReduction = 1.0 / ((15.0/32.0)*(10.0/60.0));
 
@@ -125,10 +125,10 @@ public final class Constants {
 
 
         public static final double maxDriveSpeedMetersPerSec = 4;
-        // tangential speed (m/s) = radial speed (rad/s) * radius (m)
+        /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(trackWidthXMeters/2, trackWidthYMeters/2);
-
-        public static final double joystickSlewRateLimit = 1.0 / 0.25;     // full speed in 0.25 sec
+        /**full speed in 0.25 sec*/
+        public static final double joystickSlewRateLimit = 1.0 / 0.25;
         public static final double driveJoystickDeadbandPercent = 0.2;
         public static final double driveMaxJerk = 200.0;
 
@@ -145,14 +145,10 @@ public final class Constants {
 
     }
 
-    public static final class ArmConstants {
-        public static final double elbowMotorToJointGearRatio = 1;
-    }
-
     public static final class VisionConstants {
         public static enum Camera {
             AprilTagVision(
-                "",
+                "AprilTagCam",
                 new Transform3d(
                     new Translation3d(
                         Meters.of(0.349584),
@@ -167,18 +163,55 @@ public final class Constants {
                 )
             ),
             NoteVision(
-                "Testcam",
-                new Transform3d(new Translation3d(-0.3675, 0.1975, 0.185), new Rotation3d(0,0,Units.degreesToRadians(180)))
+                "NoteVisionCam",
+                // Intake Transform
+                new Transform3d(
+                    new Translation3d(
+                        Centimeters.of(-73.5/2),
+                        Centimeters.of(20),
+                        Centimeters.of(24)
+                    ),
+                    new Rotation3d(
+                        0,
+                        0,
+                        Math.PI
+                    )
+                )
+                // Backwards Pivot Transform
+                // new Transform3d(
+                //     new Translation3d(
+                //         Centimeters.of(73.5/2-2.5),
+                //         Centimeters.of(0),
+                //         Centimeters.of(49)
+                //     ),
+                //     new Rotation3d(
+                //         0,
+                //         0,
+                //         Math.PI
+                //     )
+                // )
+                // CAD Transform
+                // new Transform3d(
+                //     new Translation3d(
+                //         Inches.of(-18.647965),
+                //         Inches.of(0),
+                //         Inches.of(-1.756603)
+                //     ),
+                //     new Rotation3d(
+                //         0,
+                //         0,
+                //         Math.PI
+                //     )
+                // )
             ),
             ;
             public final String hardwareName;
             private final Transform3d intermediateToCamera;
             private Supplier<Transform3d> robotToIntermediate;
-            private static final Transform3d nullTransform = new Transform3d();
             Camera(String hardwareName, Transform3d finalToCamera) {
                 this.hardwareName = hardwareName;
                 this.intermediateToCamera = finalToCamera;
-                this.robotToIntermediate = () -> nullTransform;
+                this.robotToIntermediate = () -> new Transform3d();
             }
             private static Transform3d robotToCameraFromCalibTag(Transform3d robotToCalibTag, Transform3d cameraToCalibTag) {
                 return robotToCalibTag.plus(cameraToCalibTag.inverse());

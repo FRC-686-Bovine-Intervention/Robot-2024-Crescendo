@@ -100,7 +100,7 @@ public class RobotContainer {
                 // kicker = new Kicker(new KickerIONeo550());
                 // shooter = new Shooter(new ShooterIOFalcon());
                 pivot = new Pivot(new PivotIOSim());
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision/* .withRobotToIntermediate(pivot::getRobotToPivot) */));
                 // drive = new Drive(
                 //     new GyroIO() {},
                 //     new ModuleIOSim(),
