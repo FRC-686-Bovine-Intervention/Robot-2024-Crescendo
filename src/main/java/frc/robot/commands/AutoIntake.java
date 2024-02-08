@@ -52,7 +52,7 @@ public class AutoIntake extends Command {
         var robotRot = robotPose.getRotation();
         var targetRelRobot = target.fieldPos.minus(robotTrans);
         var targetRelRobotNormalized = targetRelRobot.div(targetRelRobot.getNorm());
-        var magnitude = dotProduct(targetRelRobot, AllianceFlipUtil.apply(new Translation2d(translationalJoystick.y().getAsDouble(), -translationalJoystick.x().getAsDouble()), FieldFlipType.CenterPointFlip));
+        var magnitude = dotProduct(targetRelRobotNormalized, AllianceFlipUtil.apply(new Translation2d(translationalJoystick.y().getAsDouble(), -translationalJoystick.x().getAsDouble()), FieldFlipType.CenterPointFlip));
         var idkanymore = targetRelRobotNormalized.times(drive.getMaxLinearSpeedMetersPerSec() * magnitude);
         drive.driveVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
             new ChassisSpeeds(

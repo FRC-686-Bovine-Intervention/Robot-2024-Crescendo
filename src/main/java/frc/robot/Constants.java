@@ -157,7 +157,7 @@ public final class Constants {
                     ),
                     new Rotation3d(
                         Units.degreesToRadians(0),
-                        Units.degreesToRadians(30),
+                        -Units.degreesToRadians(30),
                         Units.degreesToRadians(0)
                     )
                 )
