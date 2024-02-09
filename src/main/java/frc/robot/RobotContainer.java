@@ -54,6 +54,8 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.vision.apriltag.ApriltagCameraIOPhotonVision;
+import frc.robot.subsystems.vision.apriltag.ApriltagVision;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
@@ -76,6 +78,8 @@ public class RobotContainer {
     private final Shooter shooter;
     @SuppressWarnings("unused")
     private final NoteVision noteVision;
+    @SuppressWarnings("unused")
+    private final ApriltagVision apriltagVision;
     @SuppressWarnings("unused")
     private final AutoIntake autoIntake;
     @SuppressWarnings("unused")
@@ -108,6 +112,7 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIOFalcon());
                 pivot = new Pivot(new PivotIOFalcon());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
+                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
                 // drive = new Drive(
                 //     new GyroIO() {},
                 //     new ModuleIOSim(),
@@ -134,6 +139,7 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
                 noteVision = new NoteVision(new NoteVisionIOSim());
+                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
                 autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
             break;
@@ -151,6 +157,7 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
                 noteVision = null;
+                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
                 autoIntake = null;
                 ledSystem = null;
             break;

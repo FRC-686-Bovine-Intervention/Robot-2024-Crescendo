@@ -4,7 +4,10 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.*;
+
 import java.util.Arrays;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -16,7 +19,8 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import static edu.wpi.first.units.Units.*;
+import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
+import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
 
 public final class Constants {
@@ -241,8 +245,25 @@ public final class Constants {
                 return robotToIntermediate.get().plus(intermediateToCamera);
             }
 
+            public ApriltagCamera toApriltagCamera() {
+                return new ApriltagCamera(this.name(), new ApriltagCameraIO(){});
+            }
+            public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function) {
+                return new ApriltagCamera(this.name(), function.apply(this));
+            }
+
             public static void logCameraOverrides() {
-                Logger.recordOutput("Camera Overrides", Arrays.stream(Camera.values()).map((cam) -> new Transform3d(new Pose3d(), new Pose3d(RobotState.getInstance().getPose())).plus(cam.getRobotToCam())).toArray(Transform3d[]::new));
+                Logger.recordOutput("Camera Overrides", 
+                    Arrays.stream(Camera.values())
+                    .map(
+                        (cam) -> 
+                            new Transform3d(
+                                new Pose3d(),
+                                new Pose3d(RobotState.getInstance().getPose())
+                            )
+                            .plus(cam.getRobotToCam())
+                    )
+                    .toArray(Transform3d[]::new));
             }
         }
 
