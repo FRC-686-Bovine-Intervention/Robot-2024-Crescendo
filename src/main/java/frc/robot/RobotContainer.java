@@ -171,7 +171,7 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        driveController.a().whileTrue(intake.intake(drive::getChassisSpeeds));
+        driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake());
         driveController.povUp().whileTrue(pivot.movePivotManually(1));
         driveController.povDown().whileTrue(pivot.movePivotManually(-1));
@@ -186,7 +186,7 @@ public class RobotContainer {
                     var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
                     return AllianceFlipUtil.apply(FieldConstants.speakerCenter).minus(translationalOffset);
                 }
-            )
+            ).alongWith(shooter.shoot())
         );
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
             new AutoIntake(

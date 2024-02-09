@@ -56,4 +56,8 @@ public class Kicker extends SubsystemBase {
       this
     ).withName("Kick");
   }
+
+  public boolean hasNote() {
+    return inputs.notePresent;
+  }
 }

@@ -43,7 +43,7 @@ public class Shooter extends SubsystemBase {
         }
       },
       (interrupted) -> {},
-      () -> !inputs.notePresent,
+      () -> !inputs.notePresent, // detect falling edge and confirm with rps dip from the motors
       this
     );
   }
