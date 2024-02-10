@@ -133,7 +133,7 @@ public final class Constants {
         public static final double driveMaxJerk = 200.0;
 
         public static final double precisionLinearMultiplier = 0.2;
-        public static final double precisionTurnMulitiplier = 0.2;
+        public static final double precisionTurnMulitiplier = 0;//0.2;
 
         public static final double poseMoveTranslationkP = 1;
         public static final double poseMoveTranslationMaxVel = 3;
@@ -143,6 +143,10 @@ public final class Constants {
         public static final double poseMoveRotationMaxVel = Math.PI;
         public static final double poseMoveRotationMaxAccel = Math.PI;
 
+        public static final double headingKp = 0.3;
+        public static final double headingKi = 0;
+        public static final double headingKd = 0;
+        public static final double headingTolerance = Degrees.of(1).in(Radians);
     }
 
     public static final class VisionConstants {
