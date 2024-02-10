@@ -83,8 +83,12 @@ public class NoteVision extends VirtualSubsystem {
         return noteMemories;
     }
 
+    public void removeNote(TrackedNote note) {
+        noteMemories.remove(note);
+    }
+
     private static Pose3d targetToPose(TrackedNote note) {
-        return new Pose3d(new Translation3d(note.fieldPos.getX(), note.fieldPos.getY(), 0), new Rotation3d(0, Units.degreesToRadians(-90), 0));
+        return new Pose3d(new Translation3d(note.fieldPos.getX(), note.fieldPos.getY(), Units.inchesToMeters(1)), new Rotation3d());
     }
 
     private static record PhotonMemoryConnection(TrackedNote memory, TrackedNote photonFrameTarget) {
