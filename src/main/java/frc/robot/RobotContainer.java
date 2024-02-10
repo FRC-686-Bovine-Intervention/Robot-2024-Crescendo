@@ -6,7 +6,6 @@ package frc.robot;
 
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -56,6 +55,7 @@ import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.LazyOptional;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.controllers.XboxController;
@@ -71,6 +71,8 @@ public class RobotContainer {
     private final Shooter shooter;
     @SuppressWarnings("unused")
     private final NoteVision noteVision;
+    @SuppressWarnings("unused")
+    private final AutoIntake autoIntake;
     @SuppressWarnings("unused")
     private final Leds ledSystem;
 
@@ -110,7 +112,7 @@ public class RobotContainer {
                 //     new ModuleIOSim()
                 // );
                 // intake = null;
-                
+                autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 kicker = new Kicker(new KickerIOSim(driveController.povLeft().negate()));
                 shooter = null;
                 // noteVision = null;
@@ -132,6 +134,7 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim(simJoystick.button(3)));
                 noteVision = new NoteVision(new NoteVisionIOSim());
+                autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
             break;
             default:
@@ -148,6 +151,7 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
                 noteVision = null;
+                autoIntake = null;
                 ledSystem = null;
             break;
         }
@@ -190,26 +194,35 @@ public class RobotContainer {
                             var timeScalar = drive.getPose().getTranslation().getDistance(speakerTrans) / 5;
                             var chassisOffset = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds().times(timeScalar), drive.getPose().getRotation());
                             var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
-                            return speakerTrans.minus(translationalOffset);
-                        }
+                            return Optional.of(speakerTrans.minus(translationalOffset));
+                        },
+                        () -> Rotation2d.fromDegrees(0)
                     )
                 )
             ).alongWith(shooter.shoot())
             ).withName("AutoAim")
         );
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
-            new AutoIntake(
-                driveJoystick,
+            new DriveWithCustomFlick(
                 drive,
-                intake,
-                noteVision
+                autoIntake.getTranslationalSpeeds(
+                    DriveWithCustomFlick.joystickControlledFieldRelative(
+                        driveJoystick,
+                        driveController.leftBumper()
+                    )
+                ),
+                DriveWithCustomFlick.pidControlledHeading(
+                    DriveWithCustomFlick.pointTo(autoIntake.targetLocation(), () -> Rotation2d.fromDegrees(180)).orElse(driveCustomFlick)
+                )
             )
+            .onlyWhile(() -> !intake.hasNote())
+            .withName("AutoIntake")
         );
 
-        driveController.x().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.speakerFront)));
-        driveController.y().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.ampFront)));
-        driveController.a().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.podiumFront)));
-        driveController.b().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.sourceFront)));
+        // driveController.x().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.speakerFront)));
+        // driveController.y().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.ampFront)));
+        // driveController.a().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.podiumFront)));
+        // driveController.b().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.sourceFront)));
 
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
             .and(() -> {
@@ -219,7 +232,7 @@ public class RobotContainer {
             .onTrue(drive.getDefaultCommand());
     }
 
-    private final Supplier<Optional<Rotation2d>> driveCustomFlick = 
+    private final LazyOptional<Rotation2d> driveCustomFlick = 
         DriveWithCustomFlick.headingFromJoystick(
             driveController.rightStick.smoothRadialDeadband(0.85),
             () -> {

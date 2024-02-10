@@ -32,7 +32,6 @@ public class NoteVision extends VirtualSubsystem {
     private static final LoggedTunableNumber FOVYawThreshold = new LoggedTunableNumber("Vision/FOVYawThreshold", 0.5);     
     private static final LoggedTunableNumber FOVDistanceThreshold = new LoggedTunableNumber("Vision/FOVDistanceThreshold", 2);
 
-
     public NoteVision(NoteVisionIO io) {
         this.io = io;
     }
@@ -83,7 +82,7 @@ public class NoteVision extends VirtualSubsystem {
         return noteMemories;
     }
 
-    public void removeNote(TrackedNote note) {
+    public void forgetNote(TrackedNote note) {
         noteMemories.remove(note);
     }
 

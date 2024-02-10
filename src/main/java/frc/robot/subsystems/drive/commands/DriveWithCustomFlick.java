@@ -17,6 +17,7 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.LazyOptional;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.controllers.Joystick;
 
@@ -27,8 +28,8 @@ public class DriveWithCustomFlick extends Command {
 	private final ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate;
 	private Optional<Rotation2d> override;
 
-	public static Supplier<Optional<Rotation2d>> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
-		return new Supplier<Optional<Rotation2d>>() {
+	public static LazyOptional<Rotation2d> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
+		return new LazyOptional<Rotation2d>() {
 			private final Timer preciseTurnTimer = new Timer();
 			private final double preciseTurnTimeThreshold = 0.5;
 			@Override
@@ -57,15 +58,11 @@ public class DriveWithCustomFlick extends Command {
 		};
 	}
 
-	public static Supplier<Optional<Rotation2d>> pointTo(Supplier<Translation2d> posToPointTo) {
-        return () -> {
-            var pointTo = posToPointTo.get();
-            var desiredHeading = Rotation2d.fromRadians(Math.atan2(
-                pointTo.getY() - RobotState.getInstance().getPose().getY(),
-                pointTo.getX() - RobotState.getInstance().getPose().getX()
-            ));
-            return Optional.of(desiredHeading);
-        };
+	public static LazyOptional<Rotation2d> pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
+        return () -> posToPointTo.get().map((pointTo) -> Rotation2d.fromRadians(Math.atan2(
+			pointTo.getY() - RobotState.getInstance().getPose().getY(),
+			pointTo.getX() - RobotState.getInstance().getPose().getX()
+		)).minus(forward.get()));
     }
 
 	public static ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> pidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier) {

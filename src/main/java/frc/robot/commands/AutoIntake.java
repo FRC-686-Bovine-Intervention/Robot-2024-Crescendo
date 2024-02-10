@@ -1,77 +1,59 @@
 package frc.robot.commands;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.vision.note.NoteVision;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.RobotState;
+import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.vision.note.NoteVision.TrackedNote;
-import frc.robot.util.AllianceFlipUtil;
-import frc.robot.util.AllianceFlipUtil.FieldFlipType;
-import frc.robot.util.controllers.Joystick;
+import frc.robot.util.LazyOptional;
+import frc.robot.util.VirtualSubsystem;
 
-public class AutoIntake extends Command {
-    private final Drive drive;
-    private final Intake intake;
-    private final NoteVision noteVision;
-    private final Joystick translationalJoystick;
-
-    private final PIDController thetaPID = new PIDController(2, 0, 0);
+public class AutoIntake extends VirtualSubsystem {
+    private final Supplier<List<TrackedNote>> trackedNotes;
 
     private Optional<TrackedNote> optTarget = Optional.empty();
 
-    public AutoIntake(Joystick translationalJoystick, Drive drive, Intake intake, NoteVision noteVision) {
-        addRequirements(drive);
-        this.drive = drive;
-        this.intake = intake;
-        this.noteVision = noteVision;
-        this.translationalJoystick = translationalJoystick;
-        thetaPID.enableContinuousInput(-Math.PI, Math.PI);
+    private static final double confidenceThreshold = 1;
+
+    public AutoIntake(Supplier<List<TrackedNote>> trackedNotes, Consumer<TrackedNote> forget) {
+        this.trackedNotes = trackedNotes;
+
+        CommandScheduler.getInstance().onCommandFinish((comm) -> {if (comm.getName() == IntakeCommand.INTAKE.name()) {
+            optTarget.ifPresent((target) -> forget.accept(target));
+            optTarget = Optional.empty();
+        }});
     }
 
     @Override
-    public void initialize() {
-        optTarget = Optional.empty();
-    }
-
-    @Override
-    public void execute() {
+    public void periodic() {
         if(optTarget.isEmpty()) {
-            optTarget = noteVision.getTrackedNotes().stream().sorted((a,b) -> (int)Math.signum(a.confidence - b.confidence)).findFirst();
-            if(optTarget.isEmpty()) return;
-        }
-        var target = optTarget.get();
-        var robotPose = drive.getPose();
-        var robotTrans = robotPose.getTranslation();
-        var robotRot = robotPose.getRotation();
-        var targetRelRobot = target.fieldPos.minus(robotTrans);
-        var targetRelRobotNormalized = targetRelRobot.div(targetRelRobot.getNorm());
-        var magnitude = dotProduct(targetRelRobotNormalized, AllianceFlipUtil.apply(new Translation2d(translationalJoystick.y().getAsDouble(), -translationalJoystick.x().getAsDouble()), FieldFlipType.CenterPointFlip));
-        var idkanymore = targetRelRobotNormalized.times(drive.getMaxLinearSpeedMetersPerSec() * magnitude);
-        drive.driveVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
-            new ChassisSpeeds(
-                idkanymore.getX(),
-                idkanymore.getY(),
-                thetaPID.calculate(robotRot.getRadians(), Math.atan2(-targetRelRobot.getY(), -targetRelRobot.getX()))
-            ),
-            drive.getRotation()
-        ));
-    }
-
-    @Override
-    public void end(boolean interrupted) {
-        if (!optTarget.isEmpty()) {
-            noteVision.removeNote(optTarget.get());
+            optTarget = trackedNotes.get().stream().filter((target) -> target.confidence >= confidenceThreshold).sorted((a,b) -> (int)Math.signum(a.confidence - b.confidence)).findFirst();
         }
     }
 
-    @Override
-    public boolean isFinished() {
-        return optTarget.isEmpty() || intake.hasNote();
+    public Supplier<ChassisSpeeds> getTranslationalSpeeds(Supplier<ChassisSpeeds> joystickFieldRelative) {
+        return () -> optTarget.map((target) -> {
+            var robotTrans = RobotState.getInstance().getPose().getTranslation();
+            var targetRelRobot = target.fieldPos.minus(robotTrans);
+            var targetRelRobotNormalized = targetRelRobot.div(targetRelRobot.getNorm());
+            var joystickSpeed = joystickFieldRelative.get();
+            var joy = new Translation2d(joystickSpeed.vxMetersPerSecond, joystickSpeed.vyMetersPerSecond);
+            var boy = joy.div(DriveConstants.maxDriveSpeedMetersPerSec);
+            var magnitude = dotProduct(targetRelRobotNormalized, boy);
+            var finalTrans = targetRelRobotNormalized.times(DriveConstants.maxDriveSpeedMetersPerSec * magnitude);
+            return new ChassisSpeeds(finalTrans.getX(), finalTrans.getY(), 0);
+        }).orElseGet(joystickFieldRelative);
+    }
+
+    public LazyOptional<Translation2d> targetLocation() {
+        return () -> optTarget.map((target) -> target.fieldPos);
     }
 
     private static double dotProduct(Translation2d a, Translation2d b) {
