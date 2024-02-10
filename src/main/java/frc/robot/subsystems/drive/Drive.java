@@ -8,6 +8,8 @@
 package frc.robot.subsystems.drive;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -37,6 +39,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
+import frc.robot.FieldConstants;
 import frc.robot.RobotState;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LoggedTunableNumber;
@@ -565,7 +568,22 @@ public class Drive extends SubsystemBase {
         kMaxAngularAcceleration.get()
     );
 
+    private final Map<Pose2d, String> locationNames = new HashMap<>(Map.of(
+        FieldConstants.ampFront, "amp",
+        FieldConstants.speakerFront, "speaker",
+        FieldConstants.podiumFront, "podium",
+        FieldConstants.sourceFront, "source"
+    ));
+
+    public static String autoDrivePrefix = "AutoDrive";
+
     public Command driveTo(Pose2d pos) {
-        return AutoBuilder.pathfindToPose(pos, pathConstraints, 0, 0);
+        String name = locationNames.entrySet().stream()
+            .filter(e -> e.getKey().equals(pos))
+            .findFirst()
+            .map(Map.Entry::getValue)
+            .orElse(String.format("x %.3f, y %.3f, θ %.3f°", pos.getX(), pos.getY(), pos.getRotation().getDegrees()));
+
+        return AutoBuilder.pathfindToPose(pos, pathConstraints, 0, 0).withName(String.format("%s (%s)", autoDrivePrefix, name));
     }
 }

@@ -202,7 +202,12 @@ public class RobotContainer {
         driveController.a().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.podiumFront)));
         driveController.b().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.sourceFront)));
 
-        new Trigger(() -> driveController.leftStick.magnitude() > 0.1).onTrue(drive.getDefaultCommand());
+        new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
+            .and(() -> {
+                Command currentCommand = drive.getCurrentCommand();
+                return currentCommand != null && currentCommand.getName().startsWith(Drive.autoDrivePrefix);
+            })
+            .onTrue(drive.getDefaultCommand());
     }
 
     private void configureSubsystems() {
