@@ -16,11 +16,12 @@ import frc.robot.util.LazyOptional;
 import frc.robot.util.VirtualSubsystem;
 
 public class AutoIntake extends VirtualSubsystem {
+    private static final double acquireConfidenceThreshold = 1;
+    private static final double detargetConfidenceThreshold = 0.5;
     private final Supplier<List<TrackedNote>> trackedNotes;
 
     private Optional<TrackedNote> optTarget = Optional.empty();
-
-    private static final double confidenceThreshold = 1;
+    private boolean locked = false;
 
     public AutoIntake(Supplier<List<TrackedNote>> trackedNotes, Consumer<TrackedNote> forget) {
         this.trackedNotes = trackedNotes;
@@ -33,13 +34,18 @@ public class AutoIntake extends VirtualSubsystem {
 
     @Override
     public void periodic() {
-        if(optTarget.isEmpty()) {
-            optTarget = trackedNotes.get().stream().filter((target) -> target.confidence >= confidenceThreshold).sorted((a,b) -> (int)Math.signum(a.confidence - b.confidence)).findFirst();
+        if(optTarget.isPresent() && optTarget.get().confidence < detargetConfidenceThreshold) {
+            optTarget = Optional.empty();
         }
+        if(optTarget.isEmpty() || !locked) {
+            optTarget = trackedNotes.get().stream().filter((target) -> target.confidence >= acquireConfidenceThreshold).sorted((a,b) -> (int)Math.signum(a.confidence - b.confidence)).findFirst();
+        }
+        locked = false;
     }
 
     public Supplier<ChassisSpeeds> getTranslationalSpeeds(Supplier<ChassisSpeeds> joystickFieldRelative) {
         return () -> optTarget.map((target) -> {
+            locked = true;
             var robotTrans = RobotState.getInstance().getPose().getTranslation();
             var targetRelRobot = target.fieldPos.minus(robotTrans);
             var targetRelRobotNormalized = targetRelRobot.div(targetRelRobot.getNorm());
@@ -53,7 +59,10 @@ public class AutoIntake extends VirtualSubsystem {
     }
 
     public LazyOptional<Translation2d> targetLocation() {
-        return () -> optTarget.map((target) -> target.fieldPos);
+        return () -> optTarget.map((target) -> {
+            locked = true;
+            return target.fieldPos;
+        });
     }
 
     private static double dotProduct(Translation2d a, Translation2d b) {
