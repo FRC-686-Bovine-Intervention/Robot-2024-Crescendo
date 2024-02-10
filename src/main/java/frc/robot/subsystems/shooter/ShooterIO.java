@@ -11,8 +11,6 @@ import frc.robot.util.loggerUtil.LoggedMotor;
 public interface ShooterIO {
     @AutoLog
     public static class ShooterIOInputs {
-        public boolean notePresent;
-
         public LoggedMotor leftMotor = new LoggedMotor();
         public LoggedMotor rightMotor = new LoggedMotor();
     }

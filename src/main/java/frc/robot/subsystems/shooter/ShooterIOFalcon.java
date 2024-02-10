@@ -9,14 +9,11 @@ import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
-import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.util.LoggedTunableNumber;
 
 public class ShooterIOFalcon implements ShooterIO {
     private final TalonFX leftMotor;
     private final TalonFX rightMotor;
-
-    private final DigitalInput sensor;
 
     private final TalonFXConfiguration motorConfiguration;
 
@@ -36,8 +33,6 @@ public class ShooterIOFalcon implements ShooterIO {
         motorConfiguration.Slot0.GravityType = GravityTypeValue.Elevator_Static;
         
         applyMotorConfig();
-
-        sensor = new DigitalInput(0);
     }
 
     private void applyMotorConfig() {
@@ -69,8 +64,6 @@ public class ShooterIOFalcon implements ShooterIO {
 
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
-        inputs.notePresent = sensor.get();
-
         inputs.leftMotor.updateFrom(leftMotor);
         inputs.rightMotor.updateFrom(rightMotor);
 

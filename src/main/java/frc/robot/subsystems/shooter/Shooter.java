@@ -6,6 +6,8 @@ package frc.robot.subsystems.shooter;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
@@ -19,6 +21,12 @@ public class Shooter extends SubsystemBase {
   private final LoggedTunableNumber maxRPS = new LoggedTunableNumber("Shooter/Max Rotations Per Second", 0);
   private final LoggedTunableNumber spinRPS = new LoggedTunableNumber("Shooter/Spin in Rotations Per Second", 0);
 
+  private static final double smoothingFactor = 0.35;
+  private double smoothedAverageRPS;
+
+  private static final double followUpTime = 0.5;
+  private final Timer followUpTimer = new Timer();
+
   public Shooter(ShooterIO shooterIO) {
     this.shooterIO = shooterIO;
     SmartDashboard.putData("Subsystems/Shooter", this);
@@ -28,6 +36,22 @@ public class Shooter extends SubsystemBase {
   public void periodic() {
     shooterIO.updateInputs(inputs);
     Logger.processInputs("Shooter", inputs);
+    smoothedAverageRPS = (getAverageRPS() * smoothingFactor) + (smoothedAverageRPS * (1-smoothingFactor));
+    if(getCurrentCommand() == null) {
+      followUpTimer.stop();
+      followUpTimer.reset();
+    }
+    if(shot()) {
+      followUpTimer.start();
+    }
+  }
+
+  private double getAverageRPS() {
+    return Units.radiansToRotations((inputs.leftMotor.velocityRadPerSec + inputs.rightMotor.velocityRadPerSec) * 0.5);
+  }
+
+  private boolean shot() {
+    return getAverageRPS() < 0.5 * smoothedAverageRPS;
   }
 
   public Command shoot() {
@@ -43,7 +67,7 @@ public class Shooter extends SubsystemBase {
         }
       },
       (interrupted) -> {},
-      () -> !inputs.notePresent, // detect falling edge and confirm with rps dip from the motors
+      () -> followUpTimer.hasElapsed(followUpTime),
       this
     );
   }

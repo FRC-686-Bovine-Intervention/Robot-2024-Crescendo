@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.VisionConstants.Camera;
@@ -132,7 +133,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOSim(simJoystick.button(1), simJoystick.button(2)));
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
-                shooter = new Shooter(new ShooterIOSim(simJoystick.button(3)));
+                shooter = new Shooter(new ShooterIOSim());
                 noteVision = new NoteVision(new NoteVisionIOSim());
                 autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
@@ -199,8 +200,9 @@ public class RobotContainer {
                         () -> Rotation2d.fromDegrees(0)
                     )
                 )
-            ).alongWith(shooter.shoot())
-            ).withName("AutoAim")
+            )
+            .alongWith(shooter.shoot())
+            .withName("AutoAim")
         );
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
             new DriveWithCustomFlick(
