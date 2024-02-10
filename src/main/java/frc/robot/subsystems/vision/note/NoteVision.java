@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -27,6 +28,7 @@ public class NoteVision extends VirtualSubsystem {
 
     private static final LoggedTunableNumber updateDistanceThreshold = new LoggedTunableNumber("Vision/updateDistanceThreshold", 5);
     private static final LoggedTunableNumber posUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.8);
+    private static final LoggedTunableNumber confUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.5);
     public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
     private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/confidenceDecayPerSecond", 1);
     private static final LoggedTunableNumber FOVYawThreshold = new LoggedTunableNumber("Vision/FOVYawThreshold", 0.5);     
@@ -58,6 +60,7 @@ public class NoteVision extends VirtualSubsystem {
         while(!connections.isEmpty()) {
             var confirmedConnection = connections.get(0);
             confirmedConnection.memory.updatePosWithFiltering(confirmedConnection.photonFrameTarget);
+            confirmedConnection.memory.updateConfidence();
             unusedMemories.remove(confirmedConnection.memory);
             unusedTargets.remove(confirmedConnection.photonFrameTarget);
             connections.removeIf((connection) -> 
@@ -103,7 +106,11 @@ public class NoteVision extends VirtualSubsystem {
 
         public TrackedNote(Translation2d fieldPos, double confidence) {
             this.fieldPos = fieldPos;
-            this.confidence = confidence;
+            this.confidence = confidence * confUpdatingFilteringFactor.get();
+        }
+
+        public void updateConfidence() {
+            confidence += confidence * MathUtil.clamp(1 - confUpdatingFilteringFactor.get(), 0, 1); 
         }
 
         public void updatePosWithFiltering(TrackedNote newNote) {
