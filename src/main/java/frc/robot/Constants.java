@@ -47,11 +47,11 @@ public final class Constants {
         public static final int frontRightDriveMotorID  = 21;
         public static final int frontRightTurnMotorID   = 22;
         // | Back Left
-        public static final int backLeftDriveMotorID  = 41;
-        public static final int backLeftTurnMotorID   = 42;
+        public static final int backLeftDriveMotorID  = 31;
+        public static final int backLeftTurnMotorID   = 32;
         // | Back Right
-        public static final int backRightDriveMotorID  = 31;
-        public static final int backRightTurnMotorID   = 32;
+        public static final int backRightDriveMotorID  = 41;
+        public static final int backRightTurnMotorID   = 42;
 
         // Intake
         public static final int intakeBeltMotorID   = 51;
@@ -113,7 +113,7 @@ public final class Constants {
 
         public static final GearRatio driveWheelGearRatio = GearRatio.start(14).drive(22).driven(15).drive(45);
         public static final GearRatio turnWheelGearRatio = GearRatio.start(15).drive(32).driven(10).drive(60);
-        public static final double driveWheelGearReduction = 1.0 / ((14.0/22.0)*(15.0/45.0));
+        public static final double driveWheelGearReduction = 1.0 / (1.0/4.0);
         public static final double turnWheelGearReduction = 1.0 / ((15.0/32.0)*(10.0/60.0));
 
         public static final double[] driveRealKps = {0.7, 0.4, 0.7, 0.7};
@@ -124,7 +124,7 @@ public final class Constants {
         public static final double driveSnapKd = 0;
 
 
-        public static final double maxDriveSpeedMetersPerSec = 4;
+        public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(trackWidthXMeters/2, trackWidthYMeters/2);
         /**full speed in 0.25 sec*/
@@ -143,7 +143,7 @@ public final class Constants {
         public static final double poseMoveRotationMaxVel = Math.PI;
         public static final double poseMoveRotationMaxAccel = Math.PI;
 
-        public static final double headingKp = 0.3;
+        public static final double headingKp = 0.2;
         public static final double headingKi = 0;
         public static final double headingKd = 0;
         public static final double headingTolerance = Degrees.of(1).in(Radians);

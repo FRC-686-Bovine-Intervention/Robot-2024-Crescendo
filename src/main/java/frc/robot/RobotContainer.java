@@ -104,7 +104,7 @@ public class RobotContainer {
                 // kicker = new Kicker(new KickerIONeo550());
                 // shooter = new Shooter(new ShooterIOFalcon());
                 pivot = new Pivot(new PivotIOSim());
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision/* .withRobotToIntermediate(pivot::getRobotToPivot) */));
+                noteVision = new NoteVision(new NoteVisionIOSim());//new NoteVisionIOPhotonVision(Camera.NoteVision/* .withRobotToIntermediate(pivot::getRobotToPivot) */));
                 // drive = new Drive(
                 //     new GyroIO() {},
                 //     new ModuleIOSim(),
@@ -177,7 +177,7 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
+        driveController.a()/* .and(() -> !(intake.hasNote() || kicker.hasNote())) */.whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake());
         driveController.povUp().whileTrue(pivot.movePivotManually(1));
         driveController.povDown().whileTrue(pivot.movePivotManually(-1));
@@ -201,7 +201,7 @@ public class RobotContainer {
                     )
                 )
             )
-            .alongWith(shooter.shoot())
+            // .alongWith(shooter.shoot())
             .withName("AutoAim")
         );
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
