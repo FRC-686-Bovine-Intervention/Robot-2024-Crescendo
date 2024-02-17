@@ -34,7 +34,7 @@ public class Pivot extends SubsystemBase {
   private final LoggedTunableNumber kD = new LoggedTunableNumber("Pivot/PID/kD", 0);
   private final LoggedTunableNumber kV = new LoggedTunableNumber("Pivot/PID/kV", 0);
   private final LoggedTunableNumber kA = new LoggedTunableNumber("Pivot/PID/kA", 0);
-  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 0);
+  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 5);
 
   private static final Translation3d robotToPivotTranslation = 
     new Translation3d(

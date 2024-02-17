@@ -18,10 +18,10 @@ public class Shooter extends SubsystemBase {
   private final ShooterIO shooterIO;
   private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
-  private final LoggedTunableNumber maxRPS = new LoggedTunableNumber("Shooter/Max Rotations Per Second", 0);
+  private final LoggedTunableNumber maxRPS = new LoggedTunableNumber("Shooter/Max Rotations Per Second", 30);
   private final LoggedTunableNumber spinRPS = new LoggedTunableNumber("Shooter/Spin in Rotations Per Second", 0);
 
-  private static final double smoothingFactor = 0.35;
+  private static final double smoothingFactor = 0.15;
   private double smoothedAverageRPS;
 
   private static final double followUpTime = 0.5;
@@ -44,6 +44,10 @@ public class Shooter extends SubsystemBase {
     if(shot()) {
       followUpTimer.start();
     }
+    Logger.recordOutput("Shooter/Average RPS", getAverageRPS());
+    Logger.recordOutput("Shooter/Smoothed RPS", smoothedAverageRPS);
+    Logger.recordOutput("Shooter/Timer", followUpTimer.get());
+    Logger.recordOutput("Shooter/Shot", shot());
   }
 
   private double getAverageRPS() {
@@ -51,7 +55,7 @@ public class Shooter extends SubsystemBase {
   }
 
   private boolean shot() {
-    return getAverageRPS() < 0.5 * smoothedAverageRPS;
+    return getAverageRPS() < smoothedAverageRPS - 4;
   }
 
   public Command shoot() {
@@ -66,7 +70,10 @@ public class Shooter extends SubsystemBase {
           shooterIO.setRightVelocity(maxRPS.get());
         }
       },
-      (interrupted) -> {},
+      (interrupted) -> {
+        shooterIO.setLeftVelocity(0);
+        shooterIO.setRightVelocity(0);
+      },
       () -> followUpTimer.hasElapsed(followUpTime),
       this
     );

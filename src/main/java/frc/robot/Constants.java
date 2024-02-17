@@ -41,21 +41,33 @@ public final class Constants {
         // Drive
         public static final String driveCanBusName = "rio";
         // | Front Left
-        public static final int frontLeftDriveMotorID  = 11;
-        public static final int frontLeftTurnMotorID   = 12;
+        public static final int frontLeftDriveMotorID  = 1;
+        public static final int frontLeftTurnMotorID   = 1;
         // | Front Right
-        public static final int frontRightDriveMotorID  = 21;
-        public static final int frontRightTurnMotorID   = 22;
+        public static final int frontRightDriveMotorID  = 2;
+        public static final int frontRightTurnMotorID   = 2;
         // | Back Left
-        public static final int backLeftDriveMotorID  = 31;
-        public static final int backLeftTurnMotorID   = 32;
+        public static final int backLeftDriveMotorID  = 3;
+        public static final int backLeftTurnMotorID   = 3;
         // | Back Right
-        public static final int backRightDriveMotorID  = 41;
-        public static final int backRightTurnMotorID   = 42;
+        public static final int backRightDriveMotorID  = 4;
+        public static final int backRightTurnMotorID   = 4;
 
         // Intake
-        public static final int intakeBeltMotorID   = 51;
-        public static final int intakeRollerMotorID = 52;
+        public static final int intakeBeltMotorID   = 5;
+        public static final int intakeRollerMotorID = 5;
+
+        // Pivot
+        public static final int pivotMotorID = 6;
+        public static final int pivotEncoderID = 6;
+
+        // Kicker
+        public static final int kickerLeftID = 7;
+        public static final int kickerRightID = 8;
+
+        // Shooter
+        public static final int shooterLeftID = 7;
+        public static final int shooterRightID = 8;
 
         // Misc
         public static final int pigeonCanID = 0;
@@ -66,8 +78,8 @@ public final class Constants {
 
     public static final class DIOPorts {
         // HID
-        public static final int brakeSwitchPort = 1;
-        public static final int ledSwitchPort = 2;
+        public static final int brakeSwitchPort = 9;
+        public static final int ledSwitchPort = 8;
 
         // Intake
         public static final int intakeBottomSensorPort = 0;
@@ -169,18 +181,18 @@ public final class Constants {
             NoteVision(
                 "NoteVisionCam",
                 // Intake Transform
-                new Transform3d(
-                    new Translation3d(
-                        Centimeters.of(-73.5/2),
-                        Centimeters.of(20),
-                        Centimeters.of(24)
-                    ),
-                    new Rotation3d(
-                        0,
-                        0,
-                        Math.PI
-                    )
-                )
+                // new Transform3d(
+                //     new Translation3d(
+                //         Centimeters.of(-73.5/2),
+                //         Centimeters.of(20),
+                //         Centimeters.of(24)
+                //     ),
+                //     new Rotation3d(
+                //         0,
+                //         0,
+                //         Math.PI
+                //     )
+                // )
                 // Backwards Pivot Transform
                 // new Transform3d(
                 //     new Translation3d(
@@ -195,18 +207,18 @@ public final class Constants {
                 //     )
                 // )
                 // CAD Transform
-                // new Transform3d(
-                //     new Translation3d(
-                //         Inches.of(-18.647965),
-                //         Inches.of(0),
-                //         Inches.of(-1.756603)
-                //     ),
-                //     new Rotation3d(
-                //         0,
-                //         0,
-                //         Math.PI
-                //     )
-                // )
+                new Transform3d(
+                    new Translation3d(
+                        Inches.of(-18.647965),
+                        Inches.of(0),
+                        Inches.of(-1.756603)
+                    ),
+                    new Rotation3d(
+                        0,
+                        0,
+                        Math.PI
+                    )
+                )
             ),
             ;
             public final String hardwareName;

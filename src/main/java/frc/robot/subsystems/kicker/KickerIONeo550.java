@@ -5,13 +5,15 @@
 package frc.robot.subsystems.kicker;
 
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DIOPorts;
 
 public class KickerIONeo550 implements KickerIO {
-    private final CANSparkMax leftMotor = null;
-    private final CANSparkMax rightMotor = null;
+    private final CANSparkMax leftMotor = new CANSparkMax(CANDevices.kickerLeftID, MotorType.kBrushless);
+    private final CANSparkMax rightMotor = new CANSparkMax(CANDevices.kickerRightID, MotorType.kBrushless);
 
     private final DigitalInput sensor = new DigitalInput(DIOPorts.kickerSensorPort);
 
@@ -21,7 +23,7 @@ public class KickerIONeo550 implements KickerIO {
 
     @Override
     public void updateInputs(KickerIOInputs inputs) {
-        inputs.notePresent = sensor.get();
+        inputs.notePresent = !sensor.get();
 
         inputs.leftMotor.updateFrom(leftMotor);
         inputs.rightMotor.updateFrom(rightMotor);

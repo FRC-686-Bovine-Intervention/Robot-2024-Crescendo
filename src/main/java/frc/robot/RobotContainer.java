@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
@@ -42,13 +43,16 @@ import frc.robot.subsystems.intake.IntakeIOFalcon550;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.kicker.KickerIO;
+import frc.robot.subsystems.kicker.KickerIONeo550;
 import frc.robot.subsystems.kicker.KickerIOSim;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.pivot.PivotIO;
+import frc.robot.subsystems.pivot.PivotIOFalcon;
 import frc.robot.subsystems.pivot.PivotIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
@@ -100,11 +104,10 @@ public class RobotContainer {
                     new ModuleIOFalcon550(DriveModulePosition.BACK_RIGHT)
                 );
                 intake = new Intake(new IntakeIOFalcon550());
-                // pivot = new Pivot(new PivotIOFalcon());
-                // kicker = new Kicker(new KickerIONeo550());
-                // shooter = new Shooter(new ShooterIOFalcon());
-                pivot = new Pivot(new PivotIOSim());
-                noteVision = new NoteVision(new NoteVisionIOSim());//new NoteVisionIOPhotonVision(Camera.NoteVision/* .withRobotToIntermediate(pivot::getRobotToPivot) */));
+                kicker = new Kicker(new KickerIONeo550());
+                shooter = new Shooter(new ShooterIOFalcon());
+                pivot = new Pivot(new PivotIOFalcon());
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
                 // drive = new Drive(
                 //     new GyroIO() {},
                 //     new ModuleIOSim(),
@@ -112,11 +115,7 @@ public class RobotContainer {
                 //     new ModuleIOSim(),
                 //     new ModuleIOSim()
                 // );
-                // intake = null;
                 autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
-                kicker = new Kicker(new KickerIOSim(driveController.povLeft().negate()));
-                shooter = null;
-                // noteVision = null;
                 ledSystem = null;
                 // ledSystem = new Leds(
                 //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
@@ -220,6 +219,8 @@ public class RobotContainer {
             .onlyWhile(() -> !intake.hasNote())
             .withName("AutoIntake")
         );
+        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shoot());
+        driveController.x().whileTrue(kicker.kick());
 
         // driveController.x().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.speakerFront)));
         // driveController.y().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.ampFront)));
@@ -281,8 +282,7 @@ public class RobotContainer {
 
         intake.setDefaultCommand(intake.doNothing());
 
-        // intake.setDefaultCommand(intake.doNothing());
-        // new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        new Trigger(pivot::readyToFeed).and(intake::noteReady).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
     private void configureAutos() {
