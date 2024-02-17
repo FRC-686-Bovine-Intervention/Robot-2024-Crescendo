@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
@@ -207,15 +208,15 @@ public class RobotContainer {
 
     private void configureButtonBindings() {
         driveController.a()/* .and(() -> !(intake.hasNote() || kicker.hasNote())) */.whileTrue(intake.intake(drive::getChassisSpeeds));
-        driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake().alongWith(kicker.outtake()));
-        driveController.povUp().whileTrue(pivot.movePivotManually(1));
-        driveController.povDown().whileTrue(pivot.movePivotManually(-1));
+        driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake().alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
+        // driveController.povUp().whileTrue(pivot.movePivotManually(1));
+        // driveController.povDown().whileTrue(pivot.movePivotManually(-1));
         driveController.povLeft().onTrue(pivot.gotoZero());
-        driveController.povRight().onTrue(pivot.gotoAmp());
+        driveController.povRight().onTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
         driveController.rightBumper().toggleOnTrue(
             new FieldOrientedDrive(
                 drive,
-                FieldOrientedDrive.joystickControlledFieldRelative(
+                FieldOrientedDrive.joystickSpectatorToFieldRelative(
                     driveJoystick,
                     driveController.leftBumper()
                 ),
@@ -239,7 +240,7 @@ public class RobotContainer {
             new FieldOrientedDrive(
                 drive,
                 autoIntake.getTranslationalSpeeds(
-                    FieldOrientedDrive.joystickControlledFieldRelative(
+                    FieldOrientedDrive.joystickSpectatorToFieldRelative(
                         driveJoystick,
                         driveController.leftBumper()
                     )
@@ -273,7 +274,7 @@ public class RobotContainer {
         drive.setDefaultCommand(
             new FieldOrientedDrive(
                 drive,
-                FieldOrientedDrive.joystickControlledFieldRelative(
+                FieldOrientedDrive.joystickSpectatorToFieldRelative(
                     driveJoystick,
                     driveController.leftBumper()
                 ),

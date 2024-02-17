@@ -6,6 +6,8 @@ package frc.robot.subsystems.pivot;
 
 import static edu.wpi.first.units.Units.Inches;
 
+import java.util.function.BooleanSupplier;
+
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
@@ -22,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
+import frc.robot.Constants;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Pivot extends SubsystemBase {
@@ -139,6 +142,26 @@ public class Pivot extends SubsystemBase {
       pivotPID,
       () -> inputs.pivotEncoder.positionRad,
       POS_ZERO,
+      this::pidCalc,
+      this
+    ).withName("Go to Zero");
+  }
+
+  private static final LoggedTunableNumber variableRate = new LoggedTunableNumber("Pivot/variableRate", 5);
+  private double variable = 0;
+  public Command gotoVariable(BooleanSupplier decrease, BooleanSupplier increase) {
+    return new ProfiledPIDCommand(
+      pivotPID,
+      () -> inputs.pivotEncoder.positionRad,
+      () -> {
+        if(decrease.getAsBoolean()) {
+          variable -= Units.degreesToRadians(variableRate.get()) * Constants.dtSeconds;
+        }
+        if(increase.getAsBoolean()) {
+          variable += Units.degreesToRadians(variableRate.get()) * Constants.dtSeconds;
+        }
+        return variable;
+      },
       this::pidCalc,
       this
     ).withName("Go to Zero");
