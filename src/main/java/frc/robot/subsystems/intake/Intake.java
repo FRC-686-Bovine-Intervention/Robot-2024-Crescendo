@@ -20,8 +20,10 @@ public class Intake extends SubsystemBase {
   private final IntakeIO intakeIO;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
 
-  private final LoggedTunableNumber intakeVoltage = new LoggedTunableNumber("Intake/Intake Voltage", 6);
-  private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Belt Voltage", 6);
+  private final LoggedTunableNumber intakingRollerVoltage = new LoggedTunableNumber("Intake/Intaking/Roller Voltage", 6);
+  private final LoggedTunableNumber intakingBeltVoltage = new LoggedTunableNumber("Intake/Intaking/Belt Voltage", 6);
+  private final LoggedTunableNumber feedingIntakeVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 3);
+  private final LoggedTunableNumber feedingBeltVoltage = new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 3);
   private final LoggedTunableNumber reverseSpeedThresold = new LoggedTunableNumber("Intake/Reverse Speed Threshold", 0.1);
 
   private boolean intakeReversed;
@@ -48,13 +50,18 @@ public class Intake extends SubsystemBase {
   }
 
   private void startIntake() {
-    intakeIO.setBeltVoltage(beltVoltage.get());
-    intakeIO.setRollerVoltage(intakeVoltage.get() * (intakeReversed ? -1 : 1));
+    intakeIO.setBeltVoltage(intakingBeltVoltage.get());
+    intakeIO.setRollerVoltage(intakingRollerVoltage.get() * (intakeReversed ? -1 : 1));
+  }
+
+  private void startFeed() {
+    intakeIO.setBeltVoltage(feedingBeltVoltage.get());
+    intakeIO.setRollerVoltage(feedingBeltVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
   private void startOuttake() {
-    intakeIO.setBeltVoltage(-beltVoltage.get());
-    intakeIO.setRollerVoltage(-intakeVoltage.get() * (intakeReversed ? -1 : 1));
+    intakeIO.setBeltVoltage(-intakingBeltVoltage.get());
+    intakeIO.setRollerVoltage(-intakingRollerVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
   private void stopIntake() {
@@ -84,7 +91,7 @@ public class Intake extends SubsystemBase {
     return new FunctionalCommand(
       () -> {},
       () -> {
-        startIntake();
+        startFeed();
       },
       (interrupted) -> {},
       () -> !inputs.noteAtTop,

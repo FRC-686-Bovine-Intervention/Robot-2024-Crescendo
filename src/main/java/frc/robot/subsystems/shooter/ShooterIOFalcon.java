@@ -8,19 +8,19 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 
-import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.Constants.CANDevices;
 import frc.robot.util.LoggedTunableNumber;
 
 public class ShooterIOFalcon implements ShooterIO {
-    private final TalonFX leftMotor;
-    private final TalonFX rightMotor;
+    private final TalonFX leftMotor = new TalonFX(CANDevices.shooterLeftID);
+    private final TalonFX rightMotor = new TalonFX(CANDevices.shooterRightID);
 
-    private final DigitalInput sensor;
+    private final TalonFXConfiguration leftConfiguration = new TalonFXConfiguration();
+    private final TalonFXConfiguration rightConfiguration = new TalonFXConfiguration();
 
-    private final TalonFXConfiguration motorConfiguration;
-
-    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0);
+    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0.03);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Shooter/PID/kI", 0);
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Shooter/PID/kD", 0);
     private final LoggedTunableNumber kV = new LoggedTunableNumber("Shooter/PID/kV", 0);
@@ -29,39 +29,44 @@ public class ShooterIOFalcon implements ShooterIO {
     private final LoggedTunableNumber kS = new LoggedTunableNumber("Shooter/PID/kS", 0);
 
     public ShooterIOFalcon() {
-        leftMotor = null;
-        rightMotor = null;
-
-        motorConfiguration = new TalonFXConfiguration();
-        motorConfiguration.Slot0.GravityType = GravityTypeValue.Elevator_Static;
-        
+        leftConfiguration.Slot0.GravityType = GravityTypeValue.Elevator_Static;
+        rightConfiguration.Slot0.GravityType = GravityTypeValue.Elevator_Static;
+        leftConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        rightConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        leftConfiguration.ClosedLoopRamps.DutyCycleClosedLoopRampPeriod = 1;
+        rightConfiguration.ClosedLoopRamps.DutyCycleClosedLoopRampPeriod = 1;
         applyMotorConfig();
-
-        sensor = new DigitalInput(0);
     }
 
     private void applyMotorConfig() {
-        leftMotor.getConfigurator().apply(motorConfiguration);
-        rightMotor.getConfigurator().apply(motorConfiguration);
+        leftMotor.getConfigurator().apply(leftConfiguration);
+        rightMotor.getConfigurator().apply(rightConfiguration);
     }
 
     private void updateTunables() {
         if(
-            kP.hasChanged(hashCode()) ||
-            kI.hasChanged(hashCode()) ||
-            kD.hasChanged(hashCode()) ||
-            kV.hasChanged(hashCode()) ||
-            kA.hasChanged(hashCode()) ||
-            kG.hasChanged(hashCode()) ||
+            kP.hasChanged(hashCode()) |
+            kI.hasChanged(hashCode()) |
+            kD.hasChanged(hashCode()) |
+            kV.hasChanged(hashCode()) |
+            kA.hasChanged(hashCode()) |
+            kG.hasChanged(hashCode()) |
             kS.hasChanged(hashCode())
         ) {
-            motorConfiguration.Slot0.kP = kP.get();
-            motorConfiguration.Slot0.kI = kI.get();
-            motorConfiguration.Slot0.kD = kD.get();
-            motorConfiguration.Slot0.kV = kV.get();
-            motorConfiguration.Slot0.kA = kA.get();
-            motorConfiguration.Slot0.kG = kG.get();
-            motorConfiguration.Slot0.kS = kS.get();
+            leftConfiguration.Slot0.kP = kP.get();
+            leftConfiguration.Slot0.kI = kI.get();
+            leftConfiguration.Slot0.kD = kD.get();
+            leftConfiguration.Slot0.kV = kV.get();
+            leftConfiguration.Slot0.kA = kA.get();
+            leftConfiguration.Slot0.kG = kG.get();
+            leftConfiguration.Slot0.kS = kS.get();
+            rightConfiguration.Slot0.kP = kP.get();
+            rightConfiguration.Slot0.kI = kI.get();
+            rightConfiguration.Slot0.kD = kD.get();
+            rightConfiguration.Slot0.kV = kV.get();
+            rightConfiguration.Slot0.kA = kA.get();
+            rightConfiguration.Slot0.kG = kG.get();
+            rightConfiguration.Slot0.kS = kS.get();
 
             applyMotorConfig();
         }
@@ -69,21 +74,19 @@ public class ShooterIOFalcon implements ShooterIO {
 
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
-        inputs.notePresent = sensor.get();
-
         inputs.leftMotor.updateFrom(leftMotor);
         inputs.rightMotor.updateFrom(rightMotor);
 
         updateTunables();
     }
 
-    private final boolean kEnableFOC = true;
+    private final boolean kEnableFOC = false;
     private final double kAcceleration = 1;
     private final double kFeedForward = 0;
     private final int kPIDSlot = 0;
-    private final boolean kOverrideBrakeDurNeutral = true;
-    private final boolean kLimitForwardMotion = true;
-    private final boolean kLimitReverseMotion = true;
+    private final boolean kOverrideBrakeDurNeutral = false;
+    private final boolean kLimitForwardMotion = false;
+    private final boolean kLimitReverseMotion = false;
 
     private final VelocityDutyCycle request = new VelocityDutyCycle(
         0,

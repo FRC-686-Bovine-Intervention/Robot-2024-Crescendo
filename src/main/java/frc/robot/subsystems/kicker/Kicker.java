@@ -16,7 +16,7 @@ public class Kicker extends SubsystemBase {
   private final KickerIO kickerIO;
   private final KickerIOInputsAutoLogged inputs = new KickerIOInputsAutoLogged();
 
-  private final LoggedTunableNumber kickerVolts = new LoggedTunableNumber("Kicker/Kicker Voltage", 2);
+  private final LoggedTunableNumber kickerVolts = new LoggedTunableNumber("Kicker/Kicker Voltage", 3);
 
   public Kicker(KickerIO kickerIO) {
     this.kickerIO = kickerIO;
@@ -52,7 +52,7 @@ public class Kicker extends SubsystemBase {
       (interrupted) -> {
         kickerIO.setKickerVoltage(0);
       },
-      () -> !inputs.notePresent,
+      () -> false,//!inputs.notePresent,
       this
     ).withName("Kick");
   }

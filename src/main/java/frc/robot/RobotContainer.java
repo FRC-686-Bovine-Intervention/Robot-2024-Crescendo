@@ -5,6 +5,7 @@
 package frc.robot;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -14,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
@@ -32,7 +34,6 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.commands.AutoAim;
 import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
@@ -42,13 +43,16 @@ import frc.robot.subsystems.intake.IntakeIOFalcon550;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.kicker.KickerIO;
+import frc.robot.subsystems.kicker.KickerIONeo550;
 import frc.robot.subsystems.kicker.KickerIOSim;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.pivot.PivotIO;
+import frc.robot.subsystems.pivot.PivotIOFalcon;
 import frc.robot.subsystems.pivot.PivotIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
@@ -56,6 +60,7 @@ import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.LazyOptional;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.controllers.XboxController;
@@ -65,11 +70,14 @@ public class RobotContainer {
     private final Drive drive;
     private final Intake intake;
     private final Pivot pivot;
+    @SuppressWarnings("unused")
     private final Kicker kicker;
     @SuppressWarnings("unused")
     private final Shooter shooter;
     @SuppressWarnings("unused")
     private final NoteVision noteVision;
+    @SuppressWarnings("unused")
+    private final AutoIntake autoIntake;
     @SuppressWarnings("unused")
     private final Leds ledSystem;
 
@@ -96,11 +104,10 @@ public class RobotContainer {
                     new ModuleIOFalcon550(DriveModulePosition.BACK_RIGHT)
                 );
                 intake = new Intake(new IntakeIOFalcon550());
-                // pivot = new Pivot(new PivotIOFalcon());
-                // kicker = new Kicker(new KickerIONeo550());
-                // shooter = new Shooter(new ShooterIOFalcon());
-                pivot = new Pivot(new PivotIOSim());
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision/* .withRobotToIntermediate(pivot::getRobotToPivot) */));
+                kicker = new Kicker(new KickerIONeo550());
+                shooter = new Shooter(new ShooterIOFalcon());
+                pivot = new Pivot(new PivotIOFalcon());
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
                 // drive = new Drive(
                 //     new GyroIO() {},
                 //     new ModuleIOSim(),
@@ -108,11 +115,7 @@ public class RobotContainer {
                 //     new ModuleIOSim(),
                 //     new ModuleIOSim()
                 // );
-                // intake = null;
-                
-                kicker = new Kicker(new KickerIOSim(driveController.povLeft().negate()));
-                shooter = null;
-                // noteVision = null;
+                autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
                 // ledSystem = new Leds(
                 //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
@@ -129,8 +132,9 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOSim(simJoystick.button(1), simJoystick.button(2)));
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
-                shooter = new Shooter(new ShooterIOSim(simJoystick.button(3)));
+                shooter = new Shooter(new ShooterIOSim());
                 noteVision = new NoteVision(new NoteVisionIOSim());
+                autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
             break;
             default:
@@ -147,6 +151,7 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
                 noteVision = null;
+                autoIntake = null;
                 ledSystem = null;
             break;
         }
@@ -171,36 +176,56 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
+        driveController.a()/* .and(() -> !(intake.hasNote() || kicker.hasNote())) */.whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake());
         driveController.povUp().whileTrue(pivot.movePivotManually(1));
         driveController.povDown().whileTrue(pivot.movePivotManually(-1));
         driveController.rightBumper().toggleOnTrue(
-            new AutoAim(
+            new DriveWithCustomFlick(
                 drive,
-                driveJoystick,
-                driveController.leftBumper(),
-                () -> {
-                    var timeScalar = 1;
-                    var chassisOffset = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds().times(timeScalar), drive.getPose().getRotation());
-                    var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
-                    return AllianceFlipUtil.apply(FieldConstants.speakerCenter).minus(translationalOffset);
-                }
-            ).alongWith(shooter.shoot())
+                DriveWithCustomFlick.joystickControlledFieldRelative(
+                    driveJoystick,
+                    driveController.leftBumper()
+                ),
+                DriveWithCustomFlick.pidControlledHeading(
+                    DriveWithCustomFlick.pointTo(
+                        () -> {
+                            var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
+                            var timeScalar = drive.getPose().getTranslation().getDistance(speakerTrans) / 5;
+                            var chassisOffset = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds().times(timeScalar), drive.getPose().getRotation());
+                            var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
+                            return Optional.of(speakerTrans.minus(translationalOffset));
+                        },
+                        () -> Rotation2d.fromDegrees(0)
+                    )
+                )
+            )
+            // .alongWith(shooter.shoot())
+            .withName("AutoAim")
         );
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
-            new AutoIntake(
-                driveJoystick,
+            new DriveWithCustomFlick(
                 drive,
-                intake,
-                noteVision
+                autoIntake.getTranslationalSpeeds(
+                    DriveWithCustomFlick.joystickControlledFieldRelative(
+                        driveJoystick,
+                        driveController.leftBumper()
+                    )
+                ),
+                DriveWithCustomFlick.pidControlledHeading(
+                    DriveWithCustomFlick.pointTo(autoIntake.targetLocation(), () -> Rotation2d.fromDegrees(180)).orElse(driveCustomFlick)
+                )
             )
+            .onlyWhile(() -> !intake.hasNote())
+            .withName("AutoIntake")
         );
+        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shoot());
+        driveController.x().whileTrue(kicker.kick());
 
-        driveController.x().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.speakerFront)));
-        driveController.y().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.ampFront)));
-        driveController.a().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.podiumFront)));
-        driveController.b().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.sourceFront)));
+        // driveController.x().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.speakerFront)));
+        // driveController.y().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.ampFront)));
+        // driveController.a().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.podiumFront)));
+        // driveController.b().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.sourceFront)));
 
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
             .and(() -> {
@@ -210,52 +235,54 @@ public class RobotContainer {
             .onTrue(drive.getDefaultCommand());
     }
 
+    private final LazyOptional<Rotation2d> driveCustomFlick = 
+        DriveWithCustomFlick.headingFromJoystick(
+            driveController.rightStick.smoothRadialDeadband(0.85),
+            () -> {
+                var climbingMode = driveController.rightBumper().getAsBoolean();
+                if(climbingMode) {
+                    return new Rotation2d[]{
+                        // Center Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+                        // Up Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+                        // Down Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
+                    };
+                }
+                return new Rotation2d[]{
+                    // Cardinals
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
+                    // Subwoofer
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
+                    // Source
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+                };
+            },
+            () -> Rotation2d.fromDegrees(180)
+        );
+
     private void configureSubsystems() {
         drive.setDefaultCommand(
             new DriveWithCustomFlick(
                 drive,
-                driveController.leftStick
-                    .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
-                    .radialSensitivity(0.75)
-                    .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit)
-                ,
-                DriveWithCustomFlick.headingFromJoystick(
-                    driveController.rightStick.smoothRadialDeadband(0.85),
-                    () -> {
-                        var climbingMode = driveController.rightBumper().getAsBoolean();
-                        if(climbingMode) {
-                            return new Rotation2d[]{
-                                // Center Stage
-                                Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-                                // Up Stage
-                                Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-                                // Down Stage
-                                Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
-                            };
-                        }
-                        return new Rotation2d[]{
-                            // Cardinals
-                            Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
-                            Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
-                            Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-                            Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
-                            // Subwoofer
-                            Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
-                            Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
-                            // Source
-                            Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-                        };
-                    },
-                    () -> Rotation2d.fromDegrees(180)
+                DriveWithCustomFlick.joystickControlledFieldRelative(
+                    driveJoystick,
+                    driveController.leftBumper()
                 ),
-                driveController.leftBumper()
+                DriveWithCustomFlick.pidControlledHeading(
+                    driveCustomFlick
+                )
             )
         );
 
         intake.setDefaultCommand(intake.doNothing());
 
-        // intake.setDefaultCommand(intake.doNothing());
-        // new Trigger(pivot::readyToFeed).and(intake::noteReady).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        new Trigger(pivot::readyToFeed).and(intake::noteReady).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
     private void configureAutos() {

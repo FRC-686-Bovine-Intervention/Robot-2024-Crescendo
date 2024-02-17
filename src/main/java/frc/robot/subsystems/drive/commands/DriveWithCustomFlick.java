@@ -4,36 +4,32 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleBiFunction;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.LazyOptional;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.controllers.Joystick;
 
 public class DriveWithCustomFlick extends Command {
 
 	private final Drive drive;
-    private final Joystick translationalJoystick;
-	private final Supplier<Optional<Rotation2d>> headingSupplier; // rotation
-	private final BooleanSupplier precisionSupplier; // slow-down for precision positioning
+    private final Supplier<ChassisSpeeds> fieldRelativeSupplier;
+	private final ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate;
+	private Optional<Rotation2d> override;
 
-	private Rotation2d desiredHeading;
-	private final double headingKp = 0.3 /* / DriveConstants.maxTurnRateRadiansPerSec */;
-	private final double headingKi = 0;
-	private final double headingKd = 0;
-	private final double headingTolerance = Units.degreesToRadians(1.0);
-	private final PIDController headingPID;
-
-	public static Supplier<Optional<Rotation2d>> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
-		return new Supplier<Optional<Rotation2d>>() {
+	public static LazyOptional<Rotation2d> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
+		return new LazyOptional<Rotation2d>() {
 			private final Timer preciseTurnTimer = new Timer();
 			private final double preciseTurnTimeThreshold = 0.5;
 			@Override
@@ -62,54 +58,64 @@ public class DriveWithCustomFlick extends Command {
 		};
 	}
 
-	public DriveWithCustomFlick(Drive drive, Joystick translationalJoystick, Supplier<Optional<Rotation2d>> headingSupplier, BooleanSupplier precisionSupplier) {
+	public static LazyOptional<Rotation2d> pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
+        return () -> posToPointTo.get().map((pointTo) -> Rotation2d.fromRadians(Math.atan2(
+			pointTo.getY() - RobotState.getInstance().getPose().getY(),
+			pointTo.getX() - RobotState.getInstance().getPose().getX()
+		)).minus(forward.get()));
+    }
+
+	public static ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> pidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier) {
+		return new ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>>() {
+			private final PIDController headingPID = new PIDController(DriveConstants.headingKp, DriveConstants.headingKi, DriveConstants.headingKd);
+			{
+				headingPID.enableContinuousInput(-Math.PI, Math.PI);  // since gyro angle is not limited to [-pi, pi]
+				headingPID.setTolerance(DriveConstants.headingTolerance);
+			}
+			private Rotation2d desiredHeading;
+			@Override
+			public double applyAsDouble(Rotation2d robotHeading, Optional<Rotation2d> override) {
+				override.ifPresent((r) -> desiredHeading = r);
+				headingSupplier.get().ifPresent((r) -> desiredHeading = r);
+				double turnInput = headingPID.calculate(robotHeading.getRadians(), desiredHeading.getRadians());
+				turnInput = headingPID.atSetpoint() ? 0 : turnInput;
+				turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
+				return turnInput * DriveConstants.maxTurnRateRadiansPerSec;
+			}
+		};
+	}
+
+	public static Supplier<ChassisSpeeds> joystickControlledFieldRelative(Joystick translationalJoystick, BooleanSupplier precisionSupplier) {
+		return () -> AllianceFlipUtil.applyFieldRelative(
+			new ChassisSpeeds(
+				translationalJoystick.y().getAsDouble()	 * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1),
+				-translationalJoystick.x().getAsDouble() * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1),
+				0
+			),
+			FieldFlipType.CenterPointFlip
+		);
+	}
+
+	public DriveWithCustomFlick(Drive drive, Supplier<ChassisSpeeds> fieldRelativeSupplier, ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate) {
 		addRequirements(drive);
 		setName("DriveWithCustomFlick");
 		this.drive = drive;
-        this.translationalJoystick = translationalJoystick;
-        this.headingSupplier = headingSupplier;
-		this.precisionSupplier = precisionSupplier;
-
-		headingPID = new PIDController(headingKp, headingKd, headingKi);
-		headingPID.enableContinuousInput(-Math.PI, Math.PI);  // since gyro angle is not limited to [-pi, pi]
-		headingPID.setTolerance(headingTolerance);
+        this.fieldRelativeSupplier = fieldRelativeSupplier;
+        this.headingToTurnRate = headingToTurnRate;
 	}
 
 	@Override
 	public void initialize() {
-		desiredHeading = drive.getPose().getRotation();
+		override = Optional.of(drive.getPose().getRotation());
 	}
 
 	@Override
 	public void execute() {
-		// update desired direction
-		Optional<Rotation2d> optDesiredHeading = headingSupplier.get();
-		if(optDesiredHeading.isPresent()) {
-			desiredHeading = optDesiredHeading.get();
-		}
+		var speeds = fieldRelativeSupplier.get();
+		speeds.omegaRadiansPerSecond = headingToTurnRate.applyAsDouble(drive.getPose().getRotation(), override);
+		override = Optional.empty();
 
-		// PID control of turn
-		double turnInput = headingPID.calculate(drive.getPose().getRotation().getRadians(), desiredHeading.getRadians());
-		turnInput = headingPID.atSetpoint() ? 0 : turnInput;
-		turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
-
-        // Convert to meters/sec and radians/sec
-        double vxMetersPerSecond = translationalJoystick.y().getAsDouble() * drive.getMaxLinearSpeedMetersPerSec();
-        double vyMetersPerSecond = -translationalJoystick.x().getAsDouble() * drive.getMaxLinearSpeedMetersPerSec();
-        double omegaRadiansPerSecond = turnInput * drive.getMaxAngularSpeedRadiansPerSec();
-
-        if(precisionSupplier.getAsBoolean()) {
-            vxMetersPerSecond *= DriveConstants.precisionLinearMultiplier;
-            vyMetersPerSecond *= DriveConstants.precisionLinearMultiplier;
-            omegaRadiansPerSecond *= DriveConstants.precisionTurnMulitiplier;
-        }
-
-		// robot relative controls
-		ChassisSpeeds speeds = new ChassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
-
-		// field relative controls
-		var driveRotation = AllianceFlipUtil.apply(drive.getRotation(), FieldFlipType.CenterPointFlip);
-		speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, driveRotation);
+		speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, drive.getPose().getRotation());
 
 		drive.driveVelocity(speeds);
 	}

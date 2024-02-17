@@ -41,21 +41,33 @@ public final class Constants {
         // Drive
         public static final String driveCanBusName = "rio";
         // | Front Left
-        public static final int frontLeftDriveMotorID  = 11;
-        public static final int frontLeftTurnMotorID   = 12;
+        public static final int frontLeftDriveMotorID  = 1;
+        public static final int frontLeftTurnMotorID   = 1;
         // | Front Right
-        public static final int frontRightDriveMotorID  = 21;
-        public static final int frontRightTurnMotorID   = 22;
+        public static final int frontRightDriveMotorID  = 2;
+        public static final int frontRightTurnMotorID   = 2;
         // | Back Left
-        public static final int backLeftDriveMotorID  = 41;
-        public static final int backLeftTurnMotorID   = 42;
+        public static final int backLeftDriveMotorID  = 3;
+        public static final int backLeftTurnMotorID   = 3;
         // | Back Right
-        public static final int backRightDriveMotorID  = 31;
-        public static final int backRightTurnMotorID   = 32;
+        public static final int backRightDriveMotorID  = 4;
+        public static final int backRightTurnMotorID   = 4;
 
         // Intake
-        public static final int intakeBeltMotorID   = 51;
-        public static final int intakeRollerMotorID = 52;
+        public static final int intakeBeltMotorID   = 5;
+        public static final int intakeRollerMotorID = 5;
+
+        // Pivot
+        public static final int pivotMotorID = 6;
+        public static final int pivotEncoderID = 6;
+
+        // Kicker
+        public static final int kickerLeftID = 7;
+        public static final int kickerRightID = 8;
+
+        // Shooter
+        public static final int shooterLeftID = 7;
+        public static final int shooterRightID = 8;
 
         // Misc
         public static final int pigeonCanID = 0;
@@ -66,8 +78,8 @@ public final class Constants {
 
     public static final class DIOPorts {
         // HID
-        public static final int brakeSwitchPort = 1;
-        public static final int ledSwitchPort = 2;
+        public static final int brakeSwitchPort = 9;
+        public static final int ledSwitchPort = 8;
 
         // Intake
         public static final int intakeBottomSensorPort = 0;
@@ -113,7 +125,7 @@ public final class Constants {
 
         public static final GearRatio driveWheelGearRatio = GearRatio.start(14).drive(22).driven(15).drive(45);
         public static final GearRatio turnWheelGearRatio = GearRatio.start(15).drive(32).driven(10).drive(60);
-        public static final double driveWheelGearReduction = 1.0 / ((14.0/22.0)*(15.0/45.0));
+        public static final double driveWheelGearReduction = 1.0 / (1.0/4.0);
         public static final double turnWheelGearReduction = 1.0 / ((15.0/32.0)*(10.0/60.0));
 
         public static final double[] driveRealKps = {0.7, 0.4, 0.7, 0.7};
@@ -124,7 +136,7 @@ public final class Constants {
         public static final double driveSnapKd = 0;
 
 
-        public static final double maxDriveSpeedMetersPerSec = 4;
+        public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(trackWidthXMeters/2, trackWidthYMeters/2);
         /**full speed in 0.25 sec*/
@@ -133,7 +145,7 @@ public final class Constants {
         public static final double driveMaxJerk = 200.0;
 
         public static final double precisionLinearMultiplier = 0.2;
-        public static final double precisionTurnMulitiplier = 0.2;
+        public static final double precisionTurnMulitiplier = 0;//0.2;
 
         public static final double poseMoveTranslationkP = 1;
         public static final double poseMoveTranslationMaxVel = 3;
@@ -143,6 +155,10 @@ public final class Constants {
         public static final double poseMoveRotationMaxVel = Math.PI;
         public static final double poseMoveRotationMaxAccel = Math.PI;
 
+        public static final double headingKp = 0.2;
+        public static final double headingKi = 0;
+        public static final double headingKd = 0;
+        public static final double headingTolerance = Degrees.of(1).in(Radians);
     }
 
     public static final class VisionConstants {
@@ -165,18 +181,18 @@ public final class Constants {
             NoteVision(
                 "NoteVisionCam",
                 // Intake Transform
-                new Transform3d(
-                    new Translation3d(
-                        Centimeters.of(-73.5/2),
-                        Centimeters.of(20),
-                        Centimeters.of(24)
-                    ),
-                    new Rotation3d(
-                        0,
-                        0,
-                        Math.PI
-                    )
-                )
+                // new Transform3d(
+                //     new Translation3d(
+                //         Centimeters.of(-73.5/2),
+                //         Centimeters.of(20),
+                //         Centimeters.of(24)
+                //     ),
+                //     new Rotation3d(
+                //         0,
+                //         0,
+                //         Math.PI
+                //     )
+                // )
                 // Backwards Pivot Transform
                 // new Transform3d(
                 //     new Translation3d(
@@ -191,18 +207,18 @@ public final class Constants {
                 //     )
                 // )
                 // CAD Transform
-                // new Transform3d(
-                //     new Translation3d(
-                //         Inches.of(-18.647965),
-                //         Inches.of(0),
-                //         Inches.of(-1.756603)
-                //     ),
-                //     new Rotation3d(
-                //         0,
-                //         0,
-                //         Math.PI
-                //     )
-                // )
+                new Transform3d(
+                    new Translation3d(
+                        Inches.of(-18.647965),
+                        Inches.of(0),
+                        Inches.of(-1.756603)
+                    ),
+                    new Rotation3d(
+                        0,
+                        0,
+                        Math.PI
+                    )
+                )
             ),
             ;
             public final String hardwareName;

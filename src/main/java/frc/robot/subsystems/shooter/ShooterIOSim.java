@@ -4,8 +4,6 @@
 
 package frc.robot.subsystems.shooter;
 
-import java.util.function.BooleanSupplier;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -18,8 +16,6 @@ public class ShooterIOSim implements ShooterIO {
     private final FlywheelSim leftMotor = new FlywheelSim(DCMotor.getFalcon500(1), 1, 1);
     private final FlywheelSim rightMotor = new FlywheelSim(DCMotor.getFalcon500(1), 1, 1);
     
-    private final BooleanSupplier notePresent;
-
     private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Shooter/PID/kI", 0);
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Shooter/PID/kD", 0);
@@ -58,14 +54,8 @@ public class ShooterIOSim implements ShooterIO {
         }
     } 
 
-    public ShooterIOSim(BooleanSupplier notePresent) {
-        this.notePresent = notePresent;
-    }
-
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
-        inputs.notePresent = notePresent.getAsBoolean();
-
         inputs.leftMotor.updateFrom(leftMotor, leftAppliedVolts);
         inputs.rightMotor.updateFrom(rightMotor, rightAppliedVolts);
 
