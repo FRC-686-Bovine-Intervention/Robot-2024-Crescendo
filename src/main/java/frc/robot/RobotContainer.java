@@ -34,7 +34,7 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.commands.DriveWithCustomFlick;
+import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.subsystems.intake.Intake;
@@ -161,7 +161,7 @@ public class RobotContainer {
             .radialSensitivity(0.75)
             .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
         
-        driveCustomFlick = DriveWithCustomFlick.headingFromJoystick(
+        driveCustomFlick = FieldOrientedDrive.headingFromJoystick(
             driveController.rightStick.smoothRadialDeadband(0.85),
             () -> {
                 var climbingMode = driveController.rightBumper().getAsBoolean();
@@ -213,14 +213,14 @@ public class RobotContainer {
         driveController.povLeft().onTrue(pivot.gotoZero());
         driveController.povRight().onTrue(pivot.gotoAmp());
         driveController.rightBumper().toggleOnTrue(
-            new DriveWithCustomFlick(
+            new FieldOrientedDrive(
                 drive,
-                DriveWithCustomFlick.joystickControlledFieldRelative(
+                FieldOrientedDrive.joystickControlledFieldRelative(
                     driveJoystick,
                     driveController.leftBumper()
                 ),
-                DriveWithCustomFlick.pidControlledHeading(
-                    DriveWithCustomFlick.pointTo(
+                FieldOrientedDrive.pidControlledHeading(
+                    FieldOrientedDrive.pointTo(
                         () -> {
                             var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
                             var timeScalar = drive.getPose().getTranslation().getDistance(speakerTrans) / 5;
@@ -232,20 +232,20 @@ public class RobotContainer {
                     )
                 )
             )
-            // .alongWith(shooter.shoot())
+            .alongWith(shooter.shoot().asProxy())
             .withName("AutoAim")
         );
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
-            new DriveWithCustomFlick(
+            new FieldOrientedDrive(
                 drive,
                 autoIntake.getTranslationalSpeeds(
-                    DriveWithCustomFlick.joystickControlledFieldRelative(
+                    FieldOrientedDrive.joystickControlledFieldRelative(
                         driveJoystick,
                         driveController.leftBumper()
                     )
                 ),
-                DriveWithCustomFlick.pidControlledHeading(
-                    DriveWithCustomFlick.pointTo(autoIntake.targetLocation(), () -> Rotation2d.fromDegrees(180)).orElse(driveCustomFlick)
+                FieldOrientedDrive.pidControlledHeading(
+                    FieldOrientedDrive.pointTo(autoIntake.targetLocation(), () -> Rotation2d.fromDegrees(180)).orElse(driveCustomFlick)
                 )
             )
             .onlyWhile(() -> !intake.hasNote())
@@ -271,13 +271,13 @@ public class RobotContainer {
 
     private void configureSubsystems() {
         drive.setDefaultCommand(
-            new DriveWithCustomFlick(
+            new FieldOrientedDrive(
                 drive,
-                DriveWithCustomFlick.joystickControlledFieldRelative(
+                FieldOrientedDrive.joystickControlledFieldRelative(
                     driveJoystick,
                     driveController.leftBumper()
                 ),
-                DriveWithCustomFlick.pidControlledHeading(
+                FieldOrientedDrive.pidControlledHeading(
                     driveCustomFlick
                 )
             )

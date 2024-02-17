@@ -21,7 +21,7 @@ import frc.robot.util.LazyOptional;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.controllers.Joystick;
 
-public class DriveWithCustomFlick extends Command {
+public class FieldOrientedDrive extends Command {
 
 	private final Drive drive;
     private final Supplier<ChassisSpeeds> fieldRelativeSupplier;
@@ -96,7 +96,7 @@ public class DriveWithCustomFlick extends Command {
 		);
 	}
 
-	public DriveWithCustomFlick(Drive drive, Supplier<ChassisSpeeds> fieldRelativeSupplier, ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate) {
+	public FieldOrientedDrive(Drive drive, Supplier<ChassisSpeeds> fieldRelativeSupplier, ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate) {
 		addRequirements(drive);
 		setName("DriveWithCustomFlick");
 		this.drive = drive;
