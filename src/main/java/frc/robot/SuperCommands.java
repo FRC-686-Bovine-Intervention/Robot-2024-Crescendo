@@ -10,10 +10,11 @@ import frc.robot.subsystems.kicker.Kicker;
 public class SuperCommands {
     public static Command feedToKicker(Intake intake, Kicker kicker) {
         return 
-            intake.feedToKicker().asProxy()
+            intake.feedToKicker(kicker::hasNote).asProxy()
             .alongWith(kicker.feedIn())
             .withName("Feed Into Kicker")
-            .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
+            // .withInterruptBehavior(InterruptionBehavior.kCancelIncoming)
+            ;
     }
 
     public static Command autoAim(Drive drive) {

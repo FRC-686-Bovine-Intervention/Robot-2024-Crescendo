@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.intake;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -22,8 +23,8 @@ public class Intake extends SubsystemBase {
 
   private final LoggedTunableNumber intakingRollerVoltage = new LoggedTunableNumber("Intake/Intaking/Roller Voltage", 6);
   private final LoggedTunableNumber intakingBeltVoltage = new LoggedTunableNumber("Intake/Intaking/Belt Voltage", 6);
-  private final LoggedTunableNumber feedingIntakeVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 3);
-  private final LoggedTunableNumber feedingBeltVoltage = new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 3);
+  private final LoggedTunableNumber feedingRollerVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 1.5);
+  private final LoggedTunableNumber feedingBeltVoltage = new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 1.5);
   private final LoggedTunableNumber reverseSpeedThresold = new LoggedTunableNumber("Intake/Reverse Speed Threshold", 0.1);
 
   private boolean intakeReversed;
@@ -56,7 +57,7 @@ public class Intake extends SubsystemBase {
 
   private void startFeed() {
     intakeIO.setBeltVoltage(feedingBeltVoltage.get());
-    intakeIO.setRollerVoltage(feedingBeltVoltage.get() * (intakeReversed ? -1 : 1));
+    intakeIO.setRollerVoltage(feedingRollerVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
   private void startOuttake() {
@@ -87,14 +88,14 @@ public class Intake extends SubsystemBase {
     ).withName(IntakeCommand.SECURE_NOTE.name());
   }
 
-  public Command feedToKicker() {
+  public Command feedToKicker(BooleanSupplier kickerSensor) {
     return new FunctionalCommand(
       () -> {},
       () -> {
         startFeed();
       },
       (interrupted) -> {},
-      () -> !inputs.noteAtTop,
+      () -> !inputs.noteAtTop || kickerSensor.getAsBoolean(),
       this
     ).withName(IntakeCommand.FEED_TO_KICKER.name());
   }

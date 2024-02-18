@@ -165,6 +165,18 @@ public final class Constants {
         public static final double headingTolerance = Degrees.of(1).in(Radians);
     }
 
+    public static final class PivotConstants {
+        public static final double pivotMagnetOffset = 0.21337890625;
+        public static final GearRatio motorToMechanismRatio = GearRatio
+            .start(1).drive(5) // Planetary 1
+            .driven(1).drive(5) // Planetary 2
+            .driven(1).drive(4) // Planetary 3
+            .driven(16).drive(36) // Chain
+            ;
+        public static final GearRatio encoderToMechanismRatio = GearRatio.start(1).drive(1);
+        public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.andThen(encoderToMechanismRatio.inverse());
+    }
+
     public static final class VisionConstants {
         public static enum Camera {
             AprilTagVision(

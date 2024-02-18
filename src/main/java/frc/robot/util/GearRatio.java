@@ -21,6 +21,9 @@ public class GearRatio {
     public GearRatio andThen(GearRatio other) {
         return new GearRatio(drivenToDriveRatio * other.drivenToDriveRatio);
     }
+    public GearRatio inverse() {
+        return new GearRatio(driveToDrivenRatio);
+    }
     public double drivenToDrive() {
         return drivenToDriveRatio;
     }

@@ -113,13 +113,6 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOFalcon());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
-                // drive = new Drive(
-                //     new GyroIO() {},
-                //     new ModuleIOSim(),
-                //     new ModuleIOSim(),
-                //     new ModuleIOSim(),
-                //     new ModuleIOSim()
-                // );
                 autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
                 // ledSystem = new Leds(
@@ -167,6 +160,36 @@ public class RobotContainer {
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
             .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
+        
+        driveCustomFlick = DriveWithCustomFlick.headingFromJoystick(
+            driveController.rightStick.smoothRadialDeadband(0.85),
+            () -> {
+                var climbingMode = driveController.rightBumper().getAsBoolean();
+                if(climbingMode) {
+                    return new Rotation2d[]{
+                        // Center Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+                        // Up Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+                        // Down Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
+                    };
+                }
+                return new Rotation2d[]{
+                    // Cardinals
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
+                    // Subwoofer
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
+                    // Source
+                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+                };
+            },
+            () -> (kicker.hasNote() ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180))
+        );
 
         System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
         configureSubsystems();
@@ -187,6 +210,8 @@ public class RobotContainer {
         driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake());
         driveController.povUp().whileTrue(pivot.movePivotManually(1));
         driveController.povDown().whileTrue(pivot.movePivotManually(-1));
+        driveController.povLeft().onTrue(pivot.gotoZero());
+        driveController.povRight().onTrue(pivot.gotoAmp());
         driveController.rightBumper().toggleOnTrue(
             new DriveWithCustomFlick(
                 drive,
@@ -242,36 +267,7 @@ public class RobotContainer {
             .onTrue(drive.getDefaultCommand());
     }
 
-    private final LazyOptional<Rotation2d> driveCustomFlick = 
-        DriveWithCustomFlick.headingFromJoystick(
-            driveController.rightStick.smoothRadialDeadband(0.85),
-            () -> {
-                var climbingMode = driveController.rightBumper().getAsBoolean();
-                if(climbingMode) {
-                    return new Rotation2d[]{
-                        // Center Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-                        // Up Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-                        // Down Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
-                    };
-                }
-                return new Rotation2d[]{
-                    // Cardinals
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
-                    // Subwoofer
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
-                    // Source
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-                };
-            },
-            () -> Rotation2d.fromDegrees(180)
-        );
+    private final LazyOptional<Rotation2d> driveCustomFlick;
 
     private void configureSubsystems() {
         drive.setDefaultCommand(
