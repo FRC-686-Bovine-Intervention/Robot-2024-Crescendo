@@ -57,6 +57,20 @@ public class Kicker extends SubsystemBase {
     ).withName("Kick");
   }
 
+  public Command outtake() {
+    return new FunctionalCommand(
+      () -> {},
+      () -> {
+        kickerIO.setKickerVoltage(-kickerVolts.get());
+      },
+      (interrupted) -> {
+        kickerIO.setKickerVoltage(0);
+      },
+      () -> false,
+      this
+    ).withName("Outtake");
+  }
+
   public boolean hasNote() {
     return inputs.notePresent;
   }

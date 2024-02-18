@@ -207,7 +207,7 @@ public class RobotContainer {
 
     private void configureButtonBindings() {
         driveController.a()/* .and(() -> !(intake.hasNote() || kicker.hasNote())) */.whileTrue(intake.intake(drive::getChassisSpeeds));
-        driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake());
+        driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake().alongWith(kicker.outtake()));
         driveController.povUp().whileTrue(pivot.movePivotManually(1));
         driveController.povDown().whileTrue(pivot.movePivotManually(-1));
         driveController.povLeft().onTrue(pivot.gotoZero());
