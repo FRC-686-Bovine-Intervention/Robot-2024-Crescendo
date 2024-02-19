@@ -11,17 +11,17 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.RobotState;
 import frc.robot.SuperCommands;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
-import frc.robot.commands.AutoIntake;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.AllianceFlipUtil;
 
 public class CenterLineRun extends AutoRoutine {
@@ -41,7 +41,7 @@ public class CenterLineRun extends AutoRoutine {
     private static final String startTemplate = "%s Start";
     private static final String backTemplate = "%s Back";
 
-    public CenterLineRun(Drive drive, Shooter shooter, Pivot pivot, Intake intake, AutoIntake autoIntake) {
+    public CenterLineRun(Drive drive, Shooter shooter, Pivot pivot, Intake intake, NoteVision noteVision) {
         super("Center Line Run",
             MAX_QUESTION_COUNT,
             () -> {
@@ -59,10 +59,10 @@ public class CenterLineRun extends AutoRoutine {
                         followPathConstructor.apply(startToNote),
                         intake.intake(drive::getChassisSpeeds).asProxy().deadlineWith(new FieldOrientedDrive(
                             drive,
-                            autoIntake.getTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
+                            noteVision.getAutoIntakeTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
                             FieldOrientedDrive.pidControlledHeading(
                                 FieldOrientedDrive.pointTo(
-                                    autoIntake.targetLocation(),
+                                    noteVision.autoIntakeTargetLocation(),
                                     () -> Rotation2d.fromDegrees(180)
                                 )
                             )

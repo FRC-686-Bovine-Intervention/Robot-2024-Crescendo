@@ -29,7 +29,6 @@ import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.CenterLineRun;
 import frc.robot.auto.SpikeMarkShots;
-import frc.robot.commands.AutoIntake;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -82,8 +81,6 @@ public class RobotContainer {
     @SuppressWarnings("unused")
     private final ApriltagVision apriltagVision;
     @SuppressWarnings("unused")
-    private final AutoIntake autoIntake;
-    @SuppressWarnings("unused")
     private final Leds ledSystem;
 
     private final AutoSelector autoSelector = new AutoSelector("AutoSelector");
@@ -116,7 +113,6 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOFalcon());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
-                autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
                 // ledSystem = new Leds(
                 //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
@@ -136,7 +132,6 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIOSim());
                 noteVision = new NoteVision(new NoteVisionIOSim());
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
-                autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
             break;
             default:
@@ -154,7 +149,6 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIO() {});
                 noteVision = null;
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
-                autoIntake = null;
                 ledSystem = null;
             break;
         }
@@ -253,9 +247,9 @@ public class RobotContainer {
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
             new FieldOrientedDrive(
                 drive,
-                autoIntake.getTransSpeed(autoIntake.applyDotProduct(joystickTranslational)).orElseGet(joystickTranslational),
+                noteVision.getAutoIntakeTransSpeed(noteVision.applyDotProduct(joystickTranslational)).orElseGet(joystickTranslational),
                 FieldOrientedDrive.pidControlledHeading(
-                    FieldOrientedDrive.pointTo(autoIntake.targetLocation(), () -> Rotation2d.fromDegrees(180)).orElse(driveCustomFlick)
+                    FieldOrientedDrive.pointTo(noteVision.autoIntakeTargetLocation(), () -> Rotation2d.fromDegrees(180)).orElse(driveCustomFlick)
                 )
             )
             .onlyWhile(() -> !intake.hasNote())
@@ -321,8 +315,8 @@ public class RobotContainer {
         //         drive::getCharacterizationVelocity
         //     )
         // ));
-        autoSelector.addRoutine(new CenterLineRun(drive, shooter, pivot, intake, autoIntake));
-        autoSelector.addRoutine(new SpikeMarkShots(drive, shooter, pivot, intake, kicker, autoIntake));
+        autoSelector.addRoutine(new CenterLineRun(drive, shooter, pivot, intake, noteVision));
+        autoSelector.addRoutine(new SpikeMarkShots(drive, shooter, pivot, intake, kicker, noteVision));
     }
 
     /**
