@@ -4,14 +4,20 @@
 
 package frc.robot.subsystems.shooter;
 
+import java.util.function.DoubleSupplier;
+
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.ShooterConstants;
+import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Shooter extends SubsystemBase {
@@ -58,17 +64,12 @@ public class Shooter extends SubsystemBase {
     return getAverageRPS() < smoothedAverageRPS - 4;
   }
 
-  public Command shoot() {
+  private Command shootWith(DoubleSupplier rps) {
     return new FunctionalCommand(
       () -> {},
       () -> {
-        if (spinRPS.get() >= 0) {
-          shooterIO.setLeftVelocity(maxRPS.get());
-          shooterIO.setRightVelocity(maxRPS.get() - spinRPS.get());
-        } else if (spinRPS.get() < 0) {
-          shooterIO.setLeftVelocity(maxRPS.get() + spinRPS.get());
-          shooterIO.setRightVelocity(maxRPS.get());
-        }
+        shooterIO.setLeftVelocity(rps.getAsDouble());
+        shooterIO.setRightVelocity(rps.getAsDouble());
       },
       (interrupted) -> {
         shooterIO.setLeftVelocity(0);
@@ -77,5 +78,27 @@ public class Shooter extends SubsystemBase {
       () -> followUpTimer.hasElapsed(followUpTime),
       this
     );
+  }
+
+  public Command shootWithTunableNumber() {
+    return shootWith(maxRPS::get);
+  }
+
+  public Command shoot() {
+    return shootWith(() -> {
+      int lowerBound = 0;
+      int upperBound = 0;
+      double distanceToSpeaker = FieldConstants.speakerCenter.getDistance(RobotState.getInstance().getPose().getTranslation());
+      for(int i = 0; i < ShooterConstants.distance.length; i++) {
+        upperBound = i;
+        if(distanceToSpeaker < ShooterConstants.distance[i]) {
+          break;
+        }
+        lowerBound = i;
+      }
+      double t = MathUtil.inverseInterpolate(ShooterConstants.distance[lowerBound], ShooterConstants.distance[upperBound], distanceToSpeaker);
+      double rps = MathUtil.interpolate(ShooterConstants.RPS[lowerBound], ShooterConstants.RPS[upperBound], t);
+      return rps;
+    });
   }
 }

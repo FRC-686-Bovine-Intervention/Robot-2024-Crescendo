@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.AutoSelector.AutoRoutine;
@@ -35,9 +36,10 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
 import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
+import frc.robot.subsystems.drive.commands.WheelCalibration;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOFalcon550;
@@ -211,29 +213,33 @@ public class RobotContainer {
         driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake().alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
         // driveController.povUp().whileTrue(pivot.movePivotManually(1));
         // driveController.povDown().whileTrue(pivot.movePivotManually(-1));
+        driveController.leftStickButton().onTrue(new WheelCalibration(drive));
         driveController.povLeft().onTrue(pivot.gotoZero());
         driveController.povRight().onTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
         driveController.rightBumper().toggleOnTrue(
-            new FieldOrientedDrive(
-                drive,
-                FieldOrientedDrive.joystickSpectatorToFieldRelative(
-                    driveJoystick,
-                    driveController.leftBumper()
-                ),
-                FieldOrientedDrive.pidControlledHeading(
-                    FieldOrientedDrive.pointTo(
-                        () -> {
-                            var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
-                            var timeScalar = drive.getPose().getTranslation().getDistance(speakerTrans) / 5;
-                            var chassisOffset = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds().times(timeScalar), drive.getPose().getRotation());
-                            var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
-                            return Optional.of(speakerTrans.minus(translationalOffset));
-                        },
-                        () -> Rotation2d.fromDegrees(0)
+            shooter.shoot().asProxy().deadlineWith(
+                new FieldOrientedDrive(
+                    drive,
+                    FieldOrientedDrive.joystickSpectatorToFieldRelative(
+                        driveJoystick,
+                        driveController.leftBumper()
+                    ),
+                    FieldOrientedDrive.pidControlledHeading(
+                        FieldOrientedDrive.pointTo(
+                            // () -> {
+                            //     var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
+                            //     var timeScalar = drive.getPose().getTranslation().getDistance(speakerTrans) / 5;
+                            //     var chassisOffset = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds().times(timeScalar), drive.getPose().getRotation());
+                            //     var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
+                            //     return Optional.of(speakerTrans.minus(translationalOffset));
+                            // },
+                            () -> Optional.empty(),
+                            () -> Rotation2d.fromDegrees(0)
+                        ).orElse(driveCustomFlick)
                     )
-                )
+                ),
+                pivot.autoAim().asProxy()
             )
-            .alongWith(shooter.shoot().asProxy())
             .withName("AutoAim")
         );
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
@@ -286,6 +292,8 @@ public class RobotContainer {
 
         intake.setDefaultCommand(intake.doNothing());
 
+        pivot.setDefaultCommand(pivot.gotoZero());
+
         new Trigger(pivot::readyToFeed).and(intake::noteReady).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
@@ -318,7 +326,6 @@ public class RobotContainer {
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();
         Camera.logCameraOverrides();
-        Logger.recordOutput("Testbot", new Pose2d());
         Logger.recordOutput("Mechanism2d/Robot Side Profile", robotSideProfile);
     }
 

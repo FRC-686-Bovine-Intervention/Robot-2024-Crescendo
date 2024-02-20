@@ -10,7 +10,9 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.RobotState;
@@ -89,7 +91,7 @@ public class FieldOrientedDrive extends Command {
 		};
 	}
 
-	private static final LoggedTunableNumber spectatorType = new LoggedTunableNumber("Spectator Type", 0);
+	private static final LoggedTunableNumber spectatorType = new LoggedTunableNumber("Spectator Type", 1);
 	private static enum SpectatorType {
 		Comp(new Translation2d(0,-1), new Translation2d(1,0)),
 		Spectator(new Translation2d(1,0), new Translation2d(0,1)),
@@ -107,6 +109,7 @@ public class FieldOrientedDrive extends Command {
 			);
 		}
 		public static SpectatorType getCurrentType() {
+			if(DriverStation.getMatchType() != MatchType.None) return Comp;
 			return SpectatorType.values()[MathUtil.clamp((int)spectatorType.get(), 0, values().length - 1)];
 		}
 	}

@@ -52,7 +52,7 @@ public class Kicker extends SubsystemBase {
       (interrupted) -> {
         kickerIO.setKickerVoltage(0);
       },
-      () -> false,//!inputs.notePresent,
+      () -> false,
       this
     ).withName("Kick");
   }

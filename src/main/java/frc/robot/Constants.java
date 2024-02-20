@@ -14,9 +14,12 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
@@ -125,7 +128,8 @@ public final class Constants {
         public static final double trackWidthXMeters = Inches.of(25.5).in(Meters);
         /**Distance between the left and right wheels*/
         public static final double trackWidthYMeters = Inches.of(25.5).in(Meters);
-        public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters);
+        private static final double correctionVal = 314.0 / 320.55;
+        public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters) * correctionVal;
 
         public static final GearRatio driveWheelGearRatio = GearRatio.start(14).drive(22).driven(15).drive(45);
         public static final GearRatio turnWheelGearRatio = GearRatio.start(15).drive(32).driven(10).drive(60);
@@ -166,7 +170,7 @@ public final class Constants {
     }
 
     public static final class PivotConstants {
-        public static final double pivotMagnetOffset = 0.21337890625;
+        public static final double pivotMagnetOffset = 0.2099609375;//0.21337890625;
         public static final GearRatio motorToMechanismRatio = GearRatio
             .start(1).drive(5) // Planetary 1
             .driven(1).drive(5) // Planetary 2
@@ -175,6 +179,21 @@ public final class Constants {
             ;
         public static final GearRatio encoderToMechanismRatio = GearRatio.start(1).drive(1);
         public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.andThen(encoderToMechanismRatio.inverse());
+    }
+
+    public static final class ShooterConstants {
+        public static final double[] distance = new double[] {
+            FieldConstants.subwooferToSpeakerDist,
+            FieldConstants.podiumToSpeakerDist
+        };
+        public static final double[] RPS = new double[] {
+            90,
+            90
+        };
+        public static final double[] angle = new double[] {
+            Degrees.of(0).in(Radians),
+            Degrees.of(22).in(Radians)
+        };
     }
 
     public static final class VisionConstants {
@@ -287,7 +306,6 @@ public final class Constants {
     }
 
     public static final class AutoConstants {
-
         public static final double maxVel = 3;
         public static final double maxAccel = 3;
 
@@ -316,13 +334,21 @@ public final class Constants {
         public static final double autoRotationKp = 8;
         public static final double autoRotationKi = 0;
         public static final double autoRotationKd = 0;
+    }
 
-        public static final double autoBalanceKp = 0.4;
-        public static final double autoBalanceKi = 0.05;
-        public static final double autoBalanceKd = 0.0;
+    public static final class FieldConstants {
+        public static final double fieldLength = Units.inchesToMeters(648);
+        public static final double fieldWidth =  Units.inchesToMeters(324);
 
-        public static final double initialBalanceSpeed = 1;
+        public static final Translation2d speakerCenter = new Translation2d(0.240581, 5.547755);
 
+        public static final Pose2d ampFront = new Pose2d(new Translation2d(1.83, 7.61), new Rotation2d(Degrees.of(90).in(Radians)));
+        public static final Pose2d speakerFront = new Pose2d(new Translation2d(1.40, 5.55), new Rotation2d(Degrees.of(180).in(Radians)));
+        public static final Pose2d sourceFront = new Pose2d(new Translation2d(15.41, 1.04), new Rotation2d(Degrees.of(-60).in(Radians)));
+        public static final Pose2d podiumFront = new Pose2d(new Translation2d(2.54, 4.12), new Rotation2d(Degrees.of(180).in(Radians)));
+
+        public static final double podiumToSpeakerDist = speakerCenter.getDistance(podiumFront.getTranslation());
+        public static final double subwooferToSpeakerDist = speakerCenter.getDistance(speakerFront.getTranslation());
     }
 
     // Not the robot main function. This is called by Gradle when deploying to
