@@ -166,7 +166,6 @@ public class Pivot extends SubsystemBase {
       int lowerBound = 0;
       int upperBound = 0;
       double distanceToSpeaker = FieldConstants.speakerCenter.getDistance(RobotState.getInstance().getPose().getTranslation());
-      Logger.recordOutput("DEBUG/Distance To Speaker", distanceToSpeaker);
       for(int i = 0; i < ShooterConstants.distance.length; i++) {
         upperBound = i;
         if(distanceToSpeaker < ShooterConstants.distance[i]) {
@@ -176,14 +175,6 @@ public class Pivot extends SubsystemBase {
       }
       double t = MathUtil.inverseInterpolate(ShooterConstants.distance[lowerBound], ShooterConstants.distance[upperBound], distanceToSpeaker);
       double angle = MathUtil.interpolate(ShooterConstants.angle[lowerBound], ShooterConstants.angle[upperBound], t);
-      Logger.recordOutput("DEBUG/Angle", angle);
-      Logger.recordOutput("DEBUG/t", t);
-      Logger.recordOutput("DEBUG/ints/lowerbound", lowerBound);
-      Logger.recordOutput("DEBUG/ints/upperbound", upperBound);
-      Logger.recordOutput("DEBUG/Dist/lowerbound", ShooterConstants.distance[lowerBound]);
-      Logger.recordOutput("DEBUG/Dist/upperbound", ShooterConstants.distance[upperBound]);
-      Logger.recordOutput("DEBUG/Angles/lowerbound", ShooterConstants.angle[lowerBound]);
-      Logger.recordOutput("DEBUG/Angles/upperbound", ShooterConstants.angle[upperBound]);
       return angle;
     }).withName("Auto Aim");
   }

@@ -2,6 +2,7 @@ package frc.robot.subsystems.vision.apriltag;
 
 import java.util.Optional;
 
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
@@ -35,7 +36,7 @@ public class ApriltagCameraIOPhotonVision implements ApriltagCameraIO {
             //     System.out.println(tag.pose.getRotation().toRotation2d());
             // }
 
-            photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, photonCam, cam.getRobotToCam());
+            photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_RIO, photonCam, cam.getRobotToCam());
             photonPoseEstimator.setMultiTagFallbackStrategy(PhotonPoseEstimator.PoseStrategy.LOWEST_AMBIGUITY);
         } catch (Exception e) {
             // The AprilTagFieldLayout failed to load. We won't be able to estimate poses if we don't know
@@ -60,7 +61,9 @@ public class ApriltagCameraIOPhotonVision implements ApriltagCameraIO {
         photonPoseEstimator.setReferencePose(RobotState.getInstance().getPose());
         // System.out.println("[DEBUG ApTagCamIOPhoton] Post-set reference pose");
         // System.out.println("[DEBUG ApTagCamIOPhoton] Pre-estimator update");
-        var optRobotPose = photonPoseEstimator.update();
+        var result = photonCam.getLatestResult();
+        Logger.recordOutput("photonresult", result);
+        var optRobotPose = photonPoseEstimator.update(result);
         // System.out.println("[DEBUG ApTagCamIOPhoton] Post-estimator update");
         
         if (optRobotPose.isPresent()) {
