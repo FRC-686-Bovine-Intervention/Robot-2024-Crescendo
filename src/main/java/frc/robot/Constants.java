@@ -182,6 +182,8 @@ public final class Constants {
     }
 
     public static final class ShooterConstants {
+        public static final double exitVelocity = 5;
+
         public static final double[] distance = new double[] {
             FieldConstants.subwooferToSpeakerDist,
             FieldConstants.podiumToSpeakerDist
@@ -250,7 +252,7 @@ public final class Constants {
                     ),
                     new Rotation3d(
                         0,
-                        0,
+                        Degrees.of(-15).in(Radians),
                         Math.PI
                     )
                 )
@@ -342,10 +344,10 @@ public final class Constants {
 
         public static final Translation2d speakerCenter = new Translation2d(0.240581, 5.547755);
 
-        public static final Pose2d ampFront = new Pose2d(new Translation2d(1.83, 7.61), new Rotation2d(Degrees.of(90).in(Radians)));
-        public static final Pose2d speakerFront = new Pose2d(new Translation2d(1.40, 5.55), new Rotation2d(Degrees.of(180).in(Radians)));
-        public static final Pose2d sourceFront = new Pose2d(new Translation2d(15.41, 1.04), new Rotation2d(Degrees.of(-60).in(Radians)));
-        public static final Pose2d podiumFront = new Pose2d(new Translation2d(2.54, 4.12), new Rotation2d(Degrees.of(180).in(Radians)));
+        public static final Pose2d ampFront = new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(90));
+        public static final Pose2d speakerFront = new Pose2d(new Translation2d(1.40, 5.55), Rotation2d.fromDegrees(180));
+        public static final Pose2d sourceFront = new Pose2d(new Translation2d(15.41, 1.04), Rotation2d.fromDegrees(-60));
+        public static final Pose2d podiumFront = new Pose2d(new Translation2d(2.54, 4.12), Rotation2d.fromDegrees(180));
 
         public static final double podiumToSpeakerDist = speakerCenter.getDistance(podiumFront.getTranslation());
         public static final double subwooferToSpeakerDist = speakerCenter.getDistance(speakerFront.getTranslation());

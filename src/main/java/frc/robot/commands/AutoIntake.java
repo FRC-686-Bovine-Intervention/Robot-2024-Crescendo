@@ -13,6 +13,7 @@ import frc.robot.RobotState;
 import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.vision.note.NoteVision.TrackedNote;
 import frc.robot.util.LazyOptional;
+import frc.robot.util.MathExtraUtil;
 import frc.robot.util.VirtualSubsystem;
 
 public class AutoIntake extends VirtualSubsystem {
@@ -52,7 +53,7 @@ public class AutoIntake extends VirtualSubsystem {
             var joystickSpeed = joystickFieldRelative.get();
             var joy = new Translation2d(joystickSpeed.vxMetersPerSecond, joystickSpeed.vyMetersPerSecond);
             var boy = joy.div(DriveConstants.maxDriveSpeedMetersPerSec);
-            var magnitude = dotProduct(targetRelRobotNormalized, boy);
+            var magnitude = MathExtraUtil.dotProduct(targetRelRobotNormalized, boy);
             var finalTrans = targetRelRobotNormalized.times(DriveConstants.maxDriveSpeedMetersPerSec * magnitude);
             return new ChassisSpeeds(finalTrans.getX(), finalTrans.getY(), 0);
         }).orElseGet(joystickFieldRelative);
@@ -63,9 +64,5 @@ public class AutoIntake extends VirtualSubsystem {
             locked = true;
             return target.fieldPos;
         });
-    }
-
-    private static double dotProduct(Translation2d a, Translation2d b) {
-        return a.getX()*b.getX() + a.getY()*b.getY();
     }
 }

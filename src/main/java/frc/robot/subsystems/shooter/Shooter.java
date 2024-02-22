@@ -5,10 +5,12 @@
 package frc.robot.subsystems.shooter;
 
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -64,7 +66,7 @@ public class Shooter extends SubsystemBase {
     return getAverageRPS() < smoothedAverageRPS - 4;
   }
 
-  private Command shootWith(DoubleSupplier rps) {
+  public Command shootWith(DoubleSupplier rps) {
     return new FunctionalCommand(
       () -> {},
       () -> {
@@ -84,11 +86,11 @@ public class Shooter extends SubsystemBase {
     return shootWith(maxRPS::get);
   }
 
-  public Command shoot() {
+  public Command shoot(Supplier<Translation2d> shootAtPos) {
     return shootWith(() -> {
       int lowerBound = 0;
       int upperBound = 0;
-      double distanceToSpeaker = FieldConstants.speakerCenter.getDistance(RobotState.getInstance().getPose().getTranslation());
+      double distanceToSpeaker = shootAtPos.get().getDistance(RobotState.getInstance().getPose().getTranslation());
       for(int i = 0; i < ShooterConstants.distance.length; i++) {
         upperBound = i;
         if(distanceToSpeaker < ShooterConstants.distance[i]) {

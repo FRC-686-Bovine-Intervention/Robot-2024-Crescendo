@@ -6,11 +6,11 @@ package frc.robot;
 
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -20,12 +20,14 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.AutoSelector.AutoRoutine;
@@ -57,7 +59,6 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
-import frc.robot.subsystems.vision.apriltag.ApriltagCameraIOPhotonVision;
 import frc.robot.subsystems.vision.apriltag.ApriltagVision;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
@@ -66,6 +67,7 @@ import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LazyOptional;
+import frc.robot.util.MathExtraUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.controllers.XboxController;
@@ -115,7 +117,7 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIOFalcon());
                 pivot = new Pivot(new PivotIOFalcon());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
-                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
+                apriltagVision = new ApriltagVision(/* Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new) */);
                 autoIntake = new AutoIntake(noteVision::getTrackedNotes, noteVision::forgetNote);
                 ledSystem = null;
                 // ledSystem = new Leds(
@@ -213,11 +215,24 @@ public class RobotContainer {
         driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake().alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
         // driveController.povUp().whileTrue(pivot.movePivotManually(1));
         // driveController.povDown().whileTrue(pivot.movePivotManually(-1));
-        driveController.leftStickButton().onTrue(new WheelCalibration(drive));
+        driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(FieldConstants.speakerFront))/* new WheelCalibration(drive) */);
         driveController.povLeft().onTrue(pivot.gotoZero());
         driveController.povRight().onTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
+        Supplier<Translation2d> shootAtPos = () -> {
+            var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
+            var chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(drive.getChassisSpeeds(), drive.getPose().getRotation());
+            var robotToSpeaker = speakerTrans.minus(drive.getPose().getTranslation());
+            var robotToSpeakerNorm = robotToSpeaker.div(robotToSpeaker.getNorm());
+            var velocityTowardsSpeaker = MathExtraUtil.dotProduct(robotToSpeakerNorm, new Translation2d(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond));
+            var timeToSpeaker = drive.getPose().getTranslation().getDistance(speakerTrans) / (ShooterConstants.exitVelocity + velocityTowardsSpeaker);
+            var chassisOffset = chassisSpeeds.times(timeToSpeaker);
+            var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
+            var pointTo = speakerTrans.minus(translationalOffset);
+            Logger.recordOutput("Shooter/Shoot At", pointTo);
+            return pointTo;
+        };
         driveController.rightBumper().toggleOnTrue(
-            shooter.shoot().asProxy().deadlineWith(
+            shooter.shoot(shootAtPos).asProxy().deadlineWith(
                 new FieldOrientedDrive(
                     drive,
                     FieldOrientedDrive.joystickSpectatorToFieldRelative(
@@ -226,19 +241,13 @@ public class RobotContainer {
                     ),
                     FieldOrientedDrive.pidControlledHeading(
                         FieldOrientedDrive.pointTo(
-                            // () -> {
-                            //     var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
-                            //     var timeScalar = drive.getPose().getTranslation().getDistance(speakerTrans) / 5;
-                            //     var chassisOffset = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds().times(timeScalar), drive.getPose().getRotation());
-                            //     var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
-                            //     return Optional.of(speakerTrans.minus(translationalOffset));
-                            // },
-                            () -> Optional.empty(),
+                            () -> Optional.of(shootAtPos.get()),
+                            // () -> Optional.empty(),
                             () -> Rotation2d.fromDegrees(0)
                         ).orElse(driveCustomFlick)
                     )
                 ),
-                pivot.autoAim().asProxy()
+                pivot.autoAim(shootAtPos).asProxy()
             )
             .withName("AutoAim")
         );
@@ -258,7 +267,7 @@ public class RobotContainer {
             .onlyWhile(() -> !intake.hasNote())
             .withName("AutoIntake")
         );
-        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shoot());
+        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWith(() -> 90));
         driveController.x().whileTrue(kicker.kick());
 
         // driveController.x().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.speakerFront)));

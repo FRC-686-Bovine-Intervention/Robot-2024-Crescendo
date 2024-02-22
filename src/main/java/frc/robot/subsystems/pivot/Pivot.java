@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Inches;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -16,6 +17,7 @@ import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
@@ -161,11 +163,11 @@ public class Pivot extends SubsystemBase {
     }).withName("Go to Tunable");
   }
 
-  public Command autoAim() {
+  public Command autoAim(Supplier<Translation2d> shootAtPos) {
     return go(() -> {
       int lowerBound = 0;
       int upperBound = 0;
-      double distanceToSpeaker = FieldConstants.speakerCenter.getDistance(RobotState.getInstance().getPose().getTranslation());
+      double distanceToSpeaker = shootAtPos.get().getDistance(RobotState.getInstance().getPose().getTranslation());
       for(int i = 0; i < ShooterConstants.distance.length; i++) {
         upperBound = i;
         if(distanceToSpeaker < ShooterConstants.distance[i]) {
