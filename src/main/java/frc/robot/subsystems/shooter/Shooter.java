@@ -17,7 +17,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableNumber;
@@ -26,14 +25,16 @@ public class Shooter extends SubsystemBase {
   private final ShooterIO shooterIO;
   private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
-  private final LoggedTunableNumber maxRPS = new LoggedTunableNumber("Shooter/Max Rotations Per Second", 45);
-  private final LoggedTunableNumber spinRPS = new LoggedTunableNumber("Shooter/Spin in Rotations Per Second", 0);
+  private final LoggedTunableNumber maxRPS = new LoggedTunableNumber("Shooter/Rotations Per Second", 45);
 
   private static final double smoothingFactor = 0.15;
   private double smoothedAverageRPS;
 
   private static final double followUpTime = 0.5;
   private final Timer followUpTimer = new Timer();
+
+  private final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 3);
+  private boolean readyToShoot;
 
   public Shooter(ShooterIO shooterIO) {
     this.shooterIO = shooterIO;
@@ -58,6 +59,10 @@ public class Shooter extends SubsystemBase {
     Logger.recordOutput("Shooter/Shot", shot());
   }
 
+  public boolean readyToShoot() {
+    return readyToShoot;
+  }
+
   private double getAverageRPS() {
     return Units.radiansToRotations((inputs.leftMotor.velocityRadPerSec + inputs.rightMotor.velocityRadPerSec) * 0.5);
   }
@@ -72,10 +77,12 @@ public class Shooter extends SubsystemBase {
       () -> {
         shooterIO.setLeftVelocity(rps.getAsDouble());
         shooterIO.setRightVelocity(rps.getAsDouble());
+        readyToShoot = MathUtil.isNear(rps.getAsDouble(), getAverageRPS(), readyToShootTolerance.get());
       },
       (interrupted) -> {
         shooterIO.setLeftVelocity(0);
         shooterIO.setRightVelocity(0);
+        readyToShoot = false;
       },
       () -> followUpTimer.hasElapsed(followUpTime),
       this
@@ -83,7 +90,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public Command shootWithTunableNumber() {
-    return shootWith(maxRPS::get);
+    return shootWith(maxRPS::get).withName("Shoot with tunable number");
   }
 
   public Command shoot(Supplier<Translation2d> shootAtPos) {
@@ -101,6 +108,22 @@ public class Shooter extends SubsystemBase {
       double t = MathUtil.inverseInterpolate(ShooterConstants.distance[lowerBound], ShooterConstants.distance[upperBound], distanceToSpeaker);
       double rps = MathUtil.interpolate(ShooterConstants.RPS[lowerBound], ShooterConstants.RPS[upperBound], t);
       return rps;
-    });
+    }).withName("Shoot at pos");
+  }
+
+  public Command preemptiveSpinup() {
+    return new FunctionalCommand(
+      () -> {},
+      () -> {
+        shooterIO.setLeftVelocity(45);
+        shooterIO.setRightVelocity(45);
+      },
+      (interrupted) -> {
+        shooterIO.setLeftVelocity(0);
+        shooterIO.setRightVelocity(0);
+      },
+      () -> false,
+      this
+    ).withName("Pre-emptive Spinup");
   }
 }

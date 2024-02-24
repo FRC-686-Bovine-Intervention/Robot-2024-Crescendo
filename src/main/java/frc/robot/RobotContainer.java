@@ -58,7 +58,6 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
-import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO2dPhoton;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIOPhotonVision;
 import frc.robot.subsystems.vision.apriltag.ApriltagVision;
 import frc.robot.subsystems.vision.note.NoteVision;
@@ -217,8 +216,8 @@ public class RobotContainer {
         // driveController.povUp().whileTrue(pivot.movePivotManually(1));
         // driveController.povDown().whileTrue(pivot.movePivotManually(-1));
         driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(FieldConstants.speakerFront))/* new WheelCalibration(drive) */);
-        driveController.povLeft().onTrue(pivot.gotoZero());
-        driveController.povRight().onTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
+        driveController.povLeft().or(driveController.povDown()).onTrue(pivot.gotoZero());
+        driveController.povUp().onTrue(pivot.gotoAmp());
         Supplier<Translation2d> shootAtPos = () -> {
             var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
             var chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(drive.getChassisSpeeds(), drive.getPose().getRotation());
@@ -271,11 +270,12 @@ public class RobotContainer {
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWith(() -> 90));
         driveController.x().whileTrue(kicker.kick());
 
-        // driveController.x().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.speakerFront)));
-        // driveController.y().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.ampFront)));
-        // driveController.a().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.podiumFront)));
-        // driveController.b().onTrue(drive.driveTo(AllianceFlipUtil.apply(FieldConstants.sourceFront)));
-
+        new Trigger(() -> 
+            drive.getPose().getTranslation().getDistance(FieldConstants.speakerCenter) <= 3 && 
+            kicker.hasNote() && 
+            DriverStation.isEnabled()
+        ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
+        new Trigger(() -> pivot.atPos() && shooter.readyToShoot()).onTrue(kicker.kick().onlyWhile(() -> shooter.getCurrentCommand() != null));
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
             .and(() -> {
                 Command currentCommand = drive.getCurrentCommand();
@@ -336,7 +336,7 @@ public class RobotContainer {
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();
         Camera.logCameraOverrides();
-        Logger.recordOutput("Mechanism2d/Robot Side Profile", robotSideProfile);
+        Logger.recordOutput("Ready to shoot", pivot.atPos() && shooter.readyToShoot());
     }
 
     public void enabledInit() {

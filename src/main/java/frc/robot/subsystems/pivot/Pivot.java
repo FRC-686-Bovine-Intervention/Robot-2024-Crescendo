@@ -28,7 +28,6 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.Constants;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableNumber;
@@ -40,11 +39,12 @@ public class Pivot extends SubsystemBase {
   public static final double POS_ZERO = 0;
   public static final double POS_AMP = 1.4864273834611863;
 
-  private final LoggedTunableNumber pidkP = new LoggedTunableNumber("Pivot/PID/kP", 5);
-  private final LoggedTunableNumber pidkI = new LoggedTunableNumber("Pivot/PID/kI", 10); 
-  private final LoggedTunableNumber pidkD = new LoggedTunableNumber("Pivot/PID/kD", 0);
-  private final LoggedTunableNumber pidkV = new LoggedTunableNumber("Pivot/PID/kV", 2);
-  private final LoggedTunableNumber pidkA = new LoggedTunableNumber("Pivot/PID/kA", 4);
+  private final LoggedTunableNumber pidkP = new LoggedTunableNumber("Pivot/PID/k0P", 5);
+  private final LoggedTunableNumber pidkI = new LoggedTunableNumber("Pivot/PID/k1I", 5); 
+  private final LoggedTunableNumber pidkD = new LoggedTunableNumber("Pivot/PID/k2D", 0);
+  private final LoggedTunableNumber pidkV = new LoggedTunableNumber("Pivot/PID/k3V", 2);
+  private final LoggedTunableNumber pidkA = new LoggedTunableNumber("Pivot/PID/k4A", 4);
+  private final LoggedTunableNumber pidIZone = new LoggedTunableNumber("Pivot/PID/IZone", 0.5);
   private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 2);
   private final ProfiledPIDController pivotPID = 
     new ProfiledPIDController(
@@ -59,7 +59,7 @@ public class Pivot extends SubsystemBase {
 
   private final LoggedTunableNumber ffkS = new LoggedTunableNumber("Pivot/FF/kS", 0);
   private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Pivot/FF/kG", 0);
-  private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Pivot/FF/kV", 3);
+  private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Pivot/FF/kV", 5);
   private final LoggedTunableNumber ffkA = new LoggedTunableNumber("Pivot/FF/kA", 0);
   private ArmFeedforward feedforward = 
     new ArmFeedforward(
@@ -78,13 +78,16 @@ public class Pivot extends SubsystemBase {
 
   private void updateTunables() {
     if(pidkP.hasChanged(hashCode()) | pidkI.hasChanged(hashCode()) | pidkD.hasChanged(hashCode())) {
-        pivotPID.setPID(pidkP.get(), pidkI.get(), pidkD.get());
+      pivotPID.setPID(pidkP.get(), pidkI.get(), pidkD.get());
     }
     if(pidkV.hasChanged(hashCode()) | pidkA.hasChanged(hashCode())) {
-        pivotPID.setConstraints(new Constraints(pidkV.get(), pidkA.get()));
+      pivotPID.setConstraints(new Constraints(pidkV.get(), pidkA.get()));
+    }
+    if(pidIZone.hasChanged(hashCode())) {
+      pivotPID.setIZone(pidIZone.get());
     }
     if(toleranceDeg.hasChanged(hashCode())) {
-        pivotPID.setTolerance(Units.degreesToRadians(toleranceDeg.get()));
+      pivotPID.setTolerance(Units.degreesToRadians(toleranceDeg.get()));
     }
     if(ffkS.hasChanged(hashCode()) | ffkG.hasChanged(hashCode()) | ffkV.hasChanged(hashCode()) | ffkA.hasChanged(hashCode())) {
       feedforward = new ArmFeedforward(ffkS.get(), ffkG.get(), ffkV.get(), ffkA.get());
@@ -181,8 +184,8 @@ public class Pivot extends SubsystemBase {
     }).withName("Auto Aim");
   }
 
-  public Command waitUntilAtPos() {
-      return new WaitUntilCommand(pivotPID::atGoal);
+  public boolean atPos() {
+    return pivotPID.atGoal();
   }
 
   public boolean isAtAngle(double angleRad) {

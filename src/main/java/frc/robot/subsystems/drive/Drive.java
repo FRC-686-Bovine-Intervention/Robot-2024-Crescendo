@@ -95,7 +95,7 @@ public class Drive extends SubsystemBase {
         }
 
         // initialize pose estimator
-        Pose2d initialPoseMeters = new Pose2d();
+        Pose2d initialPoseMeters = FieldConstants.speakerFront;
         RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
         prevGyroYaw = getPose().getRotation();
 

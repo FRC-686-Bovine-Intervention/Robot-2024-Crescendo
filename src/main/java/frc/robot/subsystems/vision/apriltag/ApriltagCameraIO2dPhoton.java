@@ -1,7 +1,5 @@
 package frc.robot.subsystems.vision.apriltag;
 
-import java.util.Optional;
-
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -13,9 +11,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.VisionConstants.Camera;
-import frc.robot.RobotState;
 
 public class ApriltagCameraIO2dPhoton implements ApriltagCameraIO {
     private final PhotonCamera photonCam;
@@ -31,8 +27,7 @@ public class ApriltagCameraIO2dPhoton implements ApriltagCameraIO {
     public void updateInputs(ApriltagCameraIOInputs inputs) {
         // set default values
         inputs.isConnected = photonCam.isConnected();
-        inputs.visionPose = Optional.empty();
-        inputs.timestamp = Timer.getFPGATimestamp();
+        inputs.hasResult = false;
 
         if (!inputs.isConnected) {
             return;

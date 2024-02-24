@@ -8,14 +8,13 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.RobotState;
-import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO.ApriltagCameraIOInputs;
 import frc.robot.util.LoggedTunableNumber;
 
 public class ApriltagCamera {
 
     private final String name;
     private final ApriltagCameraIO cameraIO;
-    private final ApriltagCameraIOInputs inputs = new ApriltagCameraIOInputs();
+    private final ApriltagCameraIOInputsAutoLogged inputs = new ApriltagCameraIOInputsAutoLogged();
 
     public ApriltagCamera(String name, ApriltagCameraIO cameraIO) {
         this.name = name;
@@ -26,13 +25,13 @@ public class ApriltagCamera {
         cameraIO.updateInputs(inputs);
         Logger.processInputs("Vision/Camera/" + name, inputs);
         
-        inputs.visionPose.ifPresent((pose) -> {
+        if(inputs.hasResult && inputs.result.cameraToTargetDist < 3) {
             RobotState.getInstance().addVisionMeasurement(
-                pose.toPose2d(),
-                computeStdDevs(inputs.cameraToTargetDist),  // TODO: figure out vision stdDevs 
-                inputs.timestamp
+                inputs.result.estimatedRobotPose.toPose2d(),
+                computeStdDevs(inputs.result.cameraToTargetDist),  // TODO: figure out vision stdDevs 
+                inputs.result.timestamp
             );
-        });
+        }
     }
 
     private static final LoggedTunableNumber kTransA = new LoggedTunableNumber("Vision/StdDevs/Translational/aCoef", 1);

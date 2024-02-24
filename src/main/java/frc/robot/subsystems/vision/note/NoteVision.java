@@ -76,9 +76,9 @@ public class NoteVision extends VirtualSubsystem {
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
 
-        Logger.recordOutput("Vision/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
-        Logger.recordOutput("Vision/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
-        Logger.recordOutput("Vision/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
+        // Logger.recordOutput("Vision/Note/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
+        Logger.recordOutput("Vision/Note/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
+        Logger.recordOutput("Vision/Note/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
     }
 
     public List<TrackedNote> getTrackedNotes() {
