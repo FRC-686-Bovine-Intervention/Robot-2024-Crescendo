@@ -209,7 +209,7 @@ public final class Constants {
                         Meters.of(0.499868)
                     ),
                     new Rotation3d(
-                        Units.degreesToRadians(0),
+                        Units.degreesToRadians(-90),
                         -Units.degreesToRadians(30),
                         Units.degreesToRadians(0)
                     )
@@ -252,7 +252,7 @@ public final class Constants {
                     ),
                     new Rotation3d(
                         0,
-                        Degrees.of(-15).in(Radians),
+                        Degrees.of(15).in(Radians),
                         Math.PI
                     )
                 )
