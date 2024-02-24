@@ -320,7 +320,7 @@ public class RobotContainer {
         //         drive::getCharacterizationVelocity
         //     )
         // ));
-        autoSelector.addRoutine(new ScoreNote(drive, intake, pivot, shooter, kicker));
+        autoSelector.addRoutine(new ScoreNote(drive, shooter, pivot));
     }
 
     /**
