@@ -3,45 +3,45 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.368944,
-        "y": 5.547774
+        "x": 2.9026396514331507,
+        "y": 5.545221859674489
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.431223227434068,
-        "y": 5.484162512503389
+        "x": 3.9026396514331507,
+        "y": 5.545221859674489
       },
       "isLocked": false,
-      "linkedName": "Subwoofer Front"
+      "linkedName": "note_2"
     },
     {
       "anchor": {
-        "x": 2.9707362470051115,
-        "y": 5.547774
+        "x": 4.441882729919307,
+        "y": 3.039018385729079
       },
       "prevControl": {
-        "x": 2.7317114914989533,
-        "y": 5.818797170212012
+        "x": 5.537113381919073,
+        "y": 3.6409018971884106
       },
       "nextControl": {
-        "x": 3.906161129741672,
-        "y": 4.48712312022981
+        "x": 2.0073572388109318,
+        "y": 1.7011259987235736
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.218082184681571,
-        "y": 4.117307859764
+        "x": 2.5868974814872723,
+        "y": 4.1046482092964185
       },
       "prevControl": {
-        "x": 2.968082184681571,
-        "y": 5.617307859764001
+        "x": 2.7868974814872725,
+        "y": 4.1046482092964185
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "note_3"
     }
   ],
   "rotationTargets": [],
@@ -59,7 +59,10 @@
     "rotateFast": false
   },
   "reversed": false,
-  "folder": null,
-  "previewStartingState": null,
-  "useDefaultConstraints": false
+  "folder": "Note 2",
+  "previewStartingState": {
+    "rotation": 0,
+    "velocity": 0
+  },
+  "useDefaultConstraints": true
 }

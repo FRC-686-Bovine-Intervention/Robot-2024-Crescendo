@@ -30,6 +30,7 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoSelector;
+import frc.robot.auto.ScoreNote;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.commands.AutoIntake;
 import frc.robot.subsystems.drive.Drive;
@@ -308,17 +309,18 @@ public class RobotContainer {
     }
 
     private void configureAutos() {
-        autoSelector.addRoutine(new AutoRoutine(
-            "Drive Characterization",
-            new ArrayList<>(0),
-            () -> new FeedForwardCharacterization(
-                drive,
-                true,
-                new FeedForwardCharacterizationData("drive"),
-                drive::runCharacterizationVolts,
-                drive::getCharacterizationVelocity
-            )
-        ));
+        // autoSelector.addRoutine(new AutoRoutine(
+        //     "Drive Characterization",
+        //     new ArrayList<>(0),
+        //     () -> new FeedForwardCharacterization(
+        //         drive,
+        //         true,
+        //         new FeedForwardCharacterizationData("drive"),
+        //         drive::runCharacterizationVolts,
+        //         drive::getCharacterizationVelocity
+        //     )
+        // ));
+        autoSelector.addRoutine(new ScoreNote(drive, intake, pivot, shooter, kicker));
     }
 
     /**

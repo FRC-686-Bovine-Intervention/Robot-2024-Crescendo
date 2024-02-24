@@ -105,7 +105,7 @@ public class Drive extends SubsystemBase {
                 this::setPose,
                 this::getChassisSpeeds,
                 this::driveVelocity,
-                configSup.get(),
+                autoConfigSup.get(),
                 AllianceFlipUtil::shouldFlip,
                 this
             );
@@ -539,7 +539,7 @@ public class Drive extends SubsystemBase {
     private static final LoggedTunableNumber rP = new LoggedTunableNumber("AutoDrive/rP", 1.5);
     private static final LoggedTunableNumber rI = new LoggedTunableNumber("AutoDrive/rI", 0);
     private static final LoggedTunableNumber rD = new LoggedTunableNumber("AutoDrive/rD", 0);
-    private static final Supplier<HolonomicPathFollowerConfig> configSup = () -> {
+    public static final Supplier<HolonomicPathFollowerConfig> autoConfigSup = () -> {
         return new HolonomicPathFollowerConfig(
             new PIDConstants(
                 tP.get(),

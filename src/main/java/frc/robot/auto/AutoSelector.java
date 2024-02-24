@@ -20,7 +20,7 @@ public class AutoSelector extends VirtualSubsystem {
     private final List<SwitchableChooser> responseChoosers;
     private final String key;
     
-    private static final AutoRoutine defaultRoutine = new AutoRoutine("Do Nothing", List.of(), ()->Commands.none());
+    private static final AutoRoutine defaultRoutine = new AutoRoutine("Do Nothing", 0, () -> List.of(), () -> Commands.none());
     private final String questionPlaceHolder = "NA"; 
 
     private AutoRoutine lastRoutine;
@@ -35,7 +35,7 @@ public class AutoSelector extends VirtualSubsystem {
     }
 
     public void addRoutine(AutoRoutine routine) {
-        for(int i = questionPublishers.size(); i < routine.questions.size(); i++) {
+        for(int i = questionPublishers.size(); i < routine.maxQuestionCount; i++) {
             var publisher =
                 NetworkTableInstance.getDefault()
                     .getStringTopic("/SmartDashboard/" + key + "/Question #" + Integer.toString(i + 1))
@@ -52,7 +52,7 @@ public class AutoSelector extends VirtualSubsystem {
         if(DriverStation.isEnabled()) return;
         var selectedRoutine = routineChooser.get();
         if(selectedRoutine == null) return;
-        var questions = selectedRoutine.questions;
+        var questions = selectedRoutine.questions.get();
         List<String> currentResponses = new ArrayList<>();
         for (int i = 0; i < responseChoosers.size(); i++) {
             if(i < questions.size()) {
@@ -107,11 +107,13 @@ public class AutoSelector extends VirtualSubsystem {
 
     public static class AutoRoutine {
         public final String name;
-        public final List<AutoQuestion<?>> questions;
+        public final int maxQuestionCount;
+        public final Supplier<List<AutoQuestion<?>>> questions;
         public final Supplier<? extends Command> autoCommandGenerator;
 
-        public AutoRoutine(String name, List<AutoQuestion<?>> questions, Supplier<? extends Command> autoCommandGenerator) {
+        public AutoRoutine(String name, int maxQuestionCount, Supplier<List<AutoQuestion<?>>> questions, Supplier<? extends Command> autoCommandGenerator) {
             this.name = name;
+            this.maxQuestionCount = maxQuestionCount;
             this.questions = questions;
             this.autoCommandGenerator = autoCommandGenerator;
         }
