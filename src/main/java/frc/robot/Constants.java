@@ -345,7 +345,7 @@ public final class Constants {
         public static final Translation2d speakerCenter = new Translation2d(0.240581, 5.547755);
 
         public static final Pose2d ampFront = new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(90));
-        public static final Pose2d speakerFront = new Pose2d(new Translation2d(1.40, 5.55), Rotation2d.fromDegrees(180));
+        public static final Pose2d speakerFront = new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(180));
         public static final Pose2d sourceFront = new Pose2d(new Translation2d(15.41, 1.04), Rotation2d.fromDegrees(-60));
         public static final Pose2d podiumFront = new Pose2d(new Translation2d(2.54, 4.12), Rotation2d.fromDegrees(180));
 

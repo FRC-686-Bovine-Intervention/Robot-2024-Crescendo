@@ -83,6 +83,9 @@ public class Robot extends LoggedRobot {
         commandCounts.put(name, count);
         // Logger.recordOutput(
         //         "Commands/Unique/" + name + "_" + Integer.toHexString(command.hashCode()), active.booleanValue());
+        if(command.getRequirements().size() == 0) {
+          Logger.recordOutput("Commands/No Requirements/" + name, count > 0);
+        }
         for(Subsystem subsystem : command.getRequirements()) {
           Logger.recordOutput("Commands/" + subsystem.getName() + "/" + name, count > 0);
         }

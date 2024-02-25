@@ -3,6 +3,8 @@ package frc.robot;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -53,7 +55,7 @@ public class SuperCommands {
                     )
                 ),
                 pivot.autoAim(shootAtPos).asProxy()
-            )
+            ).finallyDo(() -> Logger.recordOutput("DEBUG/Super", "WHAT"))
             .withName("AutoAim");
     }
 }

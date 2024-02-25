@@ -115,8 +115,8 @@ public class Shooter extends SubsystemBase {
     return new FunctionalCommand(
       () -> {},
       () -> {
-        shooterIO.setLeftVelocity(45);
-        shooterIO.setRightVelocity(45);
+        shooterIO.setLeftVelocity(70);
+        shooterIO.setRightVelocity(70);
       },
       (interrupted) -> {
         shooterIO.setLeftVelocity(0);

@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -16,9 +15,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
-import edu.wpi.first.wpilibj.util.Color;
-import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -30,8 +26,8 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoSelector;
-import frc.robot.auto.ScoreNote;
-import frc.robot.auto.AutoSelector.AutoRoutine;
+import frc.robot.auto.CenterLineRun;
+import frc.robot.auto.SpikeMarkShots;
 import frc.robot.commands.AutoIntake;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -39,8 +35,6 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.commands.FeedForwardCharacterization;
-import frc.robot.subsystems.drive.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
@@ -93,11 +87,13 @@ public class RobotContainer {
 
     private final AutoSelector autoSelector = new AutoSelector("AutoSelector");
 
-    private final Mechanism2d robotSideProfile = new Mechanism2d(3, 2, new Color8Bit(Color.kBlack));
+    // private final Mechanism2d robotSideProfile = new Mechanism2d(3, 2, new Color8Bit(Color.kBlack));
 
     // Controller
     private final XboxController driveController = new XboxController(0);
     private final Joystick driveJoystick;
+    private final Supplier<ChassisSpeeds> joystickTranslational;
+    private final LazyOptional<Rotation2d> driveCustomFlick;
     @SuppressWarnings("unused")
     private final ButtonBoard3x3 buttonBoard = new ButtonBoard3x3(1);
     private final CommandJoystick simJoystick = new CommandJoystick(2);
@@ -166,6 +162,11 @@ public class RobotContainer {
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
             .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
+
+        joystickTranslational = FieldOrientedDrive.joystickSpectatorToFieldRelative(
+            driveJoystick,
+            driveController.leftBumper()
+        );
         
         driveCustomFlick = FieldOrientedDrive.headingFromJoystick(
             driveController.rightStick.smoothRadialDeadband(0.85),
@@ -236,10 +237,7 @@ public class RobotContainer {
             shooter.shoot(shootAtPos).asProxy().deadlineWith(
                 new FieldOrientedDrive(
                     drive,
-                    FieldOrientedDrive.joystickSpectatorToFieldRelative(
-                        driveJoystick,
-                        driveController.leftBumper()
-                    ),
+                    joystickTranslational,
                     FieldOrientedDrive.pidControlledHeading(
                         FieldOrientedDrive.pointTo(
                             () -> Optional.of(shootAtPos.get()),
@@ -255,12 +253,7 @@ public class RobotContainer {
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
             new FieldOrientedDrive(
                 drive,
-                autoIntake.getTranslationalSpeeds(
-                    FieldOrientedDrive.joystickSpectatorToFieldRelative(
-                        driveJoystick,
-                        driveController.leftBumper()
-                    )
-                ),
+                autoIntake.getTransSpeed(autoIntake.applyDotProduct(joystickTranslational)).orElseGet(joystickTranslational),
                 FieldOrientedDrive.pidControlledHeading(
                     FieldOrientedDrive.pointTo(autoIntake.targetLocation(), () -> Rotation2d.fromDegrees(180)).orElse(driveCustomFlick)
                 )
@@ -285,16 +278,11 @@ public class RobotContainer {
             .onTrue(drive.getDefaultCommand());
     }
 
-    private final LazyOptional<Rotation2d> driveCustomFlick;
-
     private void configureSubsystems() {
         drive.setDefaultCommand(
             new FieldOrientedDrive(
                 drive,
-                FieldOrientedDrive.joystickSpectatorToFieldRelative(
-                    driveJoystick,
-                    driveController.leftBumper()
-                ),
+                joystickTranslational,
                 FieldOrientedDrive.pidControlledHeading(
                     driveCustomFlick
                 )
@@ -320,7 +308,8 @@ public class RobotContainer {
         //         drive::getCharacterizationVelocity
         //     )
         // ));
-        autoSelector.addRoutine(new ScoreNote(drive, shooter, pivot));
+        autoSelector.addRoutine(new CenterLineRun(drive, shooter, pivot, intake, autoIntake));
+        autoSelector.addRoutine(new SpikeMarkShots(drive, shooter, pivot, intake, kicker, autoIntake));
     }
 
     /**
