@@ -49,7 +49,7 @@ public class ScoreNote extends AutoRoutine {
                 
                 PathPlannerPath startToNote = PathPlannerPath.fromPathFile(String.format(startTemplate, startPosition.getResponse().toString()));
 
-                return Commands.runOnce(() -> robotState.setPose(drive.getGyroRotation(), drive.getModulePositions(), AllianceFlipUtil.apply(new Pose2d(startToNote.getPoint(0).position, new Rotation2d()))))
+                return Commands.runOnce(() -> robotState.setPose(drive.getGyroRotation(), drive.getModulePositions(), AllianceFlipUtil.apply(new Pose2d(startToNote.getPoint(0).position, Rotation2d.fromDegrees(180)))))
                     .andThen(SuperCommands.autoAim(drive, shooter, pivot))
                     .andThen(followPathConstructor.apply(startToNote))
                     .andThen(Commands.none()); // autointake

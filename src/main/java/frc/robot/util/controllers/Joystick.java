@@ -106,17 +106,17 @@ public class Joystick {
         return fromMagnitude(() -> MathUtil.applyDeadband(magnitude(), deadband));
     }
 
-    // public Joystick radialSlewRateLimit(double slewRatePerSec) {
-    //     SlewRateLimiter slewRateLimiter = new SlewRateLimiter(slewRatePerSec);
-    //     return fromMagnitude(() -> slewRateLimiter.calculate(magnitude()));
-    // }
-
-    private double previousAngle;
     public Joystick radialSlewRateLimit(double slewRatePerSec) {
         SlewRateLimiter slewRateLimiter = new SlewRateLimiter(slewRatePerSec);
-        if (magnitude() > 0.1) previousAngle = radsFromNegXCCW();
-        return fromAngleMagnitude(() -> previousAngle, () -> slewRateLimiter.calculate(magnitude()));
+        return fromMagnitude(() -> slewRateLimiter.calculate(magnitude()));
     }
+
+    // private double previousAngle;
+    // public Joystick radialSlewRateLimit(double slewRatePerSec) {
+    //     SlewRateLimiter slewRateLimiter = new SlewRateLimiter(slewRatePerSec);
+    //     if (magnitude() > 0.1) previousAngle = radsFromNegXCCW();
+    //     return fromAngleMagnitude(() -> previousAngle, () -> slewRateLimiter.calculate(magnitude()));
+    // }
 
     private DoubleUnaryOperator sensitivityFunction(double sensitivityVal) {
         return (x) -> sensitivityVal * x * x * x - sensitivityVal * x + x;
