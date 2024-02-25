@@ -6,6 +6,7 @@ package frc.robot.subsystems.kicker;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.Constants.CANDevices;
@@ -18,6 +19,8 @@ public class KickerIONeo550 implements KickerIO {
     private final DigitalInput sensor = new DigitalInput(DIOPorts.kickerSensorPort);
 
     public KickerIONeo550() {
+        leftMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
+        rightMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
         rightMotor.follow(leftMotor, true);
     }
 

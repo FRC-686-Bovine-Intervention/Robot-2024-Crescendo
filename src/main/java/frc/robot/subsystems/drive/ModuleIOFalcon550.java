@@ -56,6 +56,7 @@ public class ModuleIOFalcon550 implements ModuleIO {
         turnMotor.setIdleMode(IdleMode.kBrake);
         turnMotor.setSmartCurrentLimit(40);
         turnMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus5, 20);
+        turnMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
 
         setFramePeriods(driveMotor, true);
 
