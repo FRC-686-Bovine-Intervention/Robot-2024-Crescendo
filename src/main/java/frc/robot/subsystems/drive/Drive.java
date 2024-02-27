@@ -8,7 +8,6 @@
 package frc.robot.subsystems.drive;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +49,7 @@ public class Drive extends SubsystemBase {
     private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
     private Rotation2d prevGyroYaw = new Rotation2d();
 
-    private final Module[] modules = new Module[DriveModulePosition.values().length]; // FL, FR, BL, BR
+    private final Module[] modules = new Module[DriveConstants.numDriveModules]; // FL, FR, BL, BR
 
     private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveConstants.DriveModulePosition.moduleTranslations);
     private SwerveModuleState[] lastMeasuredStates = new SwerveModuleState[] {
@@ -530,7 +529,6 @@ public class Drive extends SubsystemBase {
     private static final LoggedTunableNumber rP = new LoggedTunableNumber("AutoDrive/rP", 1.5);
     private static final LoggedTunableNumber rI = new LoggedTunableNumber("AutoDrive/rI", 0);
     private static final LoggedTunableNumber rD = new LoggedTunableNumber("AutoDrive/rD", 0);
-    private static final double baseRadius = Arrays.stream(DriveConstants.DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
     public static final Supplier<HolonomicPathFollowerConfig> autoConfigSup = () -> {
         return new HolonomicPathFollowerConfig(
             new PIDConstants(
@@ -544,15 +542,15 @@ public class Drive extends SubsystemBase {
                 rD.get()
             ),
             DriveConstants.maxDriveSpeedMetersPerSec,
-            baseRadius,
+            DriveConstants.driveBaseRadius,
             new ReplanningConfig()
         );
     };
 
-    public static final LoggedTunableNumber kAutoDriveMaxVelocity = new LoggedTunableNumber("Drive/kAutoDriveMaxVelocity", 1.0);
-    public static final LoggedTunableNumber kMaxAcceleration = new LoggedTunableNumber("Drive/kMaxAcceleration", 1.0);
-    public static final LoggedTunableNumber kMaxAngularVelocity = new LoggedTunableNumber("Drive/kMaxAngularVelocity", Units.degreesToRadians(540));
-    public static final LoggedTunableNumber kMaxAngularAcceleration = new LoggedTunableNumber("Drive/kMaxAngularAcceleration", Units.degreesToRadians(720));
+    private static final LoggedTunableNumber kAutoDriveMaxVelocity = new LoggedTunableNumber("Drive/kAutoDriveMaxVelocity", 1.0);
+    private static final LoggedTunableNumber kMaxAcceleration = new LoggedTunableNumber("Drive/kMaxAcceleration", 1.0);
+    private static final LoggedTunableNumber kMaxAngularVelocity = new LoggedTunableNumber("Drive/kMaxAngularVelocity", Units.degreesToRadians(540));
+    private static final LoggedTunableNumber kMaxAngularAcceleration = new LoggedTunableNumber("Drive/kMaxAngularAcceleration", Units.degreesToRadians(720));
     private static final PathConstraints pathConstraints = new PathConstraints(
         kAutoDriveMaxVelocity.get(),
         kMaxAcceleration.get(),
@@ -560,7 +558,7 @@ public class Drive extends SubsystemBase {
         kMaxAngularAcceleration.get()
     );
 
-    private final Map<Pose2d, String> locationNames = new HashMap<>(Map.of(
+    private static final Map<Pose2d, String> locationNames = new HashMap<>(Map.of(
         FieldConstants.amp, "Amp",
         FieldConstants.subwooferFront, "Subwoofer Front",
         FieldConstants.podium, "Podium",
@@ -568,7 +566,7 @@ public class Drive extends SubsystemBase {
         FieldConstants.pathfindSpeaker, "Speaker Offset"
     ));
 
-    public static String autoDrivePrefix = "AutoDrive";
+    public static final String autoDrivePrefix = "AutoDrive";
 
     public Command driveToFlipped(Pose2d pos) {
         String name = locationNames.entrySet().stream()

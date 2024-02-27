@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -38,6 +39,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOFalcon550;
 import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.kicker.KickerIO;
 import frc.robot.subsystems.kicker.KickerIONeo550;
@@ -105,7 +107,6 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOFalcon());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
-                ledSystem = null;
                 // ledSystem = new Leds(
                 //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
                 // );
@@ -124,7 +125,6 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIOSim());
                 noteVision = new NoteVision(new NoteVisionIOSim());
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
-                ledSystem = null;
             break;
             default:
             case REPLAY:
@@ -141,9 +141,17 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIO() {});
                 noteVision = null;
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
-                ledSystem = null;
             break;
         }
+        ledSystem = new Leds(
+            () -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix),
+            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
+            () -> intake.getIntakeReversed(),
+            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.SECURE_NOTE)),
+            () -> intake.noteReady(),
+            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
+            () -> kicker.hasNote()
+        );
 
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
@@ -247,10 +255,7 @@ public class RobotContainer {
         ).onTrue(kicker.kick().onlyWhile(() -> shooter.getCurrentCommand() != null));
         
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
-            .and(() -> {
-                Command currentCommand = drive.getCurrentCommand();
-                return currentCommand != null && currentCommand.getName().startsWith(Drive.autoDrivePrefix);
-            })
+            .and(() -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
             .onTrue(drive.getDefaultCommand());
     }
 

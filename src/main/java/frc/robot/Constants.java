@@ -102,7 +102,6 @@ public final class Constants {
     }
 
     public static final class DriveConstants {
-        public static final int numDriveModules = DriveModulePosition.values().length;
         public static enum DriveModulePosition {
             FRONT_LEFT(
                 CANDevices.frontLeftDriveMotorID, CANDevices.frontLeftTurnMotorID,
@@ -158,6 +157,7 @@ public final class Constants {
 
             public static final Translation2d[] moduleTranslations = Arrays.stream(values()).map((a) -> a.moduleTranslation).toArray(Translation2d[]::new);
         }
+        public static final int numDriveModules = DriveModulePosition.values().length;
 
         /**Weight with battery and bumpers*/
         public static final double weightKg = Pounds.of(58.0).in(Kilograms);
@@ -166,6 +166,7 @@ public final class Constants {
         public static final double trackWidthXMeters = Inches.of(25.5).in(Meters);
         /**Distance between the left and right wheels*/
         public static final double trackWidthYMeters = Inches.of(25.5).in(Meters);
+        public static final double driveBaseRadius = Arrays.stream(DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
         private static final double correctionVal = 314.0 / 320.55;
         public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters) * correctionVal;
 

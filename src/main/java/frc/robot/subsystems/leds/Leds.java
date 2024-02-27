@@ -1,5 +1,6 @@
 package frc.robot.subsystems.leds;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
@@ -11,8 +12,11 @@ import com.ctre.phoenix.led.CANdleConfiguration;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.DriverStation.MatchType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
-import frc.robot.Constants;
+import frc.robot.RobotType;
+import frc.robot.Constants.CANDevices;
+import frc.robot.RobotType.Mode;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.led.animation.EndgameTimerAnimation;
 import frc.robot.util.led.animation.FillAnimation;
@@ -39,23 +43,45 @@ public class Leds extends VirtualSubsystem {
         BooleanSupplier kickerFeeding, BooleanSupplier kickerLoaded
     ) {
         System.out.println("[Init Leds] Instantiating Leds");
-        var m_candle = new CANdle(Constants.CANDevices.candleCanID, "rio");
-        var candleStrip = new CANdleStrip(m_candle, 60*2);
+        if(RobotType.getMode() == Mode.REAL) {
+            var m_candle = new CANdle(CANDevices.candleCanID, "rio");
+            var candleStrip = new CANdleStrip(m_candle, 60*2);
 
-        ledManager.register(candleStrip);
+            ledManager.register(candleStrip);
 
-        onboardLEDs = candleStrip.getOnboardLEDs();
-        offboardLEDs = candleStrip.getOffboardLEDs();
+            onboardLEDs = candleStrip.getOnboardLEDs();
+            offboardLEDs = candleStrip.getOffboardLEDs();
+            
+            CANdleConfiguration configAll = new CANdleConfiguration();
+            configAll.statusLedOffWhenActive = true;
+            configAll.disableWhenLOS = false;
+            configAll.stripType = LEDStripType.GRB;
+            configAll.brightnessScalar = 0.5;
+            configAll.vBatOutputMode = VBatOutputMode.Modulated;
+            m_candle.configFactoryDefault();
+            m_candle.clearAnimation(0);
+            m_candle.configAllSettings(configAll, 100);
+        } else {
+            onboardLEDs = new LEDStrip() {
+                @Override
+                public int getLength() {
+                    return 0;
+                }
+                @Override
+                public void setLED(int ledIndex, Color color) {
+                }
+            };
+            offboardLEDs = new LEDStrip() {
+                @Override
+                public int getLength() {
+                    return 0;
+                }
+                @Override
+                public void setLED(int ledIndex, Color color) {
+                }
+            };
+        }
         
-        CANdleConfiguration configAll = new CANdleConfiguration();
-        configAll.statusLedOffWhenActive = true;
-        configAll.disableWhenLOS = false;
-        configAll.stripType = LEDStripType.GRB;
-        configAll.brightnessScalar = 0.5;
-        configAll.vBatOutputMode = VBatOutputMode.Modulated;
-        m_candle.configFactoryDefault();
-        m_candle.clearAnimation(0);
-        m_candle.configAllSettings(configAll, 100);
 
         // Assuming ccw circular pattern
         var shooterStrip = offboardLEDs.substrip(0, 12);
@@ -71,6 +97,7 @@ public class Leds extends VirtualSubsystem {
 
         this.runners = new AnimationRunner[]{
             new AnimationRunner(
+                "Endgame Timer",
                 () -> DriverStation.getMatchType() != MatchType.None && DriverStation.isTeleopEnabled() && DriverStation.getMatchTime() <= 30,
                 new EndgameTimerAnimation(
                     10,
@@ -78,6 +105,7 @@ public class Leds extends VirtualSubsystem {
                 )
             ),
             new AnimationRunner(
+                "Autonomous Robot",
                 robotAutonomous,
                 new ScrollingAnimation(
                     4,
@@ -89,6 +117,7 @@ public class Leds extends VirtualSubsystem {
                 )
             ),
             new AnimationRunner(
+                "DriverStation Connection",
                 DriverStation::isDisabled,
                 new FillAnimation(
                     1,
@@ -96,12 +125,13 @@ public class Leds extends VirtualSubsystem {
                     offboardLEDs.substrip(0, 2)
                 )
             ),
-
+            // Intake
             new AnimationRunner(
-                () -> !intakeReversed.getAsBoolean() && (intaking.getAsBoolean() || intakeSecuring.getAsBoolean()), 
+                "Intaking Forward",
+                () -> !intakeReversed.getAsBoolean() && (intaking.getAsBoolean() || intakeSecuring.getAsBoolean() || kickerFeeding.getAsBoolean()), 
                 new ScrollingAnimation(
                     0,
-                    (x) -> InterpolationStyle.Linear.interpolate(x, intakeSecuring.getAsBoolean() ? new Color[]{Color.kBlue, Color.kYellow} : new Color[]{Color.kRed, Color.kYellow}),
+                    (x) -> InterpolationStyle.Linear.interpolate(x, intakeSecuring.getAsBoolean() ? new Color[]{Color.kGreen, Color.kYellow} : new Color[]{Color.kRed, Color.kYellow}),
                     TilingFunction.Sinusoidal,
                     5,
                     2,
@@ -109,10 +139,11 @@ public class Leds extends VirtualSubsystem {
                 )
             ),
             new AnimationRunner(
+                "Intaking Reversed",
                 () -> intakeReversed.getAsBoolean() && (intaking.getAsBoolean() || intakeSecuring.getAsBoolean()), 
                 new ScrollingAnimation(
                     0,
-                    (x) -> InterpolationStyle.Linear.interpolate(x, intakeSecuring.getAsBoolean() ? new Color[]{Color.kBlue, Color.kYellow} : new Color[]{Color.kRed, Color.kYellow}),
+                    (x) -> InterpolationStyle.Linear.interpolate(x, intakeSecuring.getAsBoolean() ? new Color[]{Color.kGreen, Color.kYellow} : new Color[]{Color.kRed, Color.kYellow}),
                     TilingFunction.Sinusoidal,
                     -5,
                     2,
@@ -120,26 +151,17 @@ public class Leds extends VirtualSubsystem {
                 )
             ),
             new AnimationRunner(
+                "Intake Secured",
                 intakeSecured, 
                 new FillAnimation(
                     0, 
-                    Color.kBlue,
+                    Color.kGreen,
                     sideRingStrips
                 )
             ),
-            
+            // Kicker
             new AnimationRunner(
-                kickerFeeding, 
-                new ScrollingAnimation(
-                    0, 
-                    new BasicGradient(InterpolationStyle.Linear, Color.kBlue, Color.kGreen), 
-                    TilingFunction.Sinusoidal, 
-                    5, 
-                    2, 
-                    sideRingStrips
-                )
-            ),
-            new AnimationRunner(
+                "Kicker Loaded",
                 kickerLoaded, 
                 new FillAnimation(
                     0, 
@@ -167,24 +189,25 @@ public class Leds extends VirtualSubsystem {
 
     @Override
     public void periodic() {
-        for(AnimationRunner runner : runners) {
-            runner.update();
-        }
+        Arrays.stream(runners).forEach(AnimationRunner::update);
         ledManager.runLEDs();
     }
 
     public static class AnimationRunner {
+        private final String key;
         private final BooleanSupplier runAnimationSupplier;
         private final LEDAnimation animation;
         private boolean lastVal;
 
-        public AnimationRunner(BooleanSupplier runAnimationSupplier, LEDAnimation animation) {
+        public AnimationRunner(String key, BooleanSupplier runAnimationSupplier, LEDAnimation animation) {
+            this.key = key;
             this.runAnimationSupplier = runAnimationSupplier;
             this.animation = animation;
         }
 
         public void update() {
             var curVal = runAnimationSupplier.getAsBoolean();
+            SmartDashboard.putBoolean("LEDs/"+key, curVal);
             if(curVal ^ lastVal) {
                 if(curVal) {
                     animation.start();

@@ -3,6 +3,8 @@ package frc.robot;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -33,7 +35,7 @@ public class SuperCommands {
     }
 
     public static Command shootWhenReady(Shooter shooter, Pivot pivot, Kicker kicker) {
-        return Commands.waitUntil(() -> readyToShoot(shooter, pivot)).andThen(kicker.kick());
+        return Commands.waitUntil(() -> readyToShoot(shooter, pivot)).andThen(kicker.kick().asProxy());
     }
 
     public static Command autoAim(Drive drive, Shooter shooter, Pivot pivot) {
@@ -51,6 +53,7 @@ public class SuperCommands {
             var chassisOffset = chassisSpeeds.times(timeToSpeaker);
             var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
             var pointTo = speakerTrans.minus(translationalOffset);
+            Logger.recordOutput("Shooter/Shoot at", pointTo);
             return pointTo;
         };
 
