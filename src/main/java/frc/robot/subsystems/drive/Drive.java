@@ -8,6 +8,7 @@
 package frc.robot.subsystems.drive;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -51,7 +52,7 @@ public class Drive extends SubsystemBase {
 
     private final Module[] modules = new Module[DriveModulePosition.values().length]; // FL, FR, BL, BR
 
-    private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
+    private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveConstants.DriveModulePosition.moduleTranslations);
     private SwerveModuleState[] lastMeasuredStates = new SwerveModuleState[] {
         new SwerveModuleState(),
         new SwerveModuleState(),
@@ -337,7 +338,7 @@ public class Drive extends SubsystemBase {
         stop();
         for (int i = 0; i < DriveConstants.numDriveModules; i++) {
             lastSetpointStates[i] = new SwerveModuleState(
-                    lastSetpointStates[i].speedMetersPerSecond, getModuleTranslations()[i].getAngle());
+                    lastSetpointStates[i].speedMetersPerSecond, DriveConstants.DriveModulePosition.moduleTranslations[i].getAngle());
         }
     }
 
@@ -409,16 +410,6 @@ public class Drive extends SubsystemBase {
     // public void addVisionData(List<TimestampedVisionUpdate> visionData) {
     // poseEstimator.addVisionData(visionData);
     // }
-
-    /** Returns an array of module translations. */
-    public Translation2d[] getModuleTranslations() {
-        Translation2d[] moduleTranslations = new Translation2d[DriveConstants.numDriveModules];
-        moduleTranslations[DriveModulePosition.FRONT_LEFT.ordinal()] =  new Translation2d( DriveConstants.trackWidthXMeters / 2.0,  DriveConstants.trackWidthYMeters / 2.0);
-        moduleTranslations[DriveModulePosition.FRONT_RIGHT.ordinal()] = new Translation2d( DriveConstants.trackWidthXMeters / 2.0, -DriveConstants.trackWidthYMeters / 2.0);
-        moduleTranslations[DriveModulePosition.BACK_LEFT.ordinal()] =   new Translation2d(-DriveConstants.trackWidthXMeters / 2.0,  DriveConstants.trackWidthYMeters / 2.0);
-        moduleTranslations[DriveModulePosition.BACK_RIGHT.ordinal()] =  new Translation2d(-DriveConstants.trackWidthXMeters / 2.0, -DriveConstants.trackWidthYMeters / 2.0);
-        return moduleTranslations;
-    }
 
     /** Returns an array of module positions. */
     public SwerveModulePosition[] getModulePositions() {
@@ -539,6 +530,7 @@ public class Drive extends SubsystemBase {
     private static final LoggedTunableNumber rP = new LoggedTunableNumber("AutoDrive/rP", 1.5);
     private static final LoggedTunableNumber rI = new LoggedTunableNumber("AutoDrive/rI", 0);
     private static final LoggedTunableNumber rD = new LoggedTunableNumber("AutoDrive/rD", 0);
+    private static final double baseRadius = Arrays.stream(DriveConstants.DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
     public static final Supplier<HolonomicPathFollowerConfig> autoConfigSup = () -> {
         return new HolonomicPathFollowerConfig(
             new PIDConstants(
@@ -552,7 +544,7 @@ public class Drive extends SubsystemBase {
                 rD.get()
             ),
             DriveConstants.maxDriveSpeedMetersPerSec,
-            0.46,
+            baseRadius,
             new ReplanningConfig()
         );
     };
@@ -577,13 +569,13 @@ public class Drive extends SubsystemBase {
 
     public static String autoDrivePrefix = "AutoDrive";
 
-    public Command driveTo(Pose2d pos) {
+    public Command driveToFlipped(Pose2d pos) {
         String name = locationNames.entrySet().stream()
             .filter(e -> e.getKey().equals(pos))
             .findFirst()
             .map(Map.Entry::getValue)
             .orElse(String.format("x %.3f, y %.3f, θ %.3f°", pos.getX(), pos.getY(), pos.getRotation().getDegrees()));
 
-        return AutoBuilder.pathfindToPose(pos, pathConstraints, 0, 0).withName(String.format("%s (%s)", autoDrivePrefix, name));
+        return AutoBuilder.pathfindToPoseFlipped(pos, pathConstraints, 0, 0).withName(String.format("%s (%s)", autoDrivePrefix, name));
     }
 }

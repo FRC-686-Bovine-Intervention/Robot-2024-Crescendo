@@ -26,7 +26,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.Constants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.RobotState;
@@ -44,7 +43,7 @@ public class Pivot extends SubsystemBase {
   private final LoggedTunableNumber pidkD = new LoggedTunableNumber("Pivot/PID/k2D", 0);
   private final LoggedTunableNumber pidkV = new LoggedTunableNumber("Pivot/PID/k3V", 2);
   private final LoggedTunableNumber pidkA = new LoggedTunableNumber("Pivot/PID/k4A", 4);
-  private final LoggedTunableNumber pidIZone = new LoggedTunableNumber("Pivot/PID/IZone", 0.5);
+  private final LoggedTunableNumber pidIZone = new LoggedTunableNumber("Pivot/PID/IZone", Units.degreesToRadians(3));
   private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 2);
   private final ProfiledPIDController pivotPID = 
     new ProfiledPIDController(

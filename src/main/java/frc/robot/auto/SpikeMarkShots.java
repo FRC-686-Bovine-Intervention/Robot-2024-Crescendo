@@ -1,6 +1,7 @@
 package frc.robot.auto;
 
 import java.util.List;
+import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -56,10 +57,23 @@ public class SpikeMarkShots extends AutoRoutine {
                                 FieldOrientedDrive.pointTo(
                                     autoIntake.targetLocation(),
                                     () -> Rotation2d.fromDegrees(180)
-                                )
+                                ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
                             )
                         )),
-                        drive.driveTo(FieldConstants.speakerFront),
+                        drive.driveToFlipped(FieldConstants.speakerFront),
+                        Commands.waitUntil(kicker::hasNote),
+                        SuperCommands.autoAim(drive, shooter, pivot),
+                        intake.intake(drive::getChassisSpeeds).asProxy().deadlineWith(new FieldOrientedDrive(
+                            drive,
+                            autoIntake.getTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
+                            FieldOrientedDrive.pidControlledHeading(
+                                FieldOrientedDrive.pointTo(
+                                    autoIntake.targetLocation(),
+                                    () -> Rotation2d.fromDegrees(180)
+                                ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
+                            )
+                        )),
+                        drive.driveToFlipped(FieldConstants.speakerFront),
                         Commands.waitUntil(kicker::hasNote),
                         SuperCommands.autoAim(drive, shooter, pivot)
                     )

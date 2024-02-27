@@ -68,7 +68,7 @@ public class CenterLineRun extends AutoRoutine {
                             )
                         )),
                         // followPathConstructor.apply(noteToStart),
-                        drive.driveTo(FieldConstants.speakerFront),
+                        drive.driveToFlipped(FieldConstants.speakerFront),
                         SuperCommands.autoAim(drive, shooter, pivot)
                     )
                     .withName("AUTO Center Line Run")

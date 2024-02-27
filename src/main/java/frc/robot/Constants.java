@@ -100,25 +100,33 @@ public final class Constants {
         public static int numDriveModules = 4;
         public static enum DriveModulePosition {
             FRONT_LEFT  (CANDevices.frontLeftDriveMotorID, CANDevices.frontLeftTurnMotorID, InvertedValue.CounterClockwise_Positive,
-            0.75),
+            0.75,
+            new Translation2d( DriveConstants.trackWidthXMeters / 2.0,  DriveConstants.trackWidthYMeters / 2.0)),
             FRONT_RIGHT (CANDevices.frontRightDriveMotorID, CANDevices.frontRightTurnMotorID, InvertedValue.Clockwise_Positive,
-            0.5),
+            0.5,
+            new Translation2d( DriveConstants.trackWidthXMeters / 2.0, -DriveConstants.trackWidthYMeters / 2.0)),
             BACK_LEFT   (CANDevices.backLeftDriveMotorID, CANDevices.backLeftTurnMotorID, InvertedValue.CounterClockwise_Positive,
-            0.5),
+            0.5,
+            new Translation2d(-DriveConstants.trackWidthXMeters / 2.0,  DriveConstants.trackWidthYMeters / 2.0)),
             BACK_RIGHT  (CANDevices.backRightDriveMotorID, CANDevices.backRightTurnMotorID, InvertedValue.Clockwise_Positive,
-            0.75);
+            0.75,
+            new Translation2d(-DriveConstants.trackWidthXMeters / 2.0, -DriveConstants.trackWidthYMeters / 2.0));
             public final int driveMotorID;
             public final int turnMotorID;
             // motor direction to drive 'forward' (cancoders at angles given in cancoderOffsetRotations)
             public final InvertedValue driveInverted;
             // absolute position of cancoder when drive wheel is facing 'forward'
             public final double cancoderOffsetRotations;
-            DriveModulePosition(int driveMotorID, int turnMotorID, InvertedValue driveInverted, double cancoderOffsetRotations) {
+            public final Translation2d moduleTranslation;
+            DriveModulePosition(int driveMotorID, int turnMotorID, InvertedValue driveInverted, double cancoderOffsetRotations, Translation2d moduleTranslation) {
                 this.driveMotorID = driveMotorID;
                 this.turnMotorID = turnMotorID;
                 this.driveInverted = driveInverted;
                 this.cancoderOffsetRotations = cancoderOffsetRotations;
+                this.moduleTranslation = moduleTranslation;
             }
+
+            public static final Translation2d[] moduleTranslations = Arrays.stream(values()).map((a) -> a.moduleTranslation).toArray(Translation2d[]::new);
         }
 
         /**Weight with battery and bumpers*/
@@ -346,8 +354,10 @@ public final class Constants {
 
         public static final Pose2d ampFront = new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(90));
         public static final Pose2d speakerFront = new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(180));
-        public static final Pose2d sourceFront = new Pose2d(new Translation2d(15.41, 1.04), Rotation2d.fromDegrees(-60));
+        public static final Pose2d sourceFront = new Pose2d(new Translation2d(15.41, 1.04), Rotation2d.fromDegrees(120));
         public static final Pose2d podiumFront = new Pose2d(new Translation2d(2.54, 4.12), Rotation2d.fromDegrees(180));
+        public static final Pose2d autoSpeakerFront = new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(180));
+        public static final Pose2d autoSourceFront = new Pose2d(new Translation2d(13.41, 1.54), Rotation2d.fromDegrees(180));
 
         public static final double podiumToSpeakerDist = speakerCenter.getDistance(podiumFront.getTranslation());
         public static final double subwooferToSpeakerDist = speakerCenter.getDistance(speakerFront.getTranslation());

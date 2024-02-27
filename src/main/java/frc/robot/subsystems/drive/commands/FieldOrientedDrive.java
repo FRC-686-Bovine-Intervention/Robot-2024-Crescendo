@@ -93,8 +93,9 @@ public class FieldOrientedDrive extends Command {
 
 	private static final LoggedTunableNumber spectatorType = new LoggedTunableNumber("Spectator Type", 1);
 	private static enum SpectatorType {
-		Comp(new Translation2d(0,-1), new Translation2d(1,0)),
+		Comp(new Translation2d(0,1), new Translation2d(-1,0)),
 		Spectator(new Translation2d(1,0), new Translation2d(0,1)),
+		ISpectator(new Translation2d(-1,0), new Translation2d(0,-1)),
 		;
 		private final Translation2d i;
 		private final Translation2d j;

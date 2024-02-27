@@ -71,8 +71,12 @@ public class AllianceFlipUtil {
     return applyFieldRelative(speeds, defaultFlipType);
   }
   public static ChassisSpeeds applyFieldRelative(ChassisSpeeds speeds, FieldFlipType flipType) {
-    var translation = apply(new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond), flipType);
-    return new ChassisSpeeds(translation.getX(), translation.getY(), speeds.omegaRadiansPerSecond);
+    if(!shouldFlip()) return speeds;
+    switch (flipType) {
+      default:
+      case CenterPointFlip: return new ChassisSpeeds(-speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+      case MirrorFlip: return new ChassisSpeeds(-speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+    }
   }
 
   public static ChassisSpeeds applyRobotRelative(ChassisSpeeds speeds, Rotation2d robotRotation) {

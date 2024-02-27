@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -215,11 +216,10 @@ public class RobotContainer {
     private void configureButtonBindings() {
         driveController.a()/* .and(() -> !(intake.hasNote() || kicker.hasNote())) */.whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake().alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
-        // driveController.povUp().whileTrue(pivot.movePivotManually(1));
-        // driveController.povDown().whileTrue(pivot.movePivotManually(-1));
-        driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(FieldConstants.speakerFront))/* new WheelCalibration(drive) */);
-        driveController.povLeft().or(driveController.povDown()).onTrue(pivot.gotoZero());
-        driveController.povUp().onTrue(pivot.gotoAmp());
+        
+        driveController.x().whileTrue(kicker.kick());
+        driveController.y().toggleOnTrue(pivot.gotoAmp());
+
         Supplier<Translation2d> shootAtPos = () -> {
             var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
             var chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(drive.getChassisSpeeds(), drive.getPose().getRotation());
@@ -262,10 +262,23 @@ public class RobotContainer {
             .withName("AutoIntake")
         );
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWith(() -> 90));
-        driveController.x().whileTrue(kicker.kick());
+
+        driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.autoSourceFront));
+        driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.autoSpeakerFront));
+        driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.ampFront));
+
+        driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))));
 
         new Trigger(() -> 
-            drive.getPose().getTranslation().getDistance(FieldConstants.speakerCenter) <= 3 && 
+            drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerCenter)) <= 6 && 
+            MathUtil.isNear(
+                Math.atan2(
+                    AllianceFlipUtil.apply(FieldConstants.speakerCenter).getY() - drive.getPose().getY(),
+                    AllianceFlipUtil.apply(FieldConstants.speakerCenter).getX() - drive.getPose().getX()
+                ),
+                drive.getRotation().getRadians(),
+                1
+            ) &&
             kicker.hasNote() && 
             DriverStation.isEnabled()
         ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
