@@ -12,13 +12,13 @@ import frc.robot.RobotState;
 import frc.robot.SuperCommands;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
-import frc.robot.commands.AutoIntake;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.AllianceFlipUtil;
 
 public class SpikeMarkShots extends AutoRoutine {
@@ -40,7 +40,7 @@ public class SpikeMarkShots extends AutoRoutine {
 
     private static final RobotState robotState = RobotState.getInstance();
 
-    public SpikeMarkShots(Drive drive, Shooter shooter, Pivot pivot, Intake intake, Kicker kicker, AutoIntake autoIntake) {
+    public SpikeMarkShots(Drive drive, Shooter shooter, Pivot pivot, Intake intake, Kicker kicker, NoteVision noteVision) {
         super("Spike Mark Shots",
             MAX_QUESTION_COUNT,
             () -> {
@@ -52,10 +52,10 @@ public class SpikeMarkShots extends AutoRoutine {
                         SuperCommands.autoAim(drive, shooter, pivot),
                         intake.intake(drive::getChassisSpeeds).asProxy().deadlineWith(new FieldOrientedDrive(
                             drive,
-                            autoIntake.getTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
+                            noteVision.getAutoIntakeTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
                             FieldOrientedDrive.pidControlledHeading(
                                 FieldOrientedDrive.pointTo(
-                                    autoIntake.targetLocation(),
+                                    noteVision.autoIntakeTargetLocation(),
                                     () -> Rotation2d.fromDegrees(180)
                                 ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
                             )
@@ -65,10 +65,10 @@ public class SpikeMarkShots extends AutoRoutine {
                         SuperCommands.autoAim(drive, shooter, pivot),
                         intake.intake(drive::getChassisSpeeds).asProxy().deadlineWith(new FieldOrientedDrive(
                             drive,
-                            autoIntake.getTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
+                            noteVision.getAutoIntakeTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
                             FieldOrientedDrive.pidControlledHeading(
                                 FieldOrientedDrive.pointTo(
-                                    autoIntake.targetLocation(),
+                                    noteVision.autoIntakeTargetLocation(),
                                     () -> Rotation2d.fromDegrees(180)
                                 ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
                             )
