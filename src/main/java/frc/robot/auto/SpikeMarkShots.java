@@ -1,87 +1,41 @@
 package frc.robot.auto;
 
 import java.util.List;
-import java.util.Optional;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
-import frc.robot.RobotState;
-import frc.robot.SuperCommands;
+import frc.robot.RobotContainer;
+import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
-import frc.robot.util.AllianceFlipUtil;
 
 public class SpikeMarkShots extends AutoRoutine {
-    private static final int MAX_QUESTION_COUNT = 3;
-
-    private enum StartPosition {
-        Speaker(FieldConstants.speakerFront),
-        Amp(new Pose2d()),
-        Podium(new Pose2d()),
-        Source(new Pose2d())
-        ;
-        public final Pose2d startPose;
-        StartPosition(Pose2d startPose) {
-            this.startPose = startPose;
-        }
-    }
-
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", StartPosition::values); 
 
-    private static final RobotState robotState = RobotState.getInstance();
-
-    public SpikeMarkShots(Drive drive, Shooter shooter, Pivot pivot, Intake intake, Kicker kicker, NoteVision noteVision) {
+    public SpikeMarkShots(RobotContainer robot) {
+        this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
+    }
+    public SpikeMarkShots(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
         super("Spike Mark Shots",
-            MAX_QUESTION_COUNT,
+            List.of(startPosition),
             () -> {
-                return List.of(startPosition);
-            },
-            () -> {
-                return Commands.runOnce(() -> robotState.setPose(drive.getGyroRotation(), drive.getModulePositions(), AllianceFlipUtil.apply(startPosition.getResponse().startPose)))
+                return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
                     .andThen(
-                        SuperCommands.autoAim(drive, shooter, pivot),
-                        intake.intake(drive::getChassisSpeeds).asProxy().deadlineWith(new FieldOrientedDrive(
-                            drive,
-                            noteVision.getAutoIntakeTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
-                            FieldOrientedDrive.pidControlledHeading(
-                                FieldOrientedDrive.pointTo(
-                                    noteVision.autoIntakeTargetLocation(),
-                                    () -> Rotation2d.fromDegrees(180)
-                                ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
-                            )
-                        )),
-                        drive.driveToFlipped(FieldConstants.speakerFront),
-                        Commands.waitUntil(kicker::hasNote),
-                        SuperCommands.autoAim(drive, shooter, pivot),
-                        intake.intake(drive::getChassisSpeeds).asProxy().deadlineWith(new FieldOrientedDrive(
-                            drive,
-                            noteVision.getAutoIntakeTransSpeed(() -> 1.5).orElseGet(() -> new ChassisSpeeds(0, -1, 0)),
-                            FieldOrientedDrive.pidControlledHeading(
-                                FieldOrientedDrive.pointTo(
-                                    noteVision.autoIntakeTargetLocation(),
-                                    () -> Rotation2d.fromDegrees(180)
-                                ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
-                            )
-                        )),
-                        drive.driveToFlipped(FieldConstants.speakerFront),
-                        Commands.waitUntil(kicker::hasNote),
-                        SuperCommands.autoAim(drive, shooter, pivot)
+                        AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker),
+                        AutoCommons.autoIntake(1.5, drive, intake, noteVision),
+                        drive.driveToFlipped(FieldConstants.subwooferFront),
+                        AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker),
+                        AutoCommons.autoIntake(1.5, drive, intake, noteVision),
+                        drive.driveToFlipped(FieldConstants.subwooferFront),
+                        AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker)
                     )
-                    .withName("AUTO Spike Mark Shots")
                 ;
             }
         );
-
     }
-    
 }

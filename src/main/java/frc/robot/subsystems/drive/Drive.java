@@ -96,7 +96,7 @@ public class Drive extends SubsystemBase {
         }
 
         // initialize pose estimator
-        Pose2d initialPoseMeters = FieldConstants.speakerFront;
+        Pose2d initialPoseMeters = FieldConstants.subwooferFront;
         RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
         prevGyroYaw = getPose().getRotation();
 
@@ -561,10 +561,11 @@ public class Drive extends SubsystemBase {
     );
 
     private final Map<Pose2d, String> locationNames = new HashMap<>(Map.of(
-        FieldConstants.ampFront, "amp",
-        FieldConstants.speakerFront, "speaker",
-        FieldConstants.podiumFront, "podium",
-        FieldConstants.sourceFront, "source"
+        FieldConstants.amp, "Amp",
+        FieldConstants.subwooferFront, "Subwoofer Front",
+        FieldConstants.podium, "Podium",
+        FieldConstants.pathfindSource, "Source",
+        FieldConstants.pathfindSpeaker, "Speaker Offset"
     ));
 
     public static String autoDrivePrefix = "AutoDrive";
@@ -574,7 +575,7 @@ public class Drive extends SubsystemBase {
             .filter(e -> e.getKey().equals(pos))
             .findFirst()
             .map(Map.Entry::getValue)
-            .orElse(String.format("x %.3f, y %.3f, θ %.3f°", pos.getX(), pos.getY(), pos.getRotation().getDegrees()));
+            .orElse(pos.toString());
 
         return AutoBuilder.pathfindToPoseFlipped(pos, pathConstraints, 0, 0).withName(String.format("%s (%s)", autoDrivePrefix, name));
     }

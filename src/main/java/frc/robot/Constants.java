@@ -96,21 +96,51 @@ public final class Constants {
         public static final int kickerSensorPort = 2;
     }
 
+    public static final class RobotConstants {
+        public static final Rotation2d shooterForward = Rotation2d.fromDegrees(0);
+        public static final Rotation2d intakeForward = Rotation2d.fromDegrees(180);
+    }
+
     public static final class DriveConstants {
-        public static int numDriveModules = 4;
+        public static final int numDriveModules = DriveModulePosition.values().length;
         public static enum DriveModulePosition {
-            FRONT_LEFT  (CANDevices.frontLeftDriveMotorID, CANDevices.frontLeftTurnMotorID, InvertedValue.CounterClockwise_Positive,
-            0.75,
-            new Translation2d( DriveConstants.trackWidthXMeters / 2.0,  DriveConstants.trackWidthYMeters / 2.0)),
-            FRONT_RIGHT (CANDevices.frontRightDriveMotorID, CANDevices.frontRightTurnMotorID, InvertedValue.Clockwise_Positive,
-            0.5,
-            new Translation2d( DriveConstants.trackWidthXMeters / 2.0, -DriveConstants.trackWidthYMeters / 2.0)),
-            BACK_LEFT   (CANDevices.backLeftDriveMotorID, CANDevices.backLeftTurnMotorID, InvertedValue.CounterClockwise_Positive,
-            0.5,
-            new Translation2d(-DriveConstants.trackWidthXMeters / 2.0,  DriveConstants.trackWidthYMeters / 2.0)),
-            BACK_RIGHT  (CANDevices.backRightDriveMotorID, CANDevices.backRightTurnMotorID, InvertedValue.Clockwise_Positive,
-            0.75,
-            new Translation2d(-DriveConstants.trackWidthXMeters / 2.0, -DriveConstants.trackWidthYMeters / 2.0));
+            FRONT_LEFT(
+                CANDevices.frontLeftDriveMotorID, CANDevices.frontLeftTurnMotorID,
+                InvertedValue.CounterClockwise_Positive,
+                0.75,
+                new Translation2d(
+                    +DriveConstants.trackWidthXMeters / 2.0,
+                    +DriveConstants.trackWidthYMeters / 2.0
+                )
+            ),
+            FRONT_RIGHT(
+                CANDevices.frontRightDriveMotorID, CANDevices.frontRightTurnMotorID,
+                InvertedValue.Clockwise_Positive,
+                0.5,
+                new Translation2d(
+                    +DriveConstants.trackWidthXMeters / 2.0,
+                    -DriveConstants.trackWidthYMeters / 2.0
+                )
+            ),
+            BACK_LEFT(
+                CANDevices.backLeftDriveMotorID, CANDevices.backLeftTurnMotorID,
+                InvertedValue.CounterClockwise_Positive,
+                0.5,
+                new Translation2d(
+                    -DriveConstants.trackWidthXMeters / 2.0,
+                    +DriveConstants.trackWidthYMeters / 2.0
+                )
+            ),
+            BACK_RIGHT(
+                CANDevices.backRightDriveMotorID, CANDevices.backRightTurnMotorID,
+                InvertedValue.Clockwise_Positive,
+                0.75,
+                new Translation2d(
+                    -DriveConstants.trackWidthXMeters / 2.0,
+                    -DriveConstants.trackWidthYMeters / 2.0
+                )
+            ),
+            ;
             public final int driveMotorID;
             public final int turnMotorID;
             // motor direction to drive 'forward' (cancoders at angles given in cancoderOffsetRotations)
@@ -272,8 +302,9 @@ public final class Constants {
             Camera(String hardwareName, Transform3d finalToCamera) {
                 this.hardwareName = hardwareName;
                 this.intermediateToCamera = finalToCamera;
-                this.robotToIntermediate = () -> new Transform3d();
+                this.robotToIntermediate = Transform3d::new;
             }
+            @SuppressWarnings("unused")
             private static Transform3d robotToCameraFromCalibTag(Transform3d robotToCalibTag, Transform3d cameraToCalibTag) {
                 return robotToCalibTag.plus(cameraToCalibTag.inverse());
             }
@@ -350,17 +381,20 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(648);
         public static final double fieldWidth =  Units.inchesToMeters(324);
 
-        public static final Translation2d speakerCenter = new Translation2d(0.240581, 5.547755);
+        public static final Translation2d speakerAimPoint = new Translation2d(0.240581, 5.547755);
 
-        public static final Pose2d ampFront = new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(90));
-        public static final Pose2d speakerFront = new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(180));
-        public static final Pose2d sourceFront = new Pose2d(new Translation2d(15.41, 1.04), Rotation2d.fromDegrees(120));
-        public static final Pose2d podiumFront = new Pose2d(new Translation2d(2.54, 4.12), Rotation2d.fromDegrees(180));
-        public static final Pose2d autoSpeakerFront = new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(180));
-        public static final Pose2d autoSourceFront = new Pose2d(new Translation2d(13.41, 1.54), Rotation2d.fromDegrees(180));
+        public static final Pose2d subwooferFront =     new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(+180));
+        public static final Pose2d subwooferAmp =       new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(-120));
+        public static final Pose2d subwooferSource =    new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(+120));
+        
+        public static final Pose2d amp =                new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(+90));
+        public static final Pose2d podium =             new Pose2d(new Translation2d(2.76, 4.44), Rotation2d.fromDegrees(+157.47));
 
-        public static final double podiumToSpeakerDist = speakerCenter.getDistance(podiumFront.getTranslation());
-        public static final double subwooferToSpeakerDist = speakerCenter.getDistance(speakerFront.getTranslation());
+        public static final Pose2d pathfindSpeaker =    new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(+180));
+        public static final Pose2d pathfindSource =     new Pose2d(new Translation2d(13.41, 1.54), Rotation2d.fromDegrees(+180));
+
+        public static final double podiumToSpeakerDist =    speakerAimPoint.getDistance(podium.getTranslation());
+        public static final double subwooferToSpeakerDist = speakerAimPoint.getDistance(subwooferFront.getTranslation());
     }
 
     // Not the robot main function. This is called by Gradle when deploying to
