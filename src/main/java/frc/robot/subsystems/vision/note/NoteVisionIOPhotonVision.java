@@ -29,9 +29,9 @@ public class NoteVisionIOPhotonVision implements NoteVisionIO {
         inputs.trackedNotes = 
             cam
             .getLatestResult()
-            .targets
+            .getTargets()
             .stream()
-            .filter((target) -> (camMeta.getRobotToCam().getRotation().getY() + target.getPitch()) < targetPitchThreshold.get())
+            // .filter((target) -> (camMeta.getRobotToCam().getRotation().getY() + target.getPitch()) < targetPitchThreshold.get())
             .map(this::resultToTargets)
             .toArray(TrackedNote[]::new);
     }

@@ -8,6 +8,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -23,6 +24,7 @@ public class IntakeIOFalcon550 implements IntakeIO {
     
     public IntakeIOFalcon550() {
         rollerMotor.setInverted(true);
+        rollerMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
         var beltConfig = new TalonFXConfiguration();
         beltConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         beltConfig.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.125;

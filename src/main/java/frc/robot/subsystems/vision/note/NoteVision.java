@@ -31,8 +31,6 @@ public class NoteVision extends VirtualSubsystem {
     private static final LoggedTunableNumber confUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.5);
     public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
     private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/confidenceDecayPerSecond", 1);
-    private static final LoggedTunableNumber FOVYawThreshold = new LoggedTunableNumber("Vision/FOVYawThreshold", 0.5);     
-    private static final LoggedTunableNumber FOVDistanceThreshold = new LoggedTunableNumber("Vision/FOVDistanceThreshold", 2);
 
     public NoteVision(NoteVisionIO io) {
         this.io = io;
@@ -75,10 +73,11 @@ public class NoteVision extends VirtualSubsystem {
         });
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
+        noteMemories.removeIf((memory) -> Double.isNaN(memory.fieldPos.getX()));
 
-        Logger.recordOutput("Vision/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
-        Logger.recordOutput("Vision/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
-        Logger.recordOutput("Vision/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
+        // Logger.recordOutput("Vision/Note/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
+        Logger.recordOutput("Vision/Note/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
+        Logger.recordOutput("Vision/Note/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
     }
 
     public List<TrackedNote> getTrackedNotes() {

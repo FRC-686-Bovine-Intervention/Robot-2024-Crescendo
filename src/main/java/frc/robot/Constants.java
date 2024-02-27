@@ -4,19 +4,26 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.*;
+
 import java.util.Arrays;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import static edu.wpi.first.units.Units.*;
+import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
+import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
 
 public final class Constants {
@@ -93,25 +100,33 @@ public final class Constants {
         public static int numDriveModules = 4;
         public static enum DriveModulePosition {
             FRONT_LEFT  (CANDevices.frontLeftDriveMotorID, CANDevices.frontLeftTurnMotorID, InvertedValue.CounterClockwise_Positive,
-            0.75),
+            0.75,
+            new Translation2d( DriveConstants.trackWidthXMeters / 2.0,  DriveConstants.trackWidthYMeters / 2.0)),
             FRONT_RIGHT (CANDevices.frontRightDriveMotorID, CANDevices.frontRightTurnMotorID, InvertedValue.Clockwise_Positive,
-            0.5),
+            0.5,
+            new Translation2d( DriveConstants.trackWidthXMeters / 2.0, -DriveConstants.trackWidthYMeters / 2.0)),
             BACK_LEFT   (CANDevices.backLeftDriveMotorID, CANDevices.backLeftTurnMotorID, InvertedValue.CounterClockwise_Positive,
-            0.5),
+            0.5,
+            new Translation2d(-DriveConstants.trackWidthXMeters / 2.0,  DriveConstants.trackWidthYMeters / 2.0)),
             BACK_RIGHT  (CANDevices.backRightDriveMotorID, CANDevices.backRightTurnMotorID, InvertedValue.Clockwise_Positive,
-            0.75);
+            0.75,
+            new Translation2d(-DriveConstants.trackWidthXMeters / 2.0, -DriveConstants.trackWidthYMeters / 2.0));
             public final int driveMotorID;
             public final int turnMotorID;
             // motor direction to drive 'forward' (cancoders at angles given in cancoderOffsetRotations)
             public final InvertedValue driveInverted;
             // absolute position of cancoder when drive wheel is facing 'forward'
             public final double cancoderOffsetRotations;
-            DriveModulePosition(int driveMotorID, int turnMotorID, InvertedValue driveInverted, double cancoderOffsetRotations) {
+            public final Translation2d moduleTranslation;
+            DriveModulePosition(int driveMotorID, int turnMotorID, InvertedValue driveInverted, double cancoderOffsetRotations, Translation2d moduleTranslation) {
                 this.driveMotorID = driveMotorID;
                 this.turnMotorID = turnMotorID;
                 this.driveInverted = driveInverted;
                 this.cancoderOffsetRotations = cancoderOffsetRotations;
+                this.moduleTranslation = moduleTranslation;
             }
+
+            public static final Translation2d[] moduleTranslations = Arrays.stream(values()).map((a) -> a.moduleTranslation).toArray(Translation2d[]::new);
         }
 
         /**Weight with battery and bumpers*/
@@ -121,7 +136,8 @@ public final class Constants {
         public static final double trackWidthXMeters = Inches.of(25.5).in(Meters);
         /**Distance between the left and right wheels*/
         public static final double trackWidthYMeters = Inches.of(25.5).in(Meters);
-        public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters);
+        private static final double correctionVal = 314.0 / 320.55;
+        public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters) * correctionVal;
 
         public static final GearRatio driveWheelGearRatio = GearRatio.start(14).drive(22).driven(15).drive(45);
         public static final GearRatio turnWheelGearRatio = GearRatio.start(15).drive(32).driven(10).drive(60);
@@ -161,6 +177,35 @@ public final class Constants {
         public static final double headingTolerance = Degrees.of(1).in(Radians);
     }
 
+    public static final class PivotConstants {
+        public static final double pivotMagnetOffset = 0.2099609375;//0.21337890625;
+        public static final GearRatio motorToMechanismRatio = GearRatio
+            .start(1).drive(5) // Planetary 1
+            .driven(1).drive(5) // Planetary 2
+            .driven(1).drive(4) // Planetary 3
+            .driven(16).drive(36) // Chain
+            ;
+        public static final GearRatio encoderToMechanismRatio = GearRatio.start(1).drive(1);
+        public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.andThen(encoderToMechanismRatio.inverse());
+    }
+
+    public static final class ShooterConstants {
+        public static final double exitVelocity = 5;
+
+        public static final double[] distance = new double[] {
+            FieldConstants.subwooferToSpeakerDist,
+            FieldConstants.podiumToSpeakerDist
+        };
+        public static final double[] RPS = new double[] {
+            90,
+            90
+        };
+        public static final double[] angle = new double[] {
+            Degrees.of(0).in(Radians),
+            Degrees.of(22).in(Radians)
+        };
+    }
+
     public static final class VisionConstants {
         public static enum Camera {
             AprilTagVision(
@@ -172,7 +217,7 @@ public final class Constants {
                         Meters.of(0.499868)
                     ),
                     new Rotation3d(
-                        Units.degreesToRadians(0),
+                        Units.degreesToRadians(-90),
                         -Units.degreesToRadians(30),
                         Units.degreesToRadians(0)
                     )
@@ -215,7 +260,7 @@ public final class Constants {
                     ),
                     new Rotation3d(
                         0,
-                        0,
+                        Degrees.of(15).in(Radians),
                         Math.PI
                     )
                 )
@@ -241,8 +286,25 @@ public final class Constants {
                 return robotToIntermediate.get().plus(intermediateToCamera);
             }
 
+            public ApriltagCamera toApriltagCamera() {
+                return new ApriltagCamera(this.name(), new ApriltagCameraIO(){});
+            }
+            public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function) {
+                return new ApriltagCamera(this.name(), function.apply(this));
+            }
+
             public static void logCameraOverrides() {
-                Logger.recordOutput("Camera Overrides", Arrays.stream(Camera.values()).map((cam) -> new Transform3d(new Pose3d(), new Pose3d(RobotState.getInstance().getPose())).plus(cam.getRobotToCam())).toArray(Transform3d[]::new));
+                Logger.recordOutput("Camera Overrides", 
+                    Arrays.stream(Camera.values())
+                    .map(
+                        (cam) -> 
+                            new Transform3d(
+                                new Pose3d(),
+                                new Pose3d(RobotState.getInstance().getPose())
+                            )
+                            .plus(cam.getRobotToCam())
+                    )
+                    .toArray(Transform3d[]::new));
             }
         }
 
@@ -254,7 +316,6 @@ public final class Constants {
     }
 
     public static final class AutoConstants {
-
         public static final double maxVel = 3;
         public static final double maxAccel = 3;
 
@@ -283,13 +344,23 @@ public final class Constants {
         public static final double autoRotationKp = 8;
         public static final double autoRotationKi = 0;
         public static final double autoRotationKd = 0;
+    }
 
-        public static final double autoBalanceKp = 0.4;
-        public static final double autoBalanceKi = 0.05;
-        public static final double autoBalanceKd = 0.0;
+    public static final class FieldConstants {
+        public static final double fieldLength = Units.inchesToMeters(648);
+        public static final double fieldWidth =  Units.inchesToMeters(324);
 
-        public static final double initialBalanceSpeed = 1;
+        public static final Translation2d speakerCenter = new Translation2d(0.240581, 5.547755);
 
+        public static final Pose2d ampFront = new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(90));
+        public static final Pose2d speakerFront = new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(180));
+        public static final Pose2d sourceFront = new Pose2d(new Translation2d(15.41, 1.04), Rotation2d.fromDegrees(120));
+        public static final Pose2d podiumFront = new Pose2d(new Translation2d(2.54, 4.12), Rotation2d.fromDegrees(180));
+        public static final Pose2d autoSpeakerFront = new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(180));
+        public static final Pose2d autoSourceFront = new Pose2d(new Translation2d(13.41, 1.54), Rotation2d.fromDegrees(180));
+
+        public static final double podiumToSpeakerDist = speakerCenter.getDistance(podiumFront.getTranslation());
+        public static final double subwooferToSpeakerDist = speakerCenter.getDistance(speakerFront.getTranslation());
     }
 
     // Not the robot main function. This is called by Gradle when deploying to

@@ -2,7 +2,6 @@ package frc.robot.subsystems.drive.commands;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleBiFunction;
 
@@ -11,17 +10,20 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.AllianceFlipUtil;
-import frc.robot.util.LazyOptional;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
+import frc.robot.util.LazyOptional;
+import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.controllers.Joystick;
 
-public class DriveWithCustomFlick extends Command {
+public class FieldOrientedDrive extends Command {
 
 	private final Drive drive;
     private final Supplier<ChassisSpeeds> fieldRelativeSupplier;
@@ -32,16 +34,20 @@ public class DriveWithCustomFlick extends Command {
 		return new LazyOptional<Rotation2d>() {
 			private final Timer preciseTurnTimer = new Timer();
 			private final double preciseTurnTimeThreshold = 0.5;
+			private Optional<Rotation2d> outputFilter(Rotation2d i) {
+				return Optional.of(i.minus(forwardDirectionSupplier.get()));
+			}
 			@Override
 			public Optional<Rotation2d> get() {
-				Function<Rotation2d, Optional<Rotation2d>> outputFilter = (i) -> Optional.of(i.minus(forwardDirectionSupplier.get()));
 				if(joystick.magnitude() == 0) {
 					preciseTurnTimer.restart();
 					return Optional.empty();
 				}
-				Rotation2d joyHeading = AllianceFlipUtil.apply(Rotation2d.fromRadians(joystick.radsFromPosYCCW()), FieldFlipType.CenterPointFlip);
+				var joyVec = new Translation2d(joystick.x().getAsDouble(), joystick.y().getAsDouble());
+				joyVec = SpectatorType.getCurrentType().toField(joyVec);
+				Rotation2d joyHeading = AllianceFlipUtil.apply(Rotation2d.fromRadians(Math.atan2(joyVec.getY(), joyVec.getX())), FieldFlipType.CenterPointFlip);
 				if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
-					return outputFilter.apply(joyHeading);
+					return outputFilter(joyHeading);
 				}
 				var snapPoints = snapPointsSupplier.get();
 				int smallestDistanceIndex = 0;
@@ -53,7 +59,7 @@ public class DriveWithCustomFlick extends Command {
 						smallestDistanceIndex = i;
 					}
 				}
-				return outputFilter.apply(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
+				return outputFilter(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
 			}
 		};
 	}
@@ -85,18 +91,48 @@ public class DriveWithCustomFlick extends Command {
 		};
 	}
 
-	public static Supplier<ChassisSpeeds> joystickControlledFieldRelative(Joystick translationalJoystick, BooleanSupplier precisionSupplier) {
-		return () -> AllianceFlipUtil.applyFieldRelative(
-			new ChassisSpeeds(
-				translationalJoystick.y().getAsDouble()	 * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1),
-				-translationalJoystick.x().getAsDouble() * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1),
-				0
-			),
-			FieldFlipType.CenterPointFlip
-		);
+	private static final LoggedTunableNumber spectatorType = new LoggedTunableNumber("Spectator Type", 1);
+	private static enum SpectatorType {
+		Comp(new Translation2d(0,1), new Translation2d(-1,0)),
+		Spectator(new Translation2d(1,0), new Translation2d(0,1)),
+		ISpectator(new Translation2d(-1,0), new Translation2d(0,-1)),
+		;
+		private final Translation2d i;
+		private final Translation2d j;
+		SpectatorType(Translation2d i, Translation2d j) {
+			this.i = i;
+			this.j = j;
+		}
+		public Translation2d toField(Translation2d vec) {
+			return new Translation2d(
+				vec.getX()*i.getX() + vec.getY()*i.getY(),
+				vec.getX()*j.getX() + vec.getY()*j.getY()
+			);
+		}
+		public static SpectatorType getCurrentType() {
+			if(DriverStation.getMatchType() != MatchType.None) return Comp;
+			return SpectatorType.values()[MathUtil.clamp((int)spectatorType.get(), 0, values().length - 1)];
+		}
+	}
+	public static Supplier<ChassisSpeeds> joystickSpectatorToFieldRelative(Joystick translationalJoystick, BooleanSupplier precisionSupplier) {
+		return () -> {
+			var specTrans = new Translation2d(
+				translationalJoystick.x().getAsDouble() * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1),
+				translationalJoystick.y().getAsDouble()	 * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
+			);
+			var fieldTrans = SpectatorType.getCurrentType().toField(specTrans);
+			return AllianceFlipUtil.applyFieldRelative(
+				new ChassisSpeeds(
+					fieldTrans.getX(),
+					fieldTrans.getY(),
+					0
+				),
+				FieldFlipType.CenterPointFlip
+			);
+		};
 	}
 
-	public DriveWithCustomFlick(Drive drive, Supplier<ChassisSpeeds> fieldRelativeSupplier, ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate) {
+	public FieldOrientedDrive(Drive drive, Supplier<ChassisSpeeds> fieldRelativeSupplier, ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate) {
 		addRequirements(drive);
 		setName("DriveWithCustomFlick");
 		this.drive = drive;

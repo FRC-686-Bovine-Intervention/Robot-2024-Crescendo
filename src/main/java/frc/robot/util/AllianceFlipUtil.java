@@ -15,7 +15,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import frc.robot.FieldConstants;
+import frc.robot.Constants.FieldConstants;
 
 /**
  * Utility functions for flipping from the blue to red alliance. By default, all translations and
@@ -71,8 +71,12 @@ public class AllianceFlipUtil {
     return applyFieldRelative(speeds, defaultFlipType);
   }
   public static ChassisSpeeds applyFieldRelative(ChassisSpeeds speeds, FieldFlipType flipType) {
-    var translation = apply(new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond), flipType);
-    return new ChassisSpeeds(translation.getX(), translation.getY(), speeds.omegaRadiansPerSecond);
+    if(!shouldFlip()) return speeds;
+    switch (flipType) {
+      default:
+      case CenterPointFlip: return new ChassisSpeeds(-speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+      case MirrorFlip: return new ChassisSpeeds(-speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+    }
   }
 
   public static ChassisSpeeds applyRobotRelative(ChassisSpeeds speeds, Rotation2d robotRotation) {
