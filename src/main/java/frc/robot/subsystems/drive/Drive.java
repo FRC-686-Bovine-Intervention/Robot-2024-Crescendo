@@ -51,7 +51,7 @@ public class Drive extends SubsystemBase {
 
     private final Module[] modules = new Module[DriveConstants.numDriveModules]; // FL, FR, BL, BR
 
-    private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveConstants.DriveModulePosition.moduleTranslations);
+    private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveModulePosition.moduleTranslations);
     private SwerveModuleState[] lastMeasuredStates = new SwerveModuleState[] {
         new SwerveModuleState(),
         new SwerveModuleState(),
@@ -337,7 +337,7 @@ public class Drive extends SubsystemBase {
         stop();
         for (int i = 0; i < DriveConstants.numDriveModules; i++) {
             lastSetpointStates[i] = new SwerveModuleState(
-                    lastSetpointStates[i].speedMetersPerSecond, DriveConstants.DriveModulePosition.moduleTranslations[i].getAngle());
+                    lastSetpointStates[i].speedMetersPerSecond, DriveModulePosition.moduleTranslations[i].getAngle());
         }
     }
 

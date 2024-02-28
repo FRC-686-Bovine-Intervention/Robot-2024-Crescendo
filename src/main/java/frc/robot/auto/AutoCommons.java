@@ -1,6 +1,7 @@
 package frc.robot.auto;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -62,11 +63,43 @@ public class AutoCommons {
     }
 
     public static Command followPathFlipped(PathPlannerPath path, Drive drive) {
-        return new FollowPathHolonomic(path, RobotState.getInstance()::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive);
+        return new FollowPathHolonomic(path, drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive);
     }
 
     public static Command autoAimAndShootWhenReady(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
-        return Commands.waitUntil(kicker::hasNote).andThen(SuperCommands.autoAim(drive, shooter, pivot).deadlineWith(SuperCommands.shootWhenReady(shooter, pivot, kicker)));
+        return autoAimAndShootWhenReady(ChassisSpeeds::new, drive, shooter, pivot, kicker);
+    }
+
+    public static Command autoAimAndShootWhenReady(Supplier<ChassisSpeeds> translation, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
+        return SuperCommands.autoAim(translation, drive, shooter, pivot).deadlineWith(SuperCommands.shootWhenReady(shooter, pivot, kicker));
+    }
+
+    public static Command autoAimAndFollowPath(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
+        var shootAtPos = SuperCommands.autoAimShootAtPos(drive);
+        var heading = FieldOrientedDrive.pidControlledHeading(
+            FieldOrientedDrive.pointTo(
+                () -> Optional.of(shootAtPos.get()),
+                () -> RobotConstants.shooterForward
+            )
+        );
+        return new FollowPathHolonomic(
+            path,
+            drive::getPose,
+            drive::getChassisSpeeds,
+            (pathSpeeds) -> {
+                pathSpeeds.omegaRadiansPerSecond = heading.applyAsDouble(drive.getPose().getRotation(), Optional.empty());
+                drive.driveVelocity(pathSpeeds);
+            },
+            Drive.autoConfigSup.get(),
+            AllianceFlipUtil::shouldFlip,
+            drive
+        ).withName("a").asProxy().alongWith(
+            shooter.shoot(shootAtPos).asProxy()
+            .deadlineWith(
+                pivot.autoAim(shootAtPos),
+                SuperCommands.shootWhenReady(shooter, pivot, kicker)
+            )
+        );
     }
 
     public static Command autoIntake(double throttle, Drive drive, Intake intake, NoteVision noteVision) {
@@ -84,6 +117,11 @@ public class AutoCommons {
                 )
             )
         ;
+    }
+
+    public static Command autoStrafeIntake(double throttle, Drive drive, Intake intake, NoteVision noteVision) {
+        
+        return null;
     }
 
     public static class PathNameFormats {

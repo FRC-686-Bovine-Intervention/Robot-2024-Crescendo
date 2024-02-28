@@ -27,6 +27,7 @@ import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.CenterLineRun;
+import frc.robot.auto.SpikeMarkAndCenterLine;
 import frc.robot.auto.SpikeMarkShots;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -36,10 +37,10 @@ import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOFalcon550;
 import frc.robot.subsystems.intake.IntakeIOSim;
-import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.kicker.KickerIO;
 import frc.robot.subsystems.kicker.KickerIONeo550;
@@ -290,6 +291,7 @@ public class RobotContainer {
         //     )
         // ));
         autoSelector.addDefaultRoutine(new SpikeMarkShots(this));
+        autoSelector.addDefaultRoutine(new SpikeMarkAndCenterLine(this));
         autoSelector.addRoutine(new CenterLineRun(this));
     }
 

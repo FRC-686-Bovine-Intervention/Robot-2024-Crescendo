@@ -99,6 +99,11 @@ public final class Constants {
     public static final class RobotConstants {
         public static final Rotation2d shooterForward = Rotation2d.fromDegrees(0);
         public static final Rotation2d intakeForward = Rotation2d.fromDegrees(180);
+
+        /**Distance between the front and back wheels*/
+        public static final double trackWidthXMeters = Inches.of(25.5).in(Meters);
+        /**Distance between the left and right wheels*/
+        public static final double trackWidthYMeters = Inches.of(25.5).in(Meters);
     }
 
     public static final class DriveConstants {
@@ -108,8 +113,8 @@ public final class Constants {
                 InvertedValue.CounterClockwise_Positive,
                 0.75,
                 new Translation2d(
-                    +DriveConstants.trackWidthXMeters / 2.0,
-                    +DriveConstants.trackWidthYMeters / 2.0
+                    +RobotConstants.trackWidthXMeters / 2.0,
+                    +RobotConstants.trackWidthYMeters / 2.0
                 )
             ),
             FRONT_RIGHT(
@@ -117,8 +122,8 @@ public final class Constants {
                 InvertedValue.Clockwise_Positive,
                 0.5,
                 new Translation2d(
-                    +DriveConstants.trackWidthXMeters / 2.0,
-                    -DriveConstants.trackWidthYMeters / 2.0
+                    +RobotConstants.trackWidthXMeters / 2.0,
+                    -RobotConstants.trackWidthYMeters / 2.0
                 )
             ),
             BACK_LEFT(
@@ -126,8 +131,8 @@ public final class Constants {
                 InvertedValue.CounterClockwise_Positive,
                 0.5,
                 new Translation2d(
-                    -DriveConstants.trackWidthXMeters / 2.0,
-                    +DriveConstants.trackWidthYMeters / 2.0
+                    -RobotConstants.trackWidthXMeters / 2.0,
+                    +RobotConstants.trackWidthYMeters / 2.0
                 )
             ),
             BACK_RIGHT(
@@ -135,8 +140,8 @@ public final class Constants {
                 InvertedValue.Clockwise_Positive,
                 0.75,
                 new Translation2d(
-                    -DriveConstants.trackWidthXMeters / 2.0,
-                    -DriveConstants.trackWidthYMeters / 2.0
+                    -RobotConstants.trackWidthXMeters / 2.0,
+                    -RobotConstants.trackWidthYMeters / 2.0
                 )
             ),
             ;
@@ -162,10 +167,7 @@ public final class Constants {
         /**Weight with battery and bumpers*/
         public static final double weightKg = Pounds.of(58.0).in(Kilograms);
 
-        /**Distance between the front and back wheels*/
-        public static final double trackWidthXMeters = Inches.of(25.5).in(Meters);
-        /**Distance between the left and right wheels*/
-        public static final double trackWidthYMeters = Inches.of(25.5).in(Meters);
+        
         public static final double driveBaseRadius = Arrays.stream(DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
         private static final double correctionVal = 314.0 / 320.55;
         public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters) * correctionVal;
@@ -185,7 +187,7 @@ public final class Constants {
 
         public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
-        public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(trackWidthXMeters/2, trackWidthYMeters/2);
+        public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(RobotConstants.trackWidthXMeters/2, RobotConstants.trackWidthYMeters/2);
         /**full speed in 0.25 sec*/
         public static final double joystickSlewRateLimit = 1.0 / 0.25;
         public static final double driveJoystickDeadbandPercent = 0.2;

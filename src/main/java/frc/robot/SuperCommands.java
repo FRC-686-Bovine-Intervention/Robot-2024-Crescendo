@@ -35,15 +35,15 @@ public class SuperCommands {
     }
 
     public static Command shootWhenReady(Shooter shooter, Pivot pivot, Kicker kicker) {
-        return Commands.waitUntil(() -> readyToShoot(shooter, pivot)).andThen(kicker.kick().asProxy());
+        return Commands.waitUntil(() -> kicker.hasNote() && readyToShoot(shooter, pivot)).andThen(kicker.kick().asProxy());
     }
 
     public static Command autoAim(Drive drive, Shooter shooter, Pivot pivot) {
         return autoAim(ChassisSpeeds::new, drive, shooter, pivot);
     }
 
-    public static Command autoAim(Supplier<ChassisSpeeds> translationalSpeeds, Drive drive, Shooter shooter, Pivot pivot) {
-        Supplier<Translation2d> shootAtPos = () -> {
+    public static Supplier<Translation2d> autoAimShootAtPos(Drive drive) {
+        return () -> {
             var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
             var chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(drive.getChassisSpeeds(), drive.getPose().getRotation());
             var robotToSpeaker = speakerTrans.minus(drive.getPose().getTranslation());
@@ -56,7 +56,10 @@ public class SuperCommands {
             Logger.recordOutput("Shooter/Shoot at", pointTo);
             return pointTo;
         };
+    }
 
+    public static Command autoAim(Supplier<ChassisSpeeds> translationalSpeeds, Drive drive, Shooter shooter, Pivot pivot) {
+        var shootAtPos = autoAimShootAtPos(drive);
         return
             shooter.shoot(shootAtPos).asProxy()
             .deadlineWith(
