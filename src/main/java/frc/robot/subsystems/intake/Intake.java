@@ -86,7 +86,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtTop,
       this
-    ).withName(IntakeCommand.SECURE_NOTE.name());
+    ).withName(IntakeCommand.SECURE_NOTE.name()).asProxy();
   }
 
   public Command feedToKicker(BooleanSupplier kickerSensor) {
@@ -98,7 +98,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> !inputs.noteAtTop || kickerSensor.getAsBoolean(),
       this
-    ).withName(IntakeCommand.FEED_TO_KICKER.name());
+    ).withName(IntakeCommand.FEED_TO_KICKER.name()).asProxy();
   }
 
   public Command intake(Supplier<ChassisSpeeds> driveSpeedRobotRelative) {
@@ -119,7 +119,7 @@ public class Intake extends SubsystemBase {
       (interrupted) -> {},
       () -> inputs.noteAtBottom,
       this
-    ).withName(IntakeCommand.INTAKE.name());
+    ).withName(IntakeCommand.INTAKE.name()).asProxy();
   }
 
   public Command outtake() {
@@ -131,7 +131,7 @@ public class Intake extends SubsystemBase {
         stopIntake();
       },
       this
-    ).withName(IntakeCommand.OUTTAKE.name());
+    ).withName(IntakeCommand.OUTTAKE.name()).asProxy();
   }
 
   public Command doNothing() {

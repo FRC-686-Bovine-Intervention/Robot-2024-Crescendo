@@ -1,5 +1,7 @@
 package frc.robot.auto;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -10,6 +12,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
@@ -119,13 +122,30 @@ public class AutoCommons {
         ;
     }
 
-    public static Command autoStrafeIntake(double throttle, Drive drive, Intake intake, NoteVision noteVision) {
-        
-        return null;
-    }
-
-    public static class PathNameFormats {
+    public static class AutoPaths {
         public static final String toCenterLine = "%s Start";
         public static final String fromCenterLine = "%s Back";
+
+        public static final String startToSpike = "%s Spike";
+
+        private static final Map<String, PathPlannerPath> loadedPaths = new HashMap<>();
+        private static boolean preloading;
+        public static void preload() {
+            preloading = true;
+            loadPath(String.format(AutoPaths.startToSpike, "Amp"));
+            preloading = false;
+            System.out.println("[Init AutoPaths] Loaded paths");
+        }
+
+        public static PathPlannerPath loadPath(String name) {
+            if(loadedPaths.containsKey(name)) {
+                return loadedPaths.get(name);
+            } else {
+                if(!preloading) DriverStation.reportWarning("[AutoPaths] Loading \"" + name + "\" which wasn't preloaded. Please add path to AutoPaths.preload()", false);
+                var path = PathPlannerPath.fromPathFile(name);
+                loadedPaths.put(name, path);
+                return path;
+            }
+        }
     }
 }

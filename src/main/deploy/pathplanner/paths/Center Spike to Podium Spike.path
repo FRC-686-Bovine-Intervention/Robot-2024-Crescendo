@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.3808801589527209,
-        "y": 5.548357732553615
+        "x": 2.3765889976040895,
+        "y": 5.258796314454726
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.8808801589527209,
-        "y": 5.548357732553615
+        "x": 2.417564669976574,
+        "y": 4.391477915903809
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.3479060269433503,
-        "y": 5.548357732553615
+        "x": 2.513174572179037,
+        "y": 4.289038734972597
       },
       "prevControl": {
-        "x": 1.8479060269433503,
-        "y": 5.548357732553615
+        "x": 2.3424426039603525,
+        "y": 4.4187950308187975
       },
       "nextControl": null,
       "isLocked": false,
@@ -39,11 +39,11 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 180.0,
-    "rotateFast": false
+    "rotation": 154.45928528534625,
+    "rotateFast": true
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Ideal Amp 6 Note",
   "previewStartingState": {
     "rotation": 180.0,
     "velocity": 0

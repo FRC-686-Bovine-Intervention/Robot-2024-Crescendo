@@ -29,6 +29,7 @@ import frc.robot.auto.AutoSelector;
 import frc.robot.auto.CenterLineRun;
 import frc.robot.auto.SpikeMarkAndCenterLine;
 import frc.robot.auto.SpikeMarkShots;
+import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -279,6 +280,7 @@ public class RobotContainer {
     }
 
     private void configureAutos() {
+        AutoPaths.preload();
         // autoSelector.addRoutine(new AutoRoutine(
         //     "Drive Characterization",
         //     new ArrayList<>(0),

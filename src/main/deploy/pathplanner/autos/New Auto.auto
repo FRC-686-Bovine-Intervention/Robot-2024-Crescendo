@@ -1,0 +1,61 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.372685024478224,
+      "y": 6.815871864609129
+    },
+    "rotation": -179.10482628978906
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Amp Spike"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Amp Spike To Center"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Center to Amp Wing With Stop"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Amp Spike To Center"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Center to Amp Wing Without Stop"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Amp Wing to Center Spike"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Center Spike to Podium Spike"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

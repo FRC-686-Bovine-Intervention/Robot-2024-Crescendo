@@ -3,32 +3,38 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.3808801589527209,
-        "y": 5.548357732553615
+        "x": 6.597083251969972,
+        "y": 6.897823209354097
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.8808801589527209,
-        "y": 5.548357732553615
+        "x": 7.389279584504669,
+        "y": 6.7612376347791505
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.3479060269433503,
-        "y": 5.548357732553615
+        "x": 6.979522860779826,
+        "y": 4.377819358446314
       },
       "prevControl": {
-        "x": 1.8479060269433503,
-        "y": 5.548357732553615
+        "x": 6.897571516034858,
+        "y": 5.600260250892095
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.0,
+      "rotationDegrees": -165.75898741854397,
+      "rotateFast": false
+    }
+  ],
   "constraintZones": [],
   "eventMarkers": [],
   "globalConstraints": {
@@ -39,13 +45,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 180.0,
+    "rotation": 153.43494882292217,
     "rotateFast": false
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Ideal Amp 6 Note",
   "previewStartingState": {
-    "rotation": 180.0,
+    "rotation": -163.8556612197166,
     "velocity": 0
   },
   "useDefaultConstraints": true

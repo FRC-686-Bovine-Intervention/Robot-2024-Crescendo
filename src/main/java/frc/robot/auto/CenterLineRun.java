@@ -6,7 +6,7 @@ import com.pathplanner.lib.path.PathPlannerPath;
 
 import frc.robot.Constants.FieldConstants;
 import frc.robot.RobotContainer;
-import frc.robot.auto.AutoCommons.PathNameFormats;
+import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
@@ -27,7 +27,7 @@ public class CenterLineRun extends AutoRoutine {
         super("Center Line Run",
             List.of(startPosition),
             () -> {
-                PathPlannerPath startToCenterLine = PathPlannerPath.fromPathFile(String.format(PathNameFormats.toCenterLine, startPosition.getResponse().toString()));
+                PathPlannerPath startToCenterLine = AutoPaths.loadPath(String.format(AutoPaths.toCenterLine, startPosition.getResponse().toString()));
 
                 return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
                     .andThen(
