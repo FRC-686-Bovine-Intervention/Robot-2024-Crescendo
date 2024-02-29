@@ -221,20 +221,20 @@ public class RobotContainer {
         
         driveController.x().whileTrue(kicker.kick());
         driveController.y().toggleOnTrue(pivot.gotoAmp());
-        //pivot.gotoVariable(driveController.povDown(), driveController.povUp())
-        driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(joystickTranslational, drive, shooter, pivot));
 
-        driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
-            new FieldOrientedDrive(
-                drive,
-                noteVision.getAutoIntakeTransSpeed(noteVision.applyDotProduct(joystickTranslational)).orElseGet(joystickTranslational),
-                FieldOrientedDrive.pidControlledHeading(
-                    FieldOrientedDrive.pointTo(noteVision.autoIntakeTargetLocation(), () -> RobotConstants.intakeForward).orElse(driveCustomFlick)
-                )
-            )
-            .onlyWhile(() -> !intake.hasNote())
-            .withName("Auto Intake")
-        );
+        driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(drive.rotationalSubsystem, shooter, pivot));
+
+        // driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
+        //     new FieldOrientedDrive(
+        //         drive,
+        //         noteVision.getAutoIntakeTransSpeed(noteVision.applyDotProduct(joystickTranslational)).orElseGet(joystickTranslational),
+        //         FieldOrientedDrive.pidControlledHeading(
+        //             FieldOrientedDrive.pointTo(noteVision.autoIntakeTargetLocation(), () -> RobotConstants.intakeForward).orElse(driveCustomFlick)
+        //         )
+        //     )
+        //     .onlyWhile(() -> !intake.hasNote())
+        //     .withName("Auto Intake")
+        // );
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWithTunableNumber());
 
         driveController.povLeft().whileTrue(amp.zero());
@@ -265,19 +265,16 @@ public class RobotContainer {
         ).onTrue(kicker.kick().onlyWhile(() -> shooter.getCurrentCommand() != null));
         
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
-            .and(() -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
-            .onTrue(drive.getDefaultCommand());
+            .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
+            .onTrue(drive.translationSubsystem.getDefaultCommand());
     }
 
     private void configureSubsystems() {
-        drive.setDefaultCommand(
-            new FieldOrientedDrive(
-                drive,
-                joystickTranslational,
-                FieldOrientedDrive.pidControlledHeading(
-                    driveCustomFlick
-                )
-            )
+        drive.translationSubsystem.setDefaultCommand(
+            drive.translationSubsystem.fieldRelative(joystickTranslational)
+        );
+        drive.rotationalSubsystem.setDefaultCommand(
+            drive.rotationalSubsystem.pidControlledHeading(driveCustomFlick)
         );
 
         intake.setDefaultCommand(intake.antiDeadzone());

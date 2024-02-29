@@ -25,10 +25,10 @@ import frc.robot.util.controllers.Joystick;
 
 public class FieldOrientedDrive extends Command {
 
-	private final Drive drive;
-    private final Supplier<ChassisSpeeds> fieldRelativeSupplier;
-	private final ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate;
-	private Optional<Rotation2d> override;
+	// private final Drive drive;
+    // private final Supplier<ChassisSpeeds> fieldRelativeSupplier;
+	// private final ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate;
+	// private Optional<Rotation2d> override;
 
 	public static LazyOptional<Rotation2d> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
 		return new LazyOptional<Rotation2d>() {
@@ -64,35 +64,62 @@ public class FieldOrientedDrive extends Command {
 		};
 	}
 
-	public static LazyOptional<Rotation2d> pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
-        return () -> posToPointTo.get().map((pointTo) -> Rotation2d.fromRadians(Math.atan2(
-			pointTo.getY() - RobotState.getInstance().getPose().getY(),
-			pointTo.getX() - RobotState.getInstance().getPose().getX()
-		)).minus(forward.get()));
-    }
+	// public static LazyOptional<Rotation2d> pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
+    //     return () -> posToPointTo.get().map((pointTo) -> Rotation2d.fromRadians(Math.atan2(
+	// 		pointTo.getY() - RobotState.getInstance().getPose().getY(),
+	// 		pointTo.getX() - RobotState.getInstance().getPose().getX()
+	// 	)).minus(forward.get()));
+    // }
 
-	public static ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> pidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier) {
-		return new ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>>() {
-			private final PIDController headingPID = new PIDController(DriveConstants.headingKp, DriveConstants.headingKi, DriveConstants.headingKd);
-			{
-				headingPID.enableContinuousInput(-Math.PI, Math.PI);  // since gyro angle is not limited to [-pi, pi]
-				headingPID.setTolerance(DriveConstants.headingTolerance);
-			}
-			private Rotation2d desiredHeading;
-			@Override
-			public double applyAsDouble(Rotation2d robotHeading, Optional<Rotation2d> override) {
-				override.ifPresent((r) -> desiredHeading = r);
-				headingSupplier.get().ifPresent((r) -> desiredHeading = r);
-				double turnInput = headingPID.calculate(robotHeading.getRadians(), desiredHeading.getRadians());
-				turnInput = headingPID.atSetpoint() ? 0 : turnInput;
-				turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
-				return turnInput * DriveConstants.maxTurnRateRadiansPerSec;
-			}
-		};
-	}
+	// public static ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> pidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier) {
+	// 	return new ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>>() {
+	// 		private final PIDController headingPID = new PIDController(DriveConstants.headingKp, DriveConstants.headingKi, DriveConstants.headingKd);
+	// 		{
+	// 			headingPID.enableContinuousInput(-Math.PI, Math.PI);  // since gyro angle is not limited to [-pi, pi]
+	// 			headingPID.setTolerance(DriveConstants.headingTolerance);
+	// 		}
+	// 		private Rotation2d desiredHeading;
+	// 		@Override
+	// 		public double applyAsDouble(Rotation2d robotHeading, Optional<Rotation2d> override) {
+	// 			override.ifPresent((r) -> desiredHeading = r);
+	// 			headingSupplier.get().ifPresent((r) -> desiredHeading = r);
+	// 			double turnInput = headingPID.calculate(robotHeading.getRadians(), desiredHeading.getRadians());
+	// 			turnInput = headingPID.atSetpoint() ? 0 : turnInput;
+	// 			turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
+	// 			return turnInput * DriveConstants.maxTurnRateRadiansPerSec;
+	// 		}
+	// 	};
+	// }
+
+	// public static Command epidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier, Drive.Rotational rotation) {
+	// 	return new Command() {
+	// 		private final PIDController headingPID = new PIDController(DriveConstants.headingKp, DriveConstants.headingKi, DriveConstants.headingKd);
+	// 		{
+	// 			headingPID.enableContinuousInput(-Math.PI, Math.PI);  // since gyro angle is not limited to [-pi, pi]
+	// 			headingPID.setTolerance(DriveConstants.headingTolerance);
+	// 		}
+	// 		private Rotation2d desiredHeading;
+	// 		@Override
+	// 		public void initialize() {
+	// 			desiredHeading = rotation.drive.getPose().getRotation();
+	// 		}
+	// 		@Override
+	// 		public void execute() {
+	// 			headingSupplier.get().ifPresent((r) -> desiredHeading = r);
+	// 			double turnInput = headingPID.calculate(rotation.drive.getPose().getRotation().getRadians(), desiredHeading.getRadians());
+	// 			turnInput = headingPID.atSetpoint() ? 0 : turnInput;
+	// 			turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
+	// 			rotation.driveVelocity(turnInput);
+	// 		}
+	// 		@Override
+	// 		public void end(boolean interrupted) {
+	// 			rotation.driveVelocity(0);
+	// 		}
+	// 	};
+	// }
 
 	private static final LoggedTunableNumber spectatorType = new LoggedTunableNumber("Spectator Type", 1);
-	private static enum SpectatorType {
+	public static enum SpectatorType {
 		Comp(new Translation2d(0,1), new Translation2d(-1,0)),
 		Spectator(new Translation2d(1,0), new Translation2d(0,1)),
 		ISpectator(new Translation2d(-1,0), new Translation2d(0,-1)),
@@ -132,33 +159,33 @@ public class FieldOrientedDrive extends Command {
 		};
 	}
 
-	public FieldOrientedDrive(Drive drive, Supplier<ChassisSpeeds> fieldRelativeSupplier, ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate) {
-		addRequirements(drive);
-		setName("DriveWithCustomFlick");
-		this.drive = drive;
-        this.fieldRelativeSupplier = fieldRelativeSupplier;
-        this.headingToTurnRate = headingToTurnRate;
-	}
+	// public FieldOrientedDrive(Drive drive, Supplier<ChassisSpeeds> fieldRelativeSupplier, ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate) {
+	// 	addRequirements(drive);
+	// 	setName("DriveWithCustomFlick");
+	// 	this.drive = drive;
+    //     this.fieldRelativeSupplier = fieldRelativeSupplier;
+    //     this.headingToTurnRate = headingToTurnRate;
+	// }
 
-	@Override
-	public void initialize() {
-		override = Optional.of(drive.getPose().getRotation());
-	}
+	// @Override
+	// public void initialize() {
+	// 	override = Optional.of(drive.getPose().getRotation());
+	// }
 
-	@Override
-	public void execute() {
-		var speeds = fieldRelativeSupplier.get();
-		var heading = drive.getPose().getRotation();
-		speeds.omegaRadiansPerSecond = headingToTurnRate.applyAsDouble(heading, override);
-		override = Optional.empty();
+	// @Override
+	// public void execute() {
+	// 	var speeds = fieldRelativeSupplier.get();
+	// 	var heading = drive.getPose().getRotation();
+	// 	speeds.omegaRadiansPerSecond = headingToTurnRate.applyAsDouble(heading, override);
+	// 	override = Optional.empty();
 
-		speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, heading);
+	// 	speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, heading);
 
-		drive.driveVelocity(speeds);
-	}
+	// 	drive.driveVelocity(speeds);
+	// }
 
-	@Override
-	public void end(boolean interrupted) {
-		drive.stop();
-	}
+	// @Override
+	// public void end(boolean interrupted) {
+	// 	drive.stop();
+	// }
 }

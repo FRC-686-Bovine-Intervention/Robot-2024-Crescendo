@@ -66,21 +66,17 @@ public class AutoCommons {
     }
 
     public static Command followPathFlipped(PathPlannerPath path, Drive drive) {
-        return new FollowPathHolonomic(path, drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive);
+        return new FollowPathHolonomic(path, drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem, drive.rotationalSubsystem);
     }
 
-    public static Command autoAimAndShootWhenReady(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
-        return autoAimAndShootWhenReady(ChassisSpeeds::new, drive, shooter, pivot, kicker);
-    }
-
-    public static Command autoAimAndShootWhenReady(Supplier<ChassisSpeeds> translation, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
-        return SuperCommands.autoAim(translation, drive, shooter, pivot).deadlineWith(SuperCommands.shootWhenReady(shooter, pivot, kicker));
+    public static Command autoAimAndShootWhenReady(Drive.Rotational rotation, Shooter shooter, Pivot pivot, Kicker kicker) {
+        return SuperCommands.autoAim(rotation, shooter, pivot).deadlineWith(SuperCommands.shootWhenReady(shooter, pivot, kicker));
     }
 
     public static Command autoAimAndFollowPath(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
         var shootAtPos = SuperCommands.autoAimShootAtPos(drive);
         var heading = FieldOrientedDrive.pidControlledHeading(
-            FieldOrientedDrive.pointTo(
+            Drive.Rotational.pointTo(
                 () -> Optional.of(shootAtPos.get()),
                 () -> RobotConstants.shooterForward
             )

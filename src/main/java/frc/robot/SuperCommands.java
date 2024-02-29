@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
@@ -36,10 +35,6 @@ public class SuperCommands {
 
     public static Command shootWhenReady(Shooter shooter, Pivot pivot, Kicker kicker) {
         return Commands.waitUntil(() -> kicker.hasNote() && readyToShoot(shooter, pivot)).andThen(kicker.kick().asProxy());
-    }
-
-    public static Command autoAim(Drive drive, Shooter shooter, Pivot pivot) {
-        return autoAim(ChassisSpeeds::new, drive, shooter, pivot);
     }
 
     public static Supplier<Translation2d> autoAimShootAtPos(Drive drive) {
@@ -80,6 +75,8 @@ public class SuperCommands {
     }
 
     public static Command autoAim(Supplier<Translation2d> FORR, Supplier<ChassisSpeeds> translationalSpeeds, Drive drive, Shooter shooter, Pivot pivot) {
+    public static Command autoAim(Drive.Rotational rotation, Shooter shooter, Pivot pivot) {
+        var shootAtPos = autoAimShootAtPos(rotation.drive);
         return
             shooter.shoot(FORR).asProxy()
             .deadlineWith(
@@ -91,6 +88,10 @@ public class SuperCommands {
                             var t = FORR.get();
                             return Optional.of(new Rotation2d(t.getX(), t.getY()));
                         }
+                rotation.pidControlledHeading(
+                    Drive.Rotational.pointTo(
+                        () -> Optional.of(shootAtPos.get()),
+                        () -> RobotConstants.shooterForward
                     )
                 ),
                 pivot.autoAim(FORR).asProxy()
