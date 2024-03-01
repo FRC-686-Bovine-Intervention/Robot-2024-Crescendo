@@ -26,7 +26,6 @@ import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -38,12 +37,17 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.RobotState;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.GeomUtil;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.swerve.ModuleLimits;
+import frc.robot.util.swerve.SwerveSetpoint;
+import frc.robot.util.swerve.SwerveSetpointGenerator;
 
 public class Drive extends SubsystemBase {
     private final GyroIO gyroIO;
@@ -64,13 +68,24 @@ public class Drive extends SubsystemBase {
     private double characterizationVolts = 0.0;
     private final LoggedTunableNumber rotationCorrection = new LoggedTunableNumber("Drive/Rotation Correction", 0.25);
 
-    private ChassisSpeeds setpoint = new ChassisSpeeds();
-    private SwerveModuleState[] lastSetpointStates = new SwerveModuleState[] {
+    private static final LoggedTunableNumber coastWaitTime =
+        new LoggedTunableNumber("Drive/CoastWaitTimeSeconds", 0.5);
+    private static final LoggedTunableNumber coastMetersPerSecThreshold =
+        new LoggedTunableNumber("Drive/CoastMetersPerSecThreshold", 0.05);
+
+    private ChassisSpeeds desiredSpeeds = new ChassisSpeeds();
+    private SwerveSetpoint currentSetpoint =
+        new SwerveSetpoint(
+          new ChassisSpeeds(),
+          new SwerveModuleState[] {
             new SwerveModuleState(),
             new SwerveModuleState(),
             new SwerveModuleState(),
             new SwerveModuleState()
-    };
+        });
+    private final SwerveSetpointGenerator setpointGenerator;
+    private SwerveSetpoint prevSetpoint = currentSetpoint;
+
     private Timer lastMovementTimer = new Timer(); // used for brake mode
 
     private Twist2d fieldVelocity = new Twist2d();
@@ -94,6 +109,8 @@ public class Drive extends SubsystemBase {
         for (var module : modules) {
             module.setBrakeMode(false);
         }
+
+        setpointGenerator = new SwerveSetpointGenerator(DriveConstants.kinematics, DriveConstants.DriveModulePosition.moduleTranslations);
 
         // initialize pose estimator
         Pose2d initialPoseMeters = FieldConstants.speakerFront;
@@ -121,6 +138,9 @@ public class Drive extends SubsystemBase {
             module.periodic();
         }
 
+        ModuleLimits currentModuleLimits = DriveConstants.moduleLimitsFree;
+
+        // drive train collision detection
         for (var module : modules) {
             if (Math.abs(module.getCurrentAmps()) >= currentSpikeThreshold.get()) {
                 if (!spikeModules.contains(module)) {
@@ -136,59 +156,6 @@ public class Drive extends SubsystemBase {
         } else {
             currentSpikeTimer.stop();
             currentSpikeTimer.reset();
-        }
-
-        // Run modules
-        if (DriverStation.isDisabled()) {
-            // Stop moving while disabled
-            for (var module : modules) {
-                module.stop();
-            }
-
-            // Clear setpoint logs
-            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
-
-        } else if (isCharacterizing) {
-            // Run in characterization mode
-            for (var module : modules) {
-                module.runCharacterization(characterizationVolts);
-            }
-
-            // Clear setpoint logs
-            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
-
-        } else {
-            /**
-             * Correction for swerve discrete time control issue. Borrowed from 254:
-             * https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964/5
-             */
-
-            // TODO: replace with ChassisSpeeds.discretize when available in 2024
-            ChassisSpeeds correctedSpeeds = ChassisSpeedsdiscretize(setpoint, rotationCorrection.get());
-            SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(correctedSpeeds);
-            SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeedMetersPerSec);
-
-            // Set to last angles if zero
-            if (correctedSpeeds.vxMetersPerSecond == 0.0
-                    && correctedSpeeds.vyMetersPerSecond == 0.0
-                    && correctedSpeeds.omegaRadiansPerSecond == 0) {
-                for (int i = 0; i < DriveConstants.numDriveModules; i++) {
-                    setpointStates[i] = new SwerveModuleState(0.0, lastSetpointStates[i].angle);
-                }
-            }
-            lastSetpointStates = setpointStates;
-
-            // Send setpoints to modules
-            SwerveModuleState[] optimizedStates = new SwerveModuleState[DriveConstants.numDriveModules];
-            for (int i = 0; i < DriveConstants.numDriveModules; i++) {
-                optimizedStates[i] = modules[i].runSetpoint(setpointStates[i]);
-            }
-
-            // Log setpoint states
-            Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedStates);
         }
 
         // Log measured states
@@ -214,83 +181,65 @@ public class Drive extends SubsystemBase {
 
         // Logger.recordOutput("Odometry/Robot", getPose());
 
-        // Update field velocity
-        ChassisSpeeds chassisSpeeds = kinematics.toChassisSpeeds(measuredStates);
-        Translation2d linearFieldVelocity = new Translation2d(chassisSpeeds.vxMetersPerSecond,
-                chassisSpeeds.vyMetersPerSecond)
-                .rotateBy(getRotation());
-        fieldVelocity = new Twist2d(
-                linearFieldVelocity.getX(),
-                linearFieldVelocity.getY(),
-                gyroInputs.connected
-                        ? gyroInputs.yawVelocityRadPerSec
-                        : chassisSpeeds.omegaRadiansPerSecond);
+        // Update field velocity; use gyro when possible
+        ChassisSpeeds robotRelativeVelocity = getChassisSpeeds();
+        robotRelativeVelocity.omegaRadiansPerSecond =
+            gyroInputs.connected
+                ? gyroInputs.yawVelocityRadPerSec
+                : robotRelativeVelocity.omegaRadiansPerSecond;
+        fieldVelocity = GeomUtil.toTwist2d(robotRelativeVelocity);
 
         // Update brake mode
-        // for (var module : modules) {
-        // module.setBrakeMode(true);
-        // }
+        if (Arrays.stream(modules)
+            .anyMatch(module -> module.getVelocityMetersPerSec() > coastMetersPerSecThreshold.get())) {
+            lastMovementTimer.reset();
+        }
+
+                // Run modules
+        if (DriverStation.isDisabled()) {
+            // Stop moving while disabled
+            for (var module : modules) {
+                module.stop();
+            }
+
+            // Clear setpoint logs
+            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+
+        } else if (isCharacterizing) {
+            // Run in characterization mode
+            for (var module : modules) {
+                module.runCharacterization(characterizationVolts);
+            }
+
+            // Clear setpoint logs
+            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+        } else {
+            currentSetpoint =
+                setpointGenerator.generateSetpoint(currentModuleLimits, prevSetpoint, ChassisSpeeds.discretize(desiredSpeeds, rotationCorrection.get()), Constants.dtSeconds);
+
+            SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
+            for (int i = 0; i < modules.length; i++) {
+                // Optimize setpoints
+                optimizedSetpointStates[i] =
+                    SwerveModuleState.optimize(currentSetpoint.moduleStates()[i], modules[i].getAngle());
+                modules[i].runSetpoint(optimizedSetpointStates[i]);
+            }
+
+            prevSetpoint = currentSetpoint;
+
+            Logger.recordOutput("SwerveStates/Setpoints", optimizedSetpointStates);
+            Logger.recordOutput(
+                "Drive/SwerveStates/Desired(b4 Poofs)",
+                DriveConstants.kinematics.toSwerveModuleStates(desiredSpeeds));
+            Logger.recordOutput("Drive/DesiredSpeeds", desiredSpeeds);
+            Logger.recordOutput("Drive/SetpointSpeeds", currentSetpoint.chassisSpeeds());
+        }
 
         // save values for next loop
         prevGyroYaw = gyroAngle;
     }
-
-    // TODO: remove this when 2024 WPILib comes out
-    /**
-     * Discretizes a continuous-time chassis speed.
-     *
-     * <p>This function converts a continous-time chassis speed into a discrete-time one such that
-     * when the discrete-time chassis speed is applied for one timestep, the robot moves as if the
-     * velocity components are independent (i.e., the robot moves v_x * dt along the x-axis, v_y * dt
-     * along the y-axis, and omega * dt around the z-axis).
-     *
-     * <p>This is useful for compensating for translational skew when translating and rotating a
-     * swerve drivetrain.
-     *
-     * @param vxMetersPerSecond Forward velocity.
-     * @param vyMetersPerSecond Sideways velocity.
-     * @param omegaRadiansPerSecond Angular velocity.
-     * @param dtSeconds The duration of the timestep the speeds should be applied for.
-     * @return Discretized ChassisSpeeds.
-     */
-    public static ChassisSpeeds ChassisSpeedsdiscretize(
-        double vxMetersPerSecond,
-        double vyMetersPerSecond,
-        double omegaRadiansPerSecond,
-        double dtSeconds) {
-        var desiredDeltaPose =
-            new Pose2d(
-                vxMetersPerSecond * dtSeconds,
-                vyMetersPerSecond * dtSeconds,
-                new Rotation2d(omegaRadiansPerSecond * dtSeconds));
-        var twist = new Pose2d().log(desiredDeltaPose);
-        return new ChassisSpeeds(twist.dx / dtSeconds, twist.dy / dtSeconds, twist.dtheta / dtSeconds);
-    }
-
-    /**
-     * Discretizes a continuous-time chassis speed.
-     *
-     * <p>This function converts a continous-time chassis speed into a discrete-time one such that
-     * when the discrete-time chassis speed is applied for one timestep, the robot moves as if the
-     * velocity components are independent (i.e., the robot moves v_x * dt along the x-axis, v_y * dt
-     * along the y-axis, and omega * dt around the z-axis).
-     *
-     * <p>This is useful for compensating for translational skew when translating and rotating a
-     * swerve drivetrain.
-     *
-     * @param continuousSpeeds The continuous speeds.
-     * @param dtSeconds The duration of the timestep the speeds should be applied for.
-     * @return Discretized ChassisSpeeds.
-     */
-    public static ChassisSpeeds ChassisSpeedsdiscretize(ChassisSpeeds continuousSpeeds, double dtSeconds) {
-        return ChassisSpeedsdiscretize(
-            continuousSpeeds.vxMetersPerSecond,
-            continuousSpeeds.vyMetersPerSecond,
-            continuousSpeeds.omegaRadiansPerSecond,
-            dtSeconds);
-    }
-
-
 
     /**
      * Runs the drive at the desired velocity.
@@ -299,7 +248,7 @@ public class Drive extends SubsystemBase {
      */
     public void driveVelocity(ChassisSpeeds speeds) {
         isCharacterizing = false;
-        setpoint = speeds;
+        desiredSpeeds = speeds;
         // speeds will be applied next drive.periodic()
     }
 
@@ -330,15 +279,16 @@ public class Drive extends SubsystemBase {
 
     /**
      * Stops the drive and turns the modules to an X arrangement to resist movement.
-     * The modules will
-     * return to their normal orientations the next time a nonzero velocity is
+     * The modules will return to their normal orientations the next time a nonzero velocity is
      * requested.
      */
     public void stopWithX() {
         stop();
         for (int i = 0; i < DriveConstants.numDriveModules; i++) {
-            lastSetpointStates[i] = new SwerveModuleState(
-                    lastSetpointStates[i].speedMetersPerSecond, DriveConstants.DriveModulePosition.moduleTranslations[i].getAngle());
+            prevSetpoint.moduleStates()[i] = new SwerveModuleState(
+                prevSetpoint.moduleStates()[i].speedMetersPerSecond,
+                DriveConstants.DriveModulePosition.moduleTranslations[i].getAngle()
+            );
         }
     }
 
@@ -354,8 +304,7 @@ public class Drive extends SubsystemBase {
 
     /**
      * Returns the measured X, Y, and theta field velocities in meters per sec. The
-     * components of the
-     * twist are velocities and NOT changes in position.
+     * components of the twist are velocities and NOT changes in position.
      */
     public Twist2d getFieldVelocity() {
         return fieldVelocity;
@@ -439,7 +388,11 @@ public class Drive extends SubsystemBase {
     }
 
     public ChassisSpeeds getChassisSpeeds() {
-        return kinematics.toChassisSpeeds(lastMeasuredStates);
+        return DriveConstants.kinematics.toChassisSpeeds(getModuleStates());
+    }
+
+    public SwerveModuleState[] getModuleStates() {
+        return Arrays.stream(modules).map(Module::getState).toArray(SwerveModuleState[]::new);
     }
 
     /** Runs forwards at the commanded voltage. */

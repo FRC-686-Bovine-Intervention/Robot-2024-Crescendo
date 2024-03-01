@@ -162,7 +162,7 @@ public class RobotContainer {
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
-            .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
+            /*.radialSlewRateLimit(DriveConstants.joystickSlewRateLimit)*/;
 
         joystickTranslational = FieldOrientedDrive.joystickSpectatorToFieldRelative(
             driveJoystick,

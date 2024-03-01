@@ -21,10 +21,12 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
+import frc.robot.util.swerve.ModuleLimits;
 
 public final class Constants {
 
@@ -151,8 +153,9 @@ public final class Constants {
         public static final double driveSnapKi = 0;
         public static final double driveSnapKd = 0;
 
-
         public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
+        // TODO: Find the correct max acceleration (m)/(s^2)
+        public static final double maxDriveAccelerationMetersPerSecPerSec = MetersPerSecondPerSecond.of(2).in(MetersPerSecondPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(trackWidthXMeters/2, trackWidthYMeters/2);
         /**full speed in 0.25 sec*/
@@ -175,6 +178,14 @@ public final class Constants {
         public static final double headingKi = 0;
         public static final double headingKd = 0;
         public static final double headingTolerance = Degrees.of(1).in(Radians);
+
+        public static final ModuleLimits moduleLimitsFree = new ModuleLimits(
+            maxDriveSpeedMetersPerSec,
+            maxDriveAccelerationMetersPerSecPerSec,
+            maxTurnRateRadiansPerSec
+        );
+
+        public static final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveModulePosition.moduleTranslations);
     }
 
     public static final class PivotConstants {
