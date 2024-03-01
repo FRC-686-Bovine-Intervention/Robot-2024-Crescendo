@@ -5,11 +5,12 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
@@ -29,9 +30,21 @@ public class SuperCommands {
         ;
     }
 
+    public static boolean readyToShoot(Shooter shooter, Pivot pivot) {
+        return shooter.readyToShoot() && pivot.atPos();
+    }
+
+    public static Command shootWhenReady(Shooter shooter, Pivot pivot, Kicker kicker) {
+        return Commands.waitUntil(() -> kicker.hasNote() && readyToShoot(shooter, pivot)).andThen(kicker.kick().asProxy());
+    }
+
     public static Command autoAim(Drive drive, Shooter shooter, Pivot pivot) {
-        Supplier<Translation2d> shootAtPos = () -> {
-            var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerCenter);
+        return autoAim(ChassisSpeeds::new, drive, shooter, pivot);
+    }
+
+    public static Supplier<Translation2d> autoAimShootAtPos(Drive drive) {
+        return () -> {
+            var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
             var chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(drive.getChassisSpeeds(), drive.getPose().getRotation());
             var robotToSpeaker = speakerTrans.minus(drive.getPose().getTranslation());
             var robotToSpeakerNorm = robotToSpeaker.div(robotToSpeaker.getNorm());
@@ -40,22 +53,29 @@ public class SuperCommands {
             var chassisOffset = chassisSpeeds.times(timeToSpeaker);
             var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
             var pointTo = speakerTrans.minus(translationalOffset);
+            Logger.recordOutput("Shooter/Shoot at", pointTo);
             return pointTo;
         };
+    }
 
-        return shooter.shoot(shootAtPos).asProxy().deadlineWith(
+    public static Command autoAim(Supplier<ChassisSpeeds> translationalSpeeds, Drive drive, Shooter shooter, Pivot pivot) {
+        var shootAtPos = autoAimShootAtPos(drive);
+        return
+            shooter.shoot(shootAtPos).asProxy()
+            .deadlineWith(
                 new FieldOrientedDrive(
                     drive,
-                    () -> new ChassisSpeeds(),
+                    translationalSpeeds,
                     FieldOrientedDrive.pidControlledHeading(
                         FieldOrientedDrive.pointTo(
                             () -> Optional.of(shootAtPos.get()),
-                            () -> Rotation2d.fromDegrees(0)
+                            () -> RobotConstants.shooterForward
                         )
                     )
                 ),
                 pivot.autoAim(shootAtPos).asProxy()
-            ).finallyDo(() -> Logger.recordOutput("DEBUG/Super", "WHAT"))
-            .withName("AutoAim");
+            )
+            .withName("Auto Aim")
+        ;
     }
 }

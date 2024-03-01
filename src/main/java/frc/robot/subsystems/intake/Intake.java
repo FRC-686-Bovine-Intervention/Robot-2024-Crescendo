@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.intake;
 
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -159,7 +160,13 @@ public class Intake extends SubsystemBase {
     return intakeReversed;
   }
 
-  public IntakeCommand getIntakeCommand() {
-    return IntakeCommand.valueOf(getCurrentCommand().getName());
+  public Optional<IntakeCommand> getIntakeCommand() {
+    return Optional.ofNullable(getCurrentCommand()).map(Command::getName).flatMap((n) -> {
+      try {
+        return Optional.of(IntakeCommand.valueOf(n));
+      } catch (Exception e) {
+        return Optional.empty();
+      }
+    });
   }
 }

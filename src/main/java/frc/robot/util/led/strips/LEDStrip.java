@@ -1,5 +1,6 @@
 package frc.robot.util.led.strips;
 
+import java.util.Arrays;
 import java.util.function.IntConsumer;
 
 import edu.wpi.first.wpilibj.util.Color;
@@ -11,11 +12,7 @@ import frc.robot.util.led.strips.software.SubStrip;
 public interface LEDStrip {
     public int getLength();
     public static int getLength(LEDStrip[] strips) {
-        int accumLength = 0;
-        for(LEDStrip strip : strips) {
-            accumLength += strip.getLength();
-        }
-        return accumLength;
+        return Arrays.stream(strips).mapToInt((s) -> s.getLength()).sum();
     }
 
     public void setLED(int ledIndex, Color color);

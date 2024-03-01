@@ -28,7 +28,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
@@ -54,15 +53,7 @@ public class Drive extends SubsystemBase {
     private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
     private Rotation2d prevGyroYaw = new Rotation2d();
 
-    private final Module[] modules = new Module[DriveModulePosition.values().length]; // FL, FR, BL, BR
-
-    private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveConstants.DriveModulePosition.moduleTranslations);
-    private SwerveModuleState[] lastMeasuredStates = new SwerveModuleState[] {
-        new SwerveModuleState(),
-        new SwerveModuleState(),
-        new SwerveModuleState(),
-        new SwerveModuleState()
-    };
+    private final Module[] modules = new Module[DriveConstants.numDriveModules]; // FL, FR, BL, BR
 
     private boolean isCharacterizing = false;
     private double characterizationVolts = 0.0;
@@ -113,8 +104,8 @@ public class Drive extends SubsystemBase {
         setpointGenerator = new SwerveSetpointGenerator(DriveConstants.kinematics, DriveConstants.DriveModulePosition.moduleTranslations);
 
         // initialize pose estimator
-        Pose2d initialPoseMeters = FieldConstants.speakerFront;
-        RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
+        Pose2d initialPoseMeters = FieldConstants.subwooferFront;
+        RobotState.getInstance().initializePoseEstimator(DriveConstants.kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
         prevGyroYaw = getPose().getRotation();
 
         if (!AutoBuilder.isConfigured()) {
@@ -164,7 +155,6 @@ public class Drive extends SubsystemBase {
             measuredStates[i] = modules[i].getState();
         }
         Logger.recordOutput("SwerveStates/Measured", measuredStates);
-        lastMeasuredStates = measuredStates;
 
         // Update odometry
         Rotation2d gyroAngle;
@@ -174,7 +164,7 @@ public class Drive extends SubsystemBase {
             // either the gyro is disconnected or we are in a simulation
             // accumulate a gyro estimate using module kinematics
             var wheelDeltas = getModulePositionDeltas(); // get change in module positions
-            Twist2d twist = kinematics.toTwist2d(wheelDeltas); // dtheta will be the estimated change in chassis angle
+            Twist2d twist = DriveConstants.kinematics.toTwist2d(wheelDeltas); // dtheta will be the estimated change in chassis angle
             gyroAngle = prevGyroYaw.plus(Rotation2d.fromRadians(twist.dtheta));
         }
         RobotState.getInstance().addDriveMeasurement(gyroAngle, getModulePositions());
@@ -195,7 +185,7 @@ public class Drive extends SubsystemBase {
             lastMovementTimer.reset();
         }
 
-                // Run modules
+        // Run modules
         if (DriverStation.isDisabled()) {
             // Stop moving while disabled
             for (var module : modules) {
@@ -483,7 +473,6 @@ public class Drive extends SubsystemBase {
     private static final LoggedTunableNumber rP = new LoggedTunableNumber("AutoDrive/rP", 1.5);
     private static final LoggedTunableNumber rI = new LoggedTunableNumber("AutoDrive/rI", 0);
     private static final LoggedTunableNumber rD = new LoggedTunableNumber("AutoDrive/rD", 0);
-    private static final double baseRadius = Arrays.stream(DriveConstants.DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
     public static final Supplier<HolonomicPathFollowerConfig> autoConfigSup = () -> {
         return new HolonomicPathFollowerConfig(
             new PIDConstants(
@@ -497,15 +486,15 @@ public class Drive extends SubsystemBase {
                 rD.get()
             ),
             DriveConstants.maxDriveSpeedMetersPerSec,
-            baseRadius,
+            DriveConstants.driveBaseRadius,
             new ReplanningConfig()
         );
     };
 
-    public static final LoggedTunableNumber kAutoDriveMaxVelocity = new LoggedTunableNumber("Drive/kAutoDriveMaxVelocity", 1.0);
-    public static final LoggedTunableNumber kMaxAcceleration = new LoggedTunableNumber("Drive/kMaxAcceleration", 1.0);
-    public static final LoggedTunableNumber kMaxAngularVelocity = new LoggedTunableNumber("Drive/kMaxAngularVelocity", Units.degreesToRadians(540));
-    public static final LoggedTunableNumber kMaxAngularAcceleration = new LoggedTunableNumber("Drive/kMaxAngularAcceleration", Units.degreesToRadians(720));
+    private static final LoggedTunableNumber kAutoDriveMaxVelocity = new LoggedTunableNumber("Drive/kAutoDriveMaxVelocity", 1.0);
+    private static final LoggedTunableNumber kMaxAcceleration = new LoggedTunableNumber("Drive/kMaxAcceleration", 1.0);
+    private static final LoggedTunableNumber kMaxAngularVelocity = new LoggedTunableNumber("Drive/kMaxAngularVelocity", Units.degreesToRadians(540));
+    private static final LoggedTunableNumber kMaxAngularAcceleration = new LoggedTunableNumber("Drive/kMaxAngularAcceleration", Units.degreesToRadians(720));
     private static final PathConstraints pathConstraints = new PathConstraints(
         kAutoDriveMaxVelocity.get(),
         kMaxAcceleration.get(),
@@ -513,21 +502,22 @@ public class Drive extends SubsystemBase {
         kMaxAngularAcceleration.get()
     );
 
-    private final Map<Pose2d, String> locationNames = new HashMap<>(Map.of(
-        FieldConstants.ampFront, "amp",
-        FieldConstants.speakerFront, "speaker",
-        FieldConstants.podiumFront, "podium",
-        FieldConstants.sourceFront, "source"
+    private static final Map<Pose2d, String> locationNames = new HashMap<>(Map.of(
+        FieldConstants.amp, "Amp",
+        FieldConstants.subwooferFront, "Subwoofer Front",
+        FieldConstants.podium, "Podium",
+        FieldConstants.pathfindSource, "Source",
+        FieldConstants.pathfindSpeaker, "Speaker Offset"
     ));
 
-    public static String autoDrivePrefix = "AutoDrive";
+    public static final String autoDrivePrefix = "AutoDrive";
 
     public Command driveToFlipped(Pose2d pos) {
         String name = locationNames.entrySet().stream()
             .filter(e -> e.getKey().equals(pos))
             .findFirst()
             .map(Map.Entry::getValue)
-            .orElse(String.format("x %.3f, y %.3f, θ %.3f°", pos.getX(), pos.getY(), pos.getRotation().getDegrees()));
+            .orElse(pos.toString());
 
         return AutoBuilder.pathfindToPoseFlipped(pos, pathConstraints, 0, 0).withName(String.format("%s (%s)", autoDrivePrefix, name));
     }

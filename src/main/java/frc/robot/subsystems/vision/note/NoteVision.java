@@ -3,7 +3,9 @@ package frc.robot.subsystems.vision.note;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Optional;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -12,12 +14,17 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants;
 import frc.robot.RobotState;
+import frc.robot.subsystems.intake.Intake.IntakeCommand;
+import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.MathExtraUtil;
 import frc.robot.util.VirtualSubsystem;
 
 public class NoteVision extends VirtualSubsystem {
@@ -32,8 +39,19 @@ public class NoteVision extends VirtualSubsystem {
     public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
     private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/confidenceDecayPerSecond", 1);
 
+    private static final double acquireConfidenceThreshold = 1;
+    private static final double detargetConfidenceThreshold = 0.5;
+
+    private Optional<TrackedNote> optIntakeTarget = Optional.empty();
+    private boolean intakeTargetLocked = false;
+
     public NoteVision(NoteVisionIO io) {
         this.io = io;
+
+        CommandScheduler.getInstance().onCommandFinish((comm) -> {if (comm.getName() == IntakeCommand.INTAKE.name()) {
+            optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
+            optIntakeTarget = Optional.empty();
+        }});
     }
 
     @Override
@@ -75,17 +93,46 @@ public class NoteVision extends VirtualSubsystem {
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
         noteMemories.removeIf((memory) -> Double.isNaN(memory.fieldPos.getX()));
 
+        if(optIntakeTarget.isPresent() && optIntakeTarget.get().confidence < detargetConfidenceThreshold) {
+            optIntakeTarget = Optional.empty();
+        }
+        if(optIntakeTarget.isEmpty() || !intakeTargetLocked) {
+            optIntakeTarget = noteMemories.stream().filter((target) -> target.confidence >= acquireConfidenceThreshold).sorted((a,b) -> (int)Math.signum(a.confidence - b.confidence)).findFirst();
+        }
+        intakeTargetLocked = false;
+
         // Logger.recordOutput("Vision/Note/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
         Logger.recordOutput("Vision/Note/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
         Logger.recordOutput("Vision/Note/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
     }
 
-    public List<TrackedNote> getTrackedNotes() {
-        return noteMemories;
+    public DoubleSupplier applyDotProduct(Supplier<ChassisSpeeds> joystickFieldRelative) {
+        return () -> optIntakeTarget.map((target) -> {
+            var robotTrans = RobotState.getInstance().getPose().getTranslation();
+            var targetRelRobot = target.fieldPos.minus(robotTrans);
+            var targetRelRobotNormalized = targetRelRobot.div(targetRelRobot.getNorm());
+            var joystickSpeed = joystickFieldRelative.get();
+            var joy = new Translation2d(joystickSpeed.vxMetersPerSecond, joystickSpeed.vyMetersPerSecond);
+            var throttle = MathExtraUtil.dotProduct(targetRelRobotNormalized, joy);
+            return throttle;
+        }).orElse(0.0);
     }
 
-    public void forgetNote(TrackedNote note) {
-        noteMemories.remove(note);
+    public LazyOptional<ChassisSpeeds> getAutoIntakeTransSpeed(DoubleSupplier throttleSupplier) {
+        return () -> optIntakeTarget.map((target) -> {
+            var robotTrans = RobotState.getInstance().getPose().getTranslation();
+            var targetRelRobot = target.fieldPos.minus(robotTrans);
+            var targetRelRobotNormalized = targetRelRobot.div(targetRelRobot.getNorm());
+            var finalTrans = targetRelRobotNormalized.times(throttleSupplier.getAsDouble());
+            return new ChassisSpeeds(finalTrans.getX(), finalTrans.getY(), 0);
+        });
+    }
+
+    public LazyOptional<Translation2d> autoIntakeTargetLocation() {
+        return () -> optIntakeTarget.map((target) -> {
+            intakeTargetLocked = true;
+            return target.fieldPos;
+        });
     }
 
     private static Pose3d targetToPose(TrackedNote note) {

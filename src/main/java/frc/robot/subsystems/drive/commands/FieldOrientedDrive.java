@@ -148,10 +148,11 @@ public class FieldOrientedDrive extends Command {
 	@Override
 	public void execute() {
 		var speeds = fieldRelativeSupplier.get();
-		speeds.omegaRadiansPerSecond = headingToTurnRate.applyAsDouble(drive.getPose().getRotation(), override);
+		var heading = drive.getPose().getRotation();
+		speeds.omegaRadiansPerSecond = headingToTurnRate.applyAsDouble(heading, override);
 		override = Optional.empty();
 
-		speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, drive.getPose().getRotation());
+		speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, heading);
 
 		drive.driveVelocity(speeds);
 	}
