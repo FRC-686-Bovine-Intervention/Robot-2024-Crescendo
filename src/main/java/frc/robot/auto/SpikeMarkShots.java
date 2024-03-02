@@ -26,13 +26,13 @@ public class SpikeMarkShots extends AutoRoutine {
             () -> {
                 return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
                     .andThen(
-                        AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker),
+                        AutoCommons.autoAimAndShootWhenReady(drive.rotationalSubsystem, shooter, pivot, kicker),
                         AutoCommons.autoIntake(1.5, drive, intake, noteVision),
                         drive.driveToFlipped(FieldConstants.subwooferFront),
-                        AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker),
+                        AutoCommons.autoAimAndShootWhenReady(drive.rotationalSubsystem, shooter, pivot, kicker),
                         AutoCommons.autoIntake(1.5, drive, intake, noteVision),
                         drive.driveToFlipped(FieldConstants.subwooferFront),
-                        AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker)
+                        AutoCommons.autoAimAndShootWhenReady(drive.rotationalSubsystem, shooter, pivot, kicker)
                     )
                 ;
             }

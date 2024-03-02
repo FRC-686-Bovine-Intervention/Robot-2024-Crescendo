@@ -75,7 +75,7 @@ public class AutoCommons {
 
     public static Command autoAimAndFollowPath(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
         var shootAtPos = SuperCommands.autoAimShootAtPos(drive);
-        var heading = FieldOrientedDrive.pidControlledHeading(
+        drive.rotationalSubsystem.pidControlledHeading(
             Drive.Rotational.pointTo(
                 () -> Optional.of(shootAtPos.get()),
                 () -> RobotConstants.shooterForward
@@ -86,12 +86,12 @@ public class AutoCommons {
             drive::getPose,
             drive::getChassisSpeeds,
             (pathSpeeds) -> {
-                pathSpeeds.omegaRadiansPerSecond = heading.applyAsDouble(drive.getPose().getRotation(), Optional.empty());
-                drive.driveVelocity(pathSpeeds);
+                drive.translationSubsystem.driveVelocity(pathSpeeds);
             },
             Drive.autoConfigSup.get(),
             AllianceFlipUtil::shouldFlip,
-            drive
+            drive.translationSubsystem,
+            drive.rotationalSubsystem
         ).withName("a").asProxy().alongWith(
             shooter.shoot(shootAtPos).asProxy()
             .deadlineWith(
@@ -108,16 +108,15 @@ public class AutoCommons {
     public static Command autoIntake(double throttle, Drive drive, Intake intake, NoteVision noteVision) {
         return intake.intake(drive::getChassisSpeeds).asProxy()
             .deadlineWith(
-                new FieldOrientedDrive(
-                    drive,
-                    noteVision.getAutoIntakeTransSpeed(() -> throttle).orElseGet(ChassisSpeeds::new),
-                    FieldOrientedDrive.pidControlledHeading(
-                        FieldOrientedDrive.pointTo(
-                            noteVision.autoIntakeTargetLocation(),
+                Commands.run(() -> {
+                    drive.translationSubsystem.driveVelocity(noteVision.getAutoIntakeTransSpeed(() -> throttle).orElseGet(ChassisSpeeds::new).get());
+                    drive.rotationalSubsystem.pidControlledHeading(
+                        Drive.Rotational.pointTo(
+                            () -> noteVision.autoIntakeTargetLocation().get(),
                             () -> RobotConstants.intakeForward
                         ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
-                    )
-                )
+                    );
+                }, drive.translationSubsystem, drive.rotationalSubsystem)
             )
         ;
     }
