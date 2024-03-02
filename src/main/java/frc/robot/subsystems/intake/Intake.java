@@ -5,7 +5,6 @@
 package frc.robot.subsystems.intake;
 
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -22,11 +21,14 @@ public class Intake extends SubsystemBase {
   private final IntakeIO intakeIO;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
 
-  private final LoggedTunableNumber intakingRollerVoltage = new LoggedTunableNumber("Intake/Intaking/Roller Voltage", 6);
-  private final LoggedTunableNumber intakingBeltVoltage = new LoggedTunableNumber("Intake/Intaking/Belt Voltage", 6);
-  private final LoggedTunableNumber feedingRollerVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 1.5);
-  private final LoggedTunableNumber feedingBeltVoltage = new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 1.5);
-  private final LoggedTunableNumber reverseSpeedThresold = new LoggedTunableNumber("Intake/Reverse Speed Threshold", 0.1);
+  private final LoggedTunableNumber reverseIntakeSpeedThreshold = new LoggedTunableNumber("Intake/Intake Threshold", 0.1);
+
+  private final LoggedTunableNumber intakingPopupRollerVoltage = new LoggedTunableNumber("Intake/Intaking/Pop-Up Roller Voltage", 6.0);
+  private final LoggedTunableNumber intakingIntakeRollerVoltage = new LoggedTunableNumber("Intake/Intaking/Intake Roller Voltage", 6.0);
+  private final LoggedTunableNumber feedingPopupRollerVoltage = new LoggedTunableNumber("Intake/Feeding/Pop-Up Roller Voltage", 0.0);
+  private final LoggedTunableNumber feedingIntakeRollerVoltage = new LoggedTunableNumber("Intake/Feeding/Intake Roller Voltage", 6);
+  private final LoggedTunableNumber kickingIntakeRollerVoltage = new LoggedTunableNumber("Intake/Kicking/Intake Roller Voltage", 6.0);
+  private final LoggedTunableNumber kickingKickerRollerVoltage = new LoggedTunableNumber("Intake/Kicking/Kicker Roller Voltage", 6.0);
 
   private boolean intakeReversed;
 
@@ -34,8 +36,8 @@ public class Intake extends SubsystemBase {
     DEFAULT,
     INTAKE,
     OUTTAKE,
-    SECURE_NOTE,
     FEED_TO_KICKER,
+    KICK_TO_SHHOTER
   };
 
   public Intake(IntakeIO intakeIO) {
@@ -44,31 +46,33 @@ public class Intake extends SubsystemBase {
   }
 
   public boolean hasNote() {
-    return inputs.noteAtBottom || inputs.noteAtTop;
-  }
-
-  public boolean noteReady() {
-    return inputs.noteAtTop;
+    return inputs.intakeSensor || inputs.kickerSensor;
   }
 
   private void startIntake() {
-    intakeIO.setBeltVoltage(intakingBeltVoltage.get());
-    intakeIO.setRollerVoltage(intakingRollerVoltage.get() * (intakeReversed ? -1 : 1));
+    intakeIO.setIntakeVoltage(intakingIntakeRollerVoltage.get());
+    intakeIO.setPopUpVoltage(intakingPopupRollerVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
   private void startFeed() {
-    intakeIO.setBeltVoltage(feedingBeltVoltage.get());
-    intakeIO.setRollerVoltage(feedingRollerVoltage.get() * (intakeReversed ? -1 : 1));
+    intakeIO.setIntakeVoltage(feedingIntakeRollerVoltage.get());
+    intakeIO.setPopUpVoltage(feedingPopupRollerVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
   private void startOuttake() {
-    intakeIO.setBeltVoltage(-intakingBeltVoltage.get());
-    intakeIO.setRollerVoltage(-intakingRollerVoltage.get() * (intakeReversed ? -1 : 1));
+    intakeIO.setIntakeVoltage(-intakingIntakeRollerVoltage.get());
+    intakeIO.setPopUpVoltage(-intakingPopupRollerVoltage.get() * (intakeReversed ? -1 : 1));
+  }
+
+  private void startKick() {
+    intakeIO.setIntakeVoltage(kickingIntakeRollerVoltage.get());
+    intakeIO.setKickerVoltage(kickingKickerRollerVoltage.get());
   }
 
   private void stopIntake() {
-    intakeIO.setBeltVoltage(0);
-    intakeIO.setRollerVoltage(0);
+    intakeIO.setIntakeVoltage(0);
+    intakeIO.setPopUpVoltage(0);
+    intakeIO.setKickerVoltage(0);
   }
 
   @Override
@@ -77,28 +81,28 @@ public class Intake extends SubsystemBase {
     Logger.processInputs("Intake", inputs);
   }
 
-  public Command secureNote() {
-    return new FunctionalCommand(
-      () -> {},
-      () -> {
-        startIntake();
-      },
-      (interrupted) -> {},
-      () -> inputs.noteAtTop,
-      this
-    ).withName(IntakeCommand.SECURE_NOTE.name()).asProxy();
-  }
-
-  public Command feedToKicker(BooleanSupplier kickerSensor) {
+  public Command feedToKicker() {
     return new FunctionalCommand(
       () -> {},
       () -> {
         startFeed();
       },
       (interrupted) -> {},
-      () -> !inputs.noteAtTop || kickerSensor.getAsBoolean(),
+      () -> inputs.kickerSensor,
       this
     ).withName(IntakeCommand.FEED_TO_KICKER.name()).asProxy();
+  }
+
+  public Command kickToShooter() {
+    return new FunctionalCommand(
+      () -> {},
+      () -> {
+        startKick();
+      },
+      (interrupted) -> {},
+      () -> false,
+      this
+    ).withName(IntakeCommand.KICK_TO_SHHOTER.name()).asProxy();
   }
 
   public Command intake(Supplier<ChassisSpeeds> driveSpeedRobotRelative) {
@@ -108,16 +112,16 @@ public class Intake extends SubsystemBase {
       },
       () -> {
         var velocityX = driveSpeedRobotRelative.get().vxMetersPerSecond;
-        if (velocityX < -reverseSpeedThresold.get()) {
+        if (velocityX < -reverseIntakeSpeedThreshold.get()) {
           intakeReversed = true;
         }
-        if (velocityX > reverseSpeedThresold.get()) {
+        if (velocityX > reverseIntakeSpeedThreshold.get()) {
           intakeReversed = false;
         }    
         startIntake();
       },
       (interrupted) -> {},
-      () -> inputs.noteAtBottom,
+      () -> inputs.intakeSensor,
       this
     ).withName(IntakeCommand.INTAKE.name()).asProxy();
   }
@@ -149,10 +153,6 @@ public class Intake extends SubsystemBase {
   }
 
   private void runDefaultCommand() {
-    if (inputs.noteAtBottom && !inputs.noteAtTop) {
-      secureNote().schedule();
-    }
-
     stopIntake();
   }
 

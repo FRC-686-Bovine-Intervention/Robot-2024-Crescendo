@@ -24,7 +24,7 @@ import frc.robot.util.MathExtraUtil;
 public class SuperCommands {
     public static Command feedToKicker(Intake intake, Kicker kicker) {
         return 
-            intake.feedToKicker(kicker::hasNote).asProxy()
+            intake.feedToShooter(kicker::hasNote).asProxy()
             .alongWith(kicker.feedIn())
             .withName("Feed Into Kicker")
         ;

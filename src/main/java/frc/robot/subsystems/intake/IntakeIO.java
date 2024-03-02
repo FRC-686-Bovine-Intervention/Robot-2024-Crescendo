@@ -11,16 +11,19 @@ import frc.robot.util.loggerUtil.LoggedMotor;
 public interface IntakeIO {
     @AutoLog
     public static class IntakeIOInputs {
-        public boolean noteAtBottom;
-        public boolean noteAtTop;
+        public boolean intakeSensor;
+        public boolean kickerSensor;
 
-        public LoggedMotor beltMotor = new LoggedMotor();
-        public LoggedMotor rollerMotor = new LoggedMotor();
+        public LoggedMotor popUpMotor = new LoggedMotor();
+        public LoggedMotor intakeMotor = new LoggedMotor();
+        public LoggedMotor kickerMotor = new LoggedMotor();
     }
 
     public default void updateInputs(IntakeIOInputs inputs) {}
 
-    public default void setRollerVoltage(double voltage) {}
+    public default void setPopUpVoltage(double voltage) {}
 
-    public default void setBeltVoltage(double voltage) {}
+    public default void setIntakeVoltage(double voltage) {}
+
+    public default void setKickerVoltage(double voltage) {}
 }
