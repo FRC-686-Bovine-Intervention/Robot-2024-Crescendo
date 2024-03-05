@@ -13,8 +13,8 @@ public class IntakeIONeo550 implements IntakeIO {
     private final CANSparkMax rollerMotor = null;
     private final CANSparkMax beltMotor = null;
 
-    private final DigitalInput intakeSensor = new DigitalInput(DIOPorts.intakeSensorPort);
-    private final DigitalInput kickerSensor = new DigitalInput(DIOPorts.kickerSensorPort);
+    private final DigitalInput bottomSensor = new DigitalInput(DIOPorts.intakeBottomSensorPort);
+    private final DigitalInput topSensor = new DigitalInput(DIOPorts.intakeTopSensorPort);
     
     public IntakeIONeo550() {
         
@@ -22,20 +22,20 @@ public class IntakeIONeo550 implements IntakeIO {
 
     @Override
     public void updateInputs(IntakeIOInputs inputs) {
-        inputs.popUpMotor.updateFrom(beltMotor);
-        inputs.intakeMotor.updateFrom(rollerMotor);
+        inputs.beltMotor.updateFrom(beltMotor);
+        inputs.rollerMotor.updateFrom(rollerMotor);
 
-        inputs.intakeSensor = !intakeSensor.get();
-        inputs.kickerSensor = !kickerSensor.get();
+        inputs.noteAtBottom = bottomSensor.get();
+        inputs.noteAtTop = topSensor.get();
     }
     
     @Override
-    public void setPopUpVoltage(double voltage) {
+    public void setRollerVoltage(double voltage) {
         rollerMotor.setVoltage(voltage);
     }
 
     @Override
-    public void setIntakeVoltage(double voltage) {
+    public void setBeltVoltage(double voltage) {
         beltMotor.setVoltage(voltage);
     }
 }

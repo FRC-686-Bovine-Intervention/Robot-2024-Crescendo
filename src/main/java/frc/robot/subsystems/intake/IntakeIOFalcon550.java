@@ -16,38 +16,37 @@ import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DIOPorts;
 
 public class IntakeIOFalcon550 implements IntakeIO {
-    private final CANSparkMax popUpMotor = new CANSparkMax(CANDevices.intakeRollerMotorID, MotorType.kBrushless);
-    private final TalonFX intakeMotor = new TalonFX(CANDevices.intakeBeltMotorID, CANDevices.driveCanBusName);
+    private final CANSparkMax rollerMotor = new CANSparkMax(CANDevices.intakeRollerMotorID, MotorType.kBrushless);
+    private final TalonFX beltMotor = new TalonFX(CANDevices.intakeBeltMotorID, CANDevices.driveCanBusName);
 
-
-    private final DigitalInput intakeSensor = new DigitalInput(DIOPorts.intakeSensorPort);
-    private final DigitalInput kickerSensor = new DigitalInput(DIOPorts.kickerSensorPort);
+    private final DigitalInput bottomSensor = new DigitalInput(DIOPorts.intakeBottomSensorPort);
+    private final DigitalInput topSensor = new DigitalInput(DIOPorts.intakeTopSensorPort);
     
     public IntakeIOFalcon550() {
-        popUpMotor.setInverted(true);
-        popUpMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
+        rollerMotor.setInverted(true);
+        rollerMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
         var beltConfig = new TalonFXConfiguration();
         beltConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         beltConfig.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.125;
-        intakeMotor.getConfigurator().apply(beltConfig);
+        beltMotor.getConfigurator().apply(beltConfig);
     }
 
     @Override
     public void updateInputs(IntakeIOInputs inputs) {
-        inputs.popUpMotor.updateFrom(popUpMotor);
-        inputs.intakeMotor.updateFrom(intakeMotor);
+        inputs.beltMotor.updateFrom(beltMotor);
+        inputs.rollerMotor.updateFrom(rollerMotor);
 
-        inputs.intakeSensor = !intakeSensor.get();
-        inputs.kickerSensor = !kickerSensor.get();
+        inputs.noteAtBottom = !bottomSensor.get();
+        inputs.noteAtTop = !topSensor.get();
     }
     
     @Override
-    public void setPopUpVoltage(double voltage) {
-        popUpMotor.setVoltage(voltage);
+    public void setRollerVoltage(double voltage) {
+        rollerMotor.setVoltage(voltage);
     }
 
     @Override
-    public void setIntakeVoltage(double voltage) {
-        intakeMotor.setVoltage(voltage);
+    public void setBeltVoltage(double voltage) {
+        beltMotor.setVoltage(voltage);
     }
 }

@@ -15,15 +15,15 @@ public class IntakeIOSim implements IntakeIO {
     private final DCMotorSim rollerMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
     private final DCMotorSim beltMotor = new DCMotorSim(DCMotor.getFalcon500(1), 1, 1);;
 
-    private final BooleanSupplier intakeSensor;
-    private final BooleanSupplier kickerSensor;
+    private final BooleanSupplier bottomSensor;
+    private final BooleanSupplier topSensor;
 
     private double rollerAppliedVolts = 0;
     private double beltAppliedVolts = 0;
 
-    public IntakeIOSim(BooleanSupplier intakeSensor, BooleanSupplier kickerSensor) {
-        this.intakeSensor = intakeSensor;
-        this.kickerSensor = kickerSensor;
+    public IntakeIOSim(BooleanSupplier noteAtBottom, BooleanSupplier noteAtTop) {
+        this.bottomSensor = noteAtBottom;
+        this.topSensor = noteAtTop;
     }
 
     @Override
@@ -31,22 +31,22 @@ public class IntakeIOSim implements IntakeIO {
         rollerMotor.update(Constants.dtSeconds);
         beltMotor.update(Constants.dtSeconds);
         
-        inputs.intakeMotor.updateFrom(rollerMotor, rollerAppliedVolts);
-        inputs.popUpMotor.updateFrom(beltMotor, beltAppliedVolts);
+        inputs.rollerMotor.updateFrom(rollerMotor, rollerAppliedVolts);
+        inputs.beltMotor.updateFrom(beltMotor, beltAppliedVolts);
         
-        inputs.intakeSensor = intakeSensor.getAsBoolean();
-        inputs.kickerSensor = kickerSensor.getAsBoolean();
+        inputs.noteAtBottom = bottomSensor.getAsBoolean();
+        inputs.noteAtTop = topSensor.getAsBoolean();
     }
 
     @Override
-    public void setPopUpVoltage(double volts) {
+    public void setRollerVoltage(double volts) {
         rollerAppliedVolts = MathUtil.clamp(volts, -12, 12);
 
         rollerMotor.setInputVoltage(rollerAppliedVolts);
     }
 
     @Override
-    public void setIntakeVoltage(double volts) {
+    public void setBeltVoltage(double volts) {
         beltAppliedVolts = MathUtil.clamp(volts, -12, 12);
 
         beltMotor.setInputVoltage(beltAppliedVolts);

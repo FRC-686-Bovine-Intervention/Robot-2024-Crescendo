@@ -89,8 +89,11 @@ public final class Constants {
         public static final int ledSwitchPort = 8;
 
         // Intake
-        public static final int intakeSensorPort = 0;
-        public static final int kickerSensorPort = 1;
+        public static final int intakeBottomSensorPort = 0;
+        public static final int intakeTopSensorPort = 1;
+
+        // Kicker
+        public static final int kickerSensorPort = 2;
     }
 
     public static final class RobotConstants {
