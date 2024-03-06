@@ -30,4 +30,14 @@ public class GearRatio {
     public double driveToDriven() {
         return driveToDrivenRatio;
     }
+
+
+
+    public static class Axle {
+
+    }
+
+    public static class Chain {
+        
+    }
 }

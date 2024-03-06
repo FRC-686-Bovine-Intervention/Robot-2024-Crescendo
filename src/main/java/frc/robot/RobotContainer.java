@@ -20,8 +20,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoCommons.AutoPaths;
@@ -76,7 +76,7 @@ public class RobotContainer {
     public final Pivot pivot;
     public final Kicker kicker;
     public final Shooter shooter;
-    // public final Amp amp;
+    public final Amp amp;
     public final NoteVision noteVision;
     public final ApriltagVision apriltagVision;
     public final Leds ledSystem;
@@ -108,7 +108,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOFalcon550());
                 kicker = new Kicker(new KickerIONeo550());
                 shooter = new Shooter(new ShooterIOFalcon());
-                // amp = new Amp(new AmpIONeo550());
+                amp = new Amp(new AmpIONeo550());
                 pivot = new Pivot(new PivotIOFalcon());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
@@ -128,7 +128,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
-                // amp = new Amp(new AmpIONeo550());
+                amp = new Amp(new AmpIONeo550());
                 noteVision = new NoteVision(new NoteVisionIOSim());
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
             break;
@@ -145,7 +145,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIO() {});
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
-                // amp = new Amp(new AmpIO() {});
+                amp = new Amp(new AmpIO() {});
                 noteVision = null;
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
             break;
@@ -221,8 +221,8 @@ public class RobotContainer {
         
         driveController.x().whileTrue(kicker.kick());
         driveController.y().toggleOnTrue(pivot.gotoAmp());
-
-        driveController.rightBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp())/* SuperCommands.autoAim(joystickTranslational, drive, shooter, pivot) */);
+        //pivot.gotoVariable(driveController.povDown(), driveController.povUp())
+        driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(joystickTranslational, drive, shooter, pivot));
 
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
             new FieldOrientedDrive(
@@ -235,27 +235,29 @@ public class RobotContainer {
             .onlyWhile(() -> !intake.hasNote())
             .withName("Auto Intake")
         );
-        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWith(() -> 90));
+        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWithTunableNumber());
 
+        driveController.povLeft().whileTrue(amp.zero());
+        driveController.povRight().whileTrue(amp.amp());
         // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
         // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
         // driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
+//new Pose2d(drive.getPose().getTranslation(), AllianceFlipUtil.apply(RobotConstants.intakeForward)))
+        driveController.rightStickButton().onTrue(Commands.runOnce(() -> drive.setPose(FieldConstants.subwooferFront)));
 
-        driveController.rightStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), AllianceFlipUtil.apply(RobotConstants.intakeForward)))));
-
-        new Trigger(() -> 
-            drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
-            MathUtil.isNear(
-                Math.atan2(
-                    AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).getY() - drive.getPose().getY(),
-                    AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).getX() - drive.getPose().getX()
-                ),
-                drive.getRotation().getRadians(),
-                1
-            ) &&
-            kicker.hasNote() && 
-            DriverStation.isTeleopEnabled()
-        ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
+        // new Trigger(() -> 
+        //     drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
+        //     MathUtil.isNear(
+        //         Math.atan2(
+        //             AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).getY() - drive.getPose().getY(),
+        //             AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).getX() - drive.getPose().getX()
+        //         ),
+        //         drive.getRotation().getRadians(),
+        //         1
+        //     ) &&
+        //     kicker.hasNote() && 
+        //     DriverStation.isTeleopEnabled()
+        // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
 
         new Trigger(() -> 
             SuperCommands.readyToShoot(shooter, pivot) && 
@@ -280,13 +282,11 @@ public class RobotContainer {
 
         intake.setDefaultCommand(intake.antiDeadzone());
         kicker.setDefaultCommand(kicker.antiDeadzone());
-        new Trigger(kicker::hasNote).whileTrue(intake.doNothing().alongWith(kicker.doNothing()));
+        new Trigger(kicker::hasNote).and(DriverStation::isEnabled).whileTrue(intake.doNothing().alongWith(kicker.doNothing()));
 
         pivot.setDefaultCommand(pivot.gotoZero());
 
         new Trigger(intake::hasNote).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
-
-        // amp.setDefaultCommand(amp.zero());
     }
 
     private void configureAutos() {

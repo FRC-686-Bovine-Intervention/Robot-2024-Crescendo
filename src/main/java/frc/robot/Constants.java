@@ -212,7 +212,7 @@ public final class Constants {
     }
 
     public static final class PivotConstants {
-        public static final double pivotMagnetOffset = -0.330322265625;//0.32958984375;
+        public static final double pivotMagnetOffset = -0.332763671875;//-0.330322265625;//0.32958984375;
         public static final GearRatio motorToMechanismRatio = GearRatio
             .start(8).drive(72) // Planetary 1
             .driven(10).drive(100) // Planetary 2
@@ -224,17 +224,32 @@ public final class Constants {
     public static final class ShooterConstants {
         public static final double exitVelocity = 5;
 
+        // public static final double[] distance = new double[] {
+        //     FieldConstants.subwooferToSpeakerDist,
+        //     FieldConstants.podiumToSpeakerDist
+        // };
+        // public static final double[] RPS = new double[] {
+        //     90,
+        //     90
+        // };
+        // public static final double[] angle = new double[] {
+        //     Degrees.of(0).in(Radians),
+        //     Degrees.of(22).in(Radians)
+        // };
         public static final double[] distance = new double[] {
             FieldConstants.subwooferToSpeakerDist,
-            FieldConstants.podiumToSpeakerDist
+            FieldConstants.podiumToSpeakerDist,
+            Centimeters.of(565).minus(Inches.of(35)).in(Meters)
         };
         public static final double[] RPS = new double[] {
-            90,
-            90
+            30,
+            65,
+            65
         };
         public static final double[] angle = new double[] {
-            Degrees.of(0).in(Radians),
-            Degrees.of(22).in(Radians)
+            Degrees.of(59.39).in(Radians),
+            Degrees.of(37.8).in(Radians),
+            Degrees.of(31.5).in(Radians)
         };
     }
 
