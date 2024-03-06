@@ -16,7 +16,8 @@ public class Kicker extends SubsystemBase {
   private final KickerIO kickerIO;
   private final KickerIOInputsAutoLogged inputs = new KickerIOInputsAutoLogged();
 
-  private final LoggedTunableNumber kickerVolts = new LoggedTunableNumber("Kicker/Kicker Voltage", 1.5);
+  private final LoggedTunableNumber kickerVolts = new LoggedTunableNumber("Kicker/Kicker Voltage", 2);
+  private final LoggedTunableNumber antiDeadzoneVolts = new LoggedTunableNumber("Kicker/Anti Deadzone Voltage", 1.5);
 
   public Kicker(KickerIO kickerIO) {
     this.kickerIO = kickerIO;
@@ -69,6 +70,34 @@ public class Kicker extends SubsystemBase {
       () -> false,
       this
     ).withName("Outtake");
+  }
+
+  public Command antiDeadzone() {
+    return new FunctionalCommand(
+      () -> {},
+      () -> {
+        kickerIO.setKickerVoltage(antiDeadzoneVolts.get());
+      },
+      (interrupted) -> {
+        kickerIO.setKickerVoltage(0);
+      },
+      () -> false,
+      this
+    ).withName("Anti Deadzone");
+  }
+
+  public Command doNothing() {
+    return new FunctionalCommand(
+      () -> {},
+      () -> {
+        kickerIO.setKickerVoltage(0);
+      },
+      (interrupted) -> {
+        kickerIO.setKickerVoltage(0);
+      },
+      () -> false,
+      this
+    ).withName("Do Nothing");
   }
 
   public boolean hasNote() {

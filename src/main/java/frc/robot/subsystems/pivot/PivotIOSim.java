@@ -12,7 +12,7 @@ import frc.robot.Constants;
 
 public class PivotIOSim implements PivotIO {
     private final SingleJointedArmSim pivotSim = new SingleJointedArmSim(
-        DCMotor.getFalcon500(1).withReduction(25),
+        DCMotor.getFalcon500(2).withReduction(25),
         4,
         2,
         Units.inchesToMeters(11.876),
@@ -30,7 +30,7 @@ public class PivotIOSim implements PivotIO {
     public void updateInputs(PivotIOInputs inputs) {
         pivotSim.update(Constants.dtSeconds);
 
-        inputs.pivotMotor.updateFrom(pivotSim, pivotAppliedVolts);
+        inputs.pivotLeftMotor.updateFrom(pivotSim, pivotAppliedVolts);
         inputs.pivotEncoder.updateFrom(pivotSim);
     }
     

@@ -65,16 +65,18 @@ public final class Constants {
         public static final int intakeRollerMotorID = 5;
 
         // Pivot
-        public static final int pivotMotorID = 6;
+        public static final int pivotLeftMotorID = 6;
+        public static final int pivotRightMotorID = 7;
         public static final int pivotEncoderID = 6;
 
         // Kicker
-        public static final int kickerLeftID = 7;
-        public static final int kickerRightID = 8;
+        public static final int kickerLeftID = 8;
+        public static final int kickerRightID = 9;
 
         // Shooter
-        public static final int shooterLeftID = 7;
-        public static final int shooterRightID = 8;
+        public static final int shooterLeftID = 8;
+        public static final int shooterRightID = 9;
+        public static final int shooterAmpID = 6;
 
         // Misc
         public static final int pigeonCanID = 0;
@@ -89,11 +91,10 @@ public final class Constants {
         public static final int ledSwitchPort = 8;
 
         // Intake
-        public static final int intakeBottomSensorPort = 0;
-        public static final int intakeTopSensorPort = 1;
+        public static final int intakeSensorPort = 0;
 
         // Kicker
-        public static final int kickerSensorPort = 2;
+        public static final int kickerSensorPort = 1;
     }
 
     public static final class RobotConstants {
@@ -211,12 +212,10 @@ public final class Constants {
     }
 
     public static final class PivotConstants {
-        public static final double pivotMagnetOffset = 0.2099609375;//0.21337890625;
+        public static final double pivotMagnetOffset = -0.330322265625;//0.32958984375;
         public static final GearRatio motorToMechanismRatio = GearRatio
-            .start(1).drive(5) // Planetary 1
-            .driven(1).drive(5) // Planetary 2
-            .driven(1).drive(4) // Planetary 3
-            .driven(16).drive(36) // Chain
+            .start(8).drive(72) // Planetary 1
+            .driven(10).drive(100) // Planetary 2
             ;
         public static final GearRatio encoderToMechanismRatio = GearRatio.start(1).drive(1);
         public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.andThen(encoderToMechanismRatio.inverse());

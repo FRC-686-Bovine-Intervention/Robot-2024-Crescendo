@@ -24,17 +24,18 @@ public class Intake extends SubsystemBase {
 
   private final LoggedTunableNumber intakingRollerVoltage = new LoggedTunableNumber("Intake/Intaking/Roller Voltage", 6);
   private final LoggedTunableNumber intakingBeltVoltage = new LoggedTunableNumber("Intake/Intaking/Belt Voltage", 6);
-  private final LoggedTunableNumber feedingRollerVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 1.5);
-  private final LoggedTunableNumber feedingBeltVoltage = new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 1.5);
+  private final LoggedTunableNumber feedingRollerVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 3);
+  private final LoggedTunableNumber feedingBeltVoltage = new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 3);
+  private final LoggedTunableNumber antiDeadzoneBeltVoltage = new LoggedTunableNumber("Intake/Anti Deadzone/Belt Voltage", 1);
   private final LoggedTunableNumber reverseSpeedThresold = new LoggedTunableNumber("Intake/Reverse Speed Threshold", 0.1);
 
   private boolean intakeReversed;
 
   public static enum IntakeCommand {
-    DEFAULT,
+    NOTHING,
+    ANTI_DEADZONE,
     INTAKE,
     OUTTAKE,
-    SECURE_NOTE,
     FEED_TO_KICKER,
   };
 
@@ -44,11 +45,7 @@ public class Intake extends SubsystemBase {
   }
 
   public boolean hasNote() {
-    return inputs.noteAtBottom || inputs.noteAtTop;
-  }
-
-  public boolean noteReady() {
-    return inputs.noteAtTop;
+    return inputs.sensor;
   }
 
   private void startIntake() {
@@ -66,6 +63,11 @@ public class Intake extends SubsystemBase {
     intakeIO.setRollerVoltage(-intakingRollerVoltage.get() * (intakeReversed ? -1 : 1));
   }
 
+  private void startAntiDeadzone() {
+    intakeIO.setBeltVoltage(antiDeadzoneBeltVoltage.get());
+    intakeIO.setRollerVoltage(0);
+  }
+
   private void stopIntake() {
     intakeIO.setBeltVoltage(0);
     intakeIO.setRollerVoltage(0);
@@ -77,18 +79,6 @@ public class Intake extends SubsystemBase {
     Logger.processInputs("Intake", inputs);
   }
 
-  public Command secureNote() {
-    return new FunctionalCommand(
-      () -> {},
-      () -> {
-        startIntake();
-      },
-      (interrupted) -> {},
-      () -> inputs.noteAtTop,
-      this
-    ).withName(IntakeCommand.SECURE_NOTE.name()).asProxy();
-  }
-
   public Command feedToKicker(BooleanSupplier kickerSensor) {
     return new FunctionalCommand(
       () -> {},
@@ -96,7 +86,7 @@ public class Intake extends SubsystemBase {
         startFeed();
       },
       (interrupted) -> {},
-      () -> !inputs.noteAtTop || kickerSensor.getAsBoolean(),
+      () -> kickerSensor.getAsBoolean(),
       this
     ).withName(IntakeCommand.FEED_TO_KICKER.name()).asProxy();
   }
@@ -117,14 +107,21 @@ public class Intake extends SubsystemBase {
         startIntake();
       },
       (interrupted) -> {},
-      () -> inputs.noteAtBottom,
+      () -> inputs.sensor,
       this
     ).withName(IntakeCommand.INTAKE.name()).asProxy();
   }
 
-  public Command outtake() {
+  public Command outtake(Supplier<ChassisSpeeds> driveSpeedRobotRelative) {
     return new StartEndCommand(
       () -> {
+        var velocityX = driveSpeedRobotRelative.get().vxMetersPerSecond;
+        if (velocityX < -reverseSpeedThresold.get()) {
+          intakeReversed = true;
+        }
+        if (velocityX > reverseSpeedThresold.get()) {
+          intakeReversed = false;
+        }    
         startOuttake();
       },
       () -> {
@@ -137,23 +134,37 @@ public class Intake extends SubsystemBase {
   public Command doNothing() {
     return new FunctionalCommand(
       () -> {
-        runDefaultCommand();
+        stopIntake();
       },
       () -> {
-        runDefaultCommand();
+        stopIntake();
       },
       (interrupted) -> {},
       () -> false,
       this
-    ).withName(IntakeCommand.DEFAULT.name());
+    ).withName(IntakeCommand.NOTHING.name());
   }
 
-  private void runDefaultCommand() {
-    if (inputs.noteAtBottom && !inputs.noteAtTop) {
-      secureNote().schedule();
-    }
-
-    stopIntake();
+  public Command antiDeadzone() {
+    var subsystem = this;
+    return new Command() {
+      {
+        addRequirements(subsystem);
+        setName(IntakeCommand.ANTI_DEADZONE.name());
+      }
+      @Override
+      public void initialize() {
+        startAntiDeadzone();
+      }
+      @Override
+      public void execute() {
+        startAntiDeadzone();
+      }
+      @Override
+      public void end(boolean interrupted) {
+        stopIntake();
+      }
+    };
   }
 
   public boolean getIntakeReversed() {

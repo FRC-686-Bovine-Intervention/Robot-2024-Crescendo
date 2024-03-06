@@ -31,7 +31,7 @@ public class LoggedMotor implements StructSerializable {
     public void updateFrom(CANSparkMax spark) {
         this.positionRad = Units.rotationsToRadians(spark.getEncoder().getPosition());
         this.velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(spark.getEncoder().getVelocity());
-        this.appliedVolts = spark.getAppliedOutput();
+        this.appliedVolts = spark.getAppliedOutput() * 12;
         this.currentAmps = spark.getOutputCurrent();
     }
 

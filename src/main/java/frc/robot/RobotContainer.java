@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -25,11 +24,11 @@ import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
+import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.CenterLineRun;
 import frc.robot.auto.SpikeMarkAndCenterLine;
 import frc.robot.auto.SpikeMarkShots;
-import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -38,7 +37,6 @@ import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOFalcon550;
 import frc.robot.subsystems.intake.IntakeIOSim;
@@ -55,6 +53,9 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.amp.Amp;
+import frc.robot.subsystems.shooter.amp.AmpIO;
+import frc.robot.subsystems.shooter.amp.AmpIONeo550;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIOPhotonVision;
 import frc.robot.subsystems.vision.apriltag.ApriltagVision;
 import frc.robot.subsystems.vision.note.NoteVision;
@@ -75,6 +76,7 @@ public class RobotContainer {
     public final Pivot pivot;
     public final Kicker kicker;
     public final Shooter shooter;
+    // public final Amp amp;
     public final NoteVision noteVision;
     public final ApriltagVision apriltagVision;
     public final Leds ledSystem;
@@ -106,6 +108,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOFalcon550());
                 kicker = new Kicker(new KickerIONeo550());
                 shooter = new Shooter(new ShooterIOFalcon());
+                // amp = new Amp(new AmpIONeo550());
                 pivot = new Pivot(new PivotIOFalcon());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
@@ -121,10 +124,11 @@ public class RobotContainer {
                     new ModuleIOSim(),
                     new ModuleIOSim()
                 );
-                intake = new Intake(new IntakeIOSim(simJoystick.button(1), simJoystick.button(2)));
+                intake = new Intake(new IntakeIOSim(simJoystick.button(1)));
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
+                // amp = new Amp(new AmpIONeo550());
                 noteVision = new NoteVision(new NoteVisionIOSim());
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
             break;
@@ -141,19 +145,21 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIO() {});
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
+                // amp = new Amp(new AmpIO() {});
                 noteVision = null;
                 apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
             break;
         }
-        ledSystem = new Leds(
-            () -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix),
-            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
-            () -> intake.getIntakeReversed(),
-            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.SECURE_NOTE)),
-            () -> intake.noteReady(),
-            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
-            () -> kicker.hasNote()
-        );
+        ledSystem = null;
+        // ledSystem = new Leds(
+        //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix),
+        //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
+        //     () -> intake.getIntakeReversed(),
+        //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.SECURE_NOTE)),
+        //     () -> intake.noteReady(),
+        //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
+        //     () -> kicker.hasNote()
+        // );
 
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
@@ -211,12 +217,12 @@ public class RobotContainer {
 
     private void configureButtonBindings() {
         driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
-        driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake().alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
+        driveController.b().and(() -> Math.abs(drive.getChassisSpeeds().vxMetersPerSecond) >= 0.5).whileTrue(intake.outtake(drive::getChassisSpeeds).alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
         
         driveController.x().whileTrue(kicker.kick());
         driveController.y().toggleOnTrue(pivot.gotoAmp());
 
-        driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(joystickTranslational, drive, shooter, pivot));
+        driveController.rightBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp())/* SuperCommands.autoAim(joystickTranslational, drive, shooter, pivot) */);
 
         driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
             new FieldOrientedDrive(
@@ -231,9 +237,9 @@ public class RobotContainer {
         );
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWith(() -> 90));
 
-        driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
-        driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
-        driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
+        // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
+        // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
+        // driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
 
         driveController.rightStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), AllianceFlipUtil.apply(RobotConstants.intakeForward)))));
 
@@ -272,11 +278,15 @@ public class RobotContainer {
             )
         );
 
-        intake.setDefaultCommand(intake.doNothing());
+        intake.setDefaultCommand(intake.antiDeadzone());
+        kicker.setDefaultCommand(kicker.antiDeadzone());
+        new Trigger(kicker::hasNote).whileTrue(intake.doNothing().alongWith(kicker.doNothing()));
 
         pivot.setDefaultCommand(pivot.gotoZero());
 
-        new Trigger(pivot::readyToFeed).and(intake::noteReady).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        new Trigger(intake::hasNote).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
+
+        // amp.setDefaultCommand(amp.zero());
     }
 
     private void configureAutos() {

@@ -12,7 +12,8 @@ import frc.robot.util.loggerUtil.LoggedMotor;
 public interface PivotIO {
     @AutoLog
     public static class PivotIOInputs {
-        public LoggedMotor pivotMotor = new LoggedMotor();
+        public LoggedMotor pivotLeftMotor = new LoggedMotor();
+        public LoggedMotor pivotRightMotor = new LoggedMotor();
         public LoggedEncoder pivotEncoder = new LoggedEncoder();
     }
 

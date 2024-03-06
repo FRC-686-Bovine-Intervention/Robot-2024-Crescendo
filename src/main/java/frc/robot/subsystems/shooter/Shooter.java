@@ -25,7 +25,8 @@ public class Shooter extends SubsystemBase {
   private final ShooterIO shooterIO;
   private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
-  private final LoggedTunableNumber maxRPS = new LoggedTunableNumber("Shooter/Rotations Per Second", 45);
+  private static final LoggedTunableNumber maxRPS = new LoggedTunableNumber("Shooter/Rotations Per Second", 45);
+  private static final LoggedTunableNumber ampRPS = new LoggedTunableNumber("Shooter/Amp RPS", 30);
 
   private static final double smoothingFactor = 0.15;
   private double smoothedAverageRPS;
@@ -33,7 +34,7 @@ public class Shooter extends SubsystemBase {
   private static final double followUpTime = 0.5;
   private final Timer followUpTimer = new Timer();
 
-  private final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 3);
+  private static final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 3);
   private boolean readyToShoot;
 
   public Shooter(ShooterIO shooterIO) {
@@ -125,5 +126,25 @@ public class Shooter extends SubsystemBase {
       () -> false,
       this
     ).withName("Pre-emptive Spinup");
+  }
+
+  public Command amp() {
+    var subsystem = this;
+    return new Command() {
+      {
+        addRequirements(subsystem);
+        setName("Amp");
+      }
+      @Override
+      public void execute() {
+        shooterIO.setLeftVelocity(ampRPS.get());
+        shooterIO.setRightVelocity(ampRPS.get());
+      }
+      @Override
+      public void end(boolean interrupted) {
+        shooterIO.setLeftVelocity(0);
+        shooterIO.setRightVelocity(0);
+      }
+    };
   }
 }
