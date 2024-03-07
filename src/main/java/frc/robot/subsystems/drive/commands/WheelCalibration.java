@@ -18,7 +18,7 @@ public class WheelCalibration extends Command {
     private double timeEnd;
 
     public WheelCalibration(Drive drive) {
-        addRequirements(drive.translationSubsystem, drive.rotationalSubsystem);
+        addRequirements(drive);
         this.drive = drive;
     }
 
