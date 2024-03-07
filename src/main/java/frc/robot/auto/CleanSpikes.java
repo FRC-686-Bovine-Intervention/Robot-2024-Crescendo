@@ -37,19 +37,15 @@ public class CleanSpikes extends AutoRoutine {
 
                 return AutoCommons.setOdometryFlipped(AutoCommons.StartPosition.Amp.startPose, drive)
                     .andThen(
-                        AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
-                        .alongWith(
-                            AutoCommons.autoAimAsIfAt(preloadShot, drive.rotationalSubsystem, shooter, pivot, kicker)
-                            .deadlineWith(
-                                Commands.waitUntil(() -> drive.getPose().getTranslation().getDistance(preloadShot) < 0.2)
-                                .andThen(
-                                    SuperCommands.shootWhenReady(shooter, pivot, kicker)
-                                )
-                            )
-                        ),
-                        intake.intake(drive::getChassisSpeeds)
+                        AutoCommons.autoAimAsIfAt(preloadShot, drive.rotationalSubsystem, shooter, pivot, kicker)
                         .deadlineWith(
-                            drive.translationSubsystem.fieldRelative(() -> AllianceFlipUtil.applyFieldRelative(new ChassisSpeeds(0.5, 0, 0)))
+                            Commands.waitUntil(() -> drive.getPose().getTranslation().getDistance(preloadShot) < 0.2)
+                            .andThen(
+                                SuperCommands.shootWhenReady(shooter, pivot, kicker)
+                            )
+                        )
+                        .alongWith(
+                            AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         ),
                         AutoCommons.autoAimAsIfAt(note1Shot, drive.rotationalSubsystem, shooter, pivot, kicker)
                         .deadlineWith(
@@ -57,17 +53,23 @@ public class CleanSpikes extends AutoRoutine {
                             .andThen(
                                 SuperCommands.shootWhenReady(shooter, pivot, kicker)
                             )
-                        ),
-                        AutoCommons.followPathFlipped(ampSpikeToCenterSpike, drive.translationSubsystem)
+                        )
                         .alongWith(
-                            intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAimAsIfAt(note2Shot, drive.rotationalSubsystem, shooter, pivot, kicker)
+                            intake.intake(drive::getChassisSpeeds)
                             .deadlineWith(
-                                Commands.waitUntil(() -> drive.getPose().getTranslation().getDistance(note2Shot) < 0.2)
-                                .andThen(
-                                    SuperCommands.shootWhenReady(shooter, pivot, kicker)
-                                )
+                                drive.translationSubsystem.fieldRelative(() -> AllianceFlipUtil.applyFieldRelative(new ChassisSpeeds(0.5, 0, 0)))
                             )
+                        ),
+                        AutoCommons.autoAimAsIfAt(note2Shot, drive.rotationalSubsystem, shooter, pivot, kicker)
+                        .deadlineWith(
+                            Commands.waitUntil(() -> drive.getPose().getTranslation().getDistance(note2Shot) < 0.2)
+                            .andThen(
+                                SuperCommands.shootWhenReady(shooter, pivot, kicker)
+                            )
+                        )
+                        .alongWith(
+                            AutoCommons.followPathFlipped(ampSpikeToCenterSpike, drive.translationSubsystem),
+                            intake.intake(drive::getChassisSpeeds)
                         ),
                         AutoCommons.followPathFlipped(centerSpikeToPodiumSpike, drive.translationSubsystem)
                         .alongWith(
