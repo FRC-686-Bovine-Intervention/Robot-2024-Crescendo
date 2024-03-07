@@ -70,29 +70,19 @@ public class SuperCommands {
             var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
             var pointTo = speakerTrans.minus(translationalOffset);
             Logger.recordOutput("Shooter/Shoot at", pointTo);
-            return robotTrans.minus(pointTo);
+            return pointTo.minus(robotTrans);
         };
     }
 
-    public static Command autoAim(Supplier<Translation2d> FORR, Supplier<ChassisSpeeds> translationalSpeeds, Drive drive, Shooter shooter, Pivot pivot) {
-    public static Command autoAim(Drive.Rotational rotation, Shooter shooter, Pivot pivot) {
-        var shootAtPos = autoAimShootAtPos(rotation.drive);
+    public static Command autoAim(Supplier<Translation2d> FORR, Drive.Rotational rotation, Shooter shooter, Pivot pivot) {
         return
             shooter.shoot(FORR).asProxy()
             .deadlineWith(
-                new FieldOrientedDrive(
-                    drive,
-                    translationalSpeeds,
-                    FieldOrientedDrive.pidControlledHeading(
-                        () -> {
-                            var t = FORR.get();
-                            return Optional.of(new Rotation2d(t.getX(), t.getY()));
-                        }
                 rotation.pidControlledHeading(
-                    Drive.Rotational.pointTo(
-                        () -> Optional.of(shootAtPos.get()),
-                        () -> RobotConstants.shooterForward
-                    )
+                    () -> {
+                        var t = FORR.get();
+                        return Optional.of(new Rotation2d(t.getX(), t.getY()));
+                    }
                 ),
                 pivot.autoAim(FORR).asProxy()
             )
@@ -100,7 +90,7 @@ public class SuperCommands {
         ;
     }
 
-    public static Command autoAim(Supplier<ChassisSpeeds> translationalSpeeds, Drive drive, Shooter shooter, Pivot pivot) {
-        return autoAim(autoAimFORR(drive), translationalSpeeds, drive, shooter, pivot);
+    public static Command autoAim(Drive.Rotational rotation, Shooter shooter, Pivot pivot) {
+        return autoAim(autoAimFORR(rotation.drive), rotation, shooter, pivot);
     }
 }

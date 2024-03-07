@@ -67,22 +67,27 @@ public class Shooter extends SubsystemBase {
     return Units.radiansToRotations((inputs.leftMotor.velocityRadPerSec + inputs.rightMotor.velocityRadPerSec) * 0.5);
   }
 
-  private boolean shot() {
+  public boolean shot() {
     return getAverageRPS() < smoothedAverageRPS - 4;
   }
 
   public Command shootWith(DoubleSupplier rps) {
     return new FunctionalCommand(
-      () -> {},
       () -> {
-        shooterIO.setLeftVelocity(rps.getAsDouble());
-        shooterIO.setRightVelocity(rps.getAsDouble());
-        readyToShoot = MathUtil.isNear(rps.getAsDouble(), getAverageRPS(), readyToShootTolerance.get());
+        smoothedAverageRPS = getAverageRPS();
+      },
+      () -> {
+        var speed = rps.getAsDouble();
+        shooterIO.setLeftVelocity(speed);
+        shooterIO.setRightVelocity(speed);
+        readyToShoot = MathUtil.isNear(speed, getAverageRPS(), readyToShootTolerance.get());
+        Logger.recordOutput("Shooter/Target RPS", speed);
       },
       (interrupted) -> {
         shooterIO.setLeftVelocity(0);
         shooterIO.setRightVelocity(0);
         readyToShoot = false;
+        Logger.recordOutput("Shooter/Target RPS", 0);
       },
       () -> followUpTimer.hasElapsed(followUpTime),
       this
@@ -115,12 +120,14 @@ public class Shooter extends SubsystemBase {
     return new FunctionalCommand(
       () -> {},
       () -> {
-        shooterIO.setLeftVelocity(70);
-        shooterIO.setRightVelocity(70);
+        shooterIO.setLeftVelocity(45);
+        shooterIO.setRightVelocity(45);
+        Logger.recordOutput("Shooter/Target RPS", 45);
       },
       (interrupted) -> {
         shooterIO.setLeftVelocity(0);
         shooterIO.setRightVelocity(0);
+        Logger.recordOutput("Shooter/Target RPS", 0);
       },
       () -> false,
       this
@@ -138,11 +145,13 @@ public class Shooter extends SubsystemBase {
       public void execute() {
         shooterIO.setLeftVelocity(ampRPS.get());
         shooterIO.setRightVelocity(ampRPS.get());
+        Logger.recordOutput("Shooter/Target RPS", ampRPS.get());
       }
       @Override
       public void end(boolean interrupted) {
         shooterIO.setLeftVelocity(0);
         shooterIO.setRightVelocity(0);
+        Logger.recordOutput("Shooter/Target RPS", 0);
       }
     };
   }

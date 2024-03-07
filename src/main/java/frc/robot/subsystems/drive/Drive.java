@@ -251,12 +251,17 @@ public class Drive extends VirtualSubsystem {
         
         private Translational(Drive drive) {
             this.drive = drive;
+            setName("Drive/Translational");
             SmartDashboard.putData("Subsystems/Drive/Translational", this);
         }
 
         public void driveVelocity(ChassisSpeeds speeds) {
             drive.setpoint.vxMetersPerSecond = speeds.vxMetersPerSecond;
             drive.setpoint.vyMetersPerSecond = speeds.vyMetersPerSecond;
+        }
+
+        public void stop() {
+            driveVelocity(new ChassisSpeeds());
         }
 
         public Command fieldRelative(Supplier<ChassisSpeeds> speeds) {
@@ -272,7 +277,7 @@ public class Drive extends VirtualSubsystem {
                 }
                 @Override
                 public void end(boolean interrupted) {
-                    driveVelocity(new ChassisSpeeds());
+                    stop();
                 }
             };
         }
@@ -301,14 +306,18 @@ public class Drive extends VirtualSubsystem {
         
         private Rotational(Drive drive) {
             this.drive = drive;
+            setName("Drive/Rotational");
             SmartDashboard.putData("Subsystems/Drive/Rotational", this);
         }
 
+        public void driveVelocity(double omega) {
+            drive.setpoint.omegaRadiansPerSecond = omega;
+        }
         public void driveVelocity(ChassisSpeeds speeds) {
             driveVelocity(speeds.omegaRadiansPerSecond);
         }
-        public void driveVelocity(double omega) {
-            drive.setpoint.omegaRadiansPerSecond = omega;
+        public void stop() {
+            driveVelocity(0);
         }
 
         public Command pidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier) {
@@ -332,7 +341,7 @@ public class Drive extends VirtualSubsystem {
                     double turnInput = headingPID.calculate(drive.getRotation().getRadians(), desiredHeading.getRadians());
                     turnInput = headingPID.atSetpoint() ? 0 : turnInput;
                     turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
-                    driveVelocity(turnInput);
+                    driveVelocity(turnInput * DriveConstants.maxTurnRateRadiansPerSec);
                 }
                 @Override
                 public void end(boolean interrupted) {

@@ -34,11 +34,11 @@ public class IdealAmp6Note extends AutoRoutine {
                 // Drive back to wing and continue to center spike
                 return AutoCommons.setOdometryFlipped(StartPosition.Amp.startPose, drive)
                     .andThen(
-                        AutoCommons.autoAimAndFollowPath(startToSpike, drive, shooter, pivot, kicker),
-                        AutoCommons.autoAimAndFollowPath(startToSpike, drive, shooter, pivot, kicker)
-                        .alongWith(
-                            intake.intake(drive::getChassisSpeeds)
-                        )
+                        // AutoCommons.autoAimAndFollowPath(startToSpike, drive, shooter, pivot, kicker),
+                        // AutoCommons.autoAimAndFollowPath(startToSpike, drive, shooter, pivot, kicker)
+                        // .alongWith(
+                        //     intake.intake(drive::getChassisSpeeds)
+                        // )
                     )
                 ;
             }

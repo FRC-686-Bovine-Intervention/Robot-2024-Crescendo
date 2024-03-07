@@ -30,13 +30,13 @@ public class CenterLineRun extends AutoRoutine {
                 PathPlannerPath startToCenterLine = AutoPaths.loadPath(String.format(AutoPaths.toCenterLine, startPosition.getResponse().toString()));
 
                 return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
-                    .andThen(
-                        AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker),
-                        AutoCommons.followPathFlipped(startToCenterLine, drive),
-                        AutoCommons.autoIntake(1.5, drive, intake, noteVision),
-                        drive.driveToFlipped(FieldConstants.subwooferFront),
-                        AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker)
-                    )
+                    // .andThen(
+                    //     AutoCommons.autoAimAndShootWhenReady(drive.rotationalSubsystem, shooter, pivot, kicker),
+                    //     AutoCommons.followPathFlipped(startToCenterLine, drive),
+                    //     AutoCommons.autoIntake(1.5, drive, intake, noteVision),
+                    //     drive.driveToFlipped(FieldConstants.subwooferFront),
+                    //     AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker)
+                    // )
                 ;
             }
         );

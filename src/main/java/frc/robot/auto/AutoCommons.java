@@ -2,8 +2,6 @@ package frc.robot.auto;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -20,7 +18,6 @@ import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
 import frc.robot.SuperCommands;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
@@ -68,57 +65,63 @@ public class AutoCommons {
     public static Command followPathFlipped(PathPlannerPath path, Drive drive) {
         return new FollowPathHolonomic(path, drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem, drive.rotationalSubsystem);
     }
+    public static Command followPathFlipped(PathPlannerPath path, Drive.Translational drive) {
+        return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive);
+    }
 
     public static Command autoAimAndShootWhenReady(Drive.Rotational rotation, Shooter shooter, Pivot pivot, Kicker kicker) {
         return SuperCommands.autoAim(rotation, shooter, pivot).deadlineWith(SuperCommands.shootWhenReady(shooter, pivot, kicker));
     }
 
-    public static Command autoAimAndFollowPath(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
-        var shootAtPos = SuperCommands.autoAimShootAtPos(drive);
-        var heading = FieldOrientedDrive.pidControlledHeading(
-            Drive.Rotational.pointTo(
-                () -> Optional.of(shootAtPos.get()),
-                () -> RobotConstants.shooterForward
-            )
-        );
-        return new FollowPathHolonomic(
-            path,
-            drive::getPose,
-            drive::getChassisSpeeds,
-            (pathSpeeds) -> {
-                pathSpeeds.omegaRadiansPerSecond = heading.applyAsDouble(drive.getPose().getRotation(), Optional.empty());
-                drive.driveVelocity(pathSpeeds);
-            },
-            Drive.autoConfigSup.get(),
-            AllianceFlipUtil::shouldFlip,
-            drive
-        ).withName("a").asProxy().alongWith(
-            shooter.shoot(shootAtPos).asProxy()
-            .deadlineWith(
-                pivot.autoAim(shootAtPos),
-                SuperCommands.shootWhenReady(shooter, pivot, kicker)
-            )
-        );
-    }
+    // public static Command autoAimAndFollowPath(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
+    //     var shootAtPos = SuperCommands.autoAimShootAtPos(drive);
+    //     var heading = FieldOrientedDrive.pidControlledHeading(
+    //         Drive.Rotational.pointTo(
+    //             () -> Optional.of(shootAtPos.get()),
+    //             () -> RobotConstants.shooterForward
+    //         )
+    //     );
+    //     return new FollowPathHolonomic(
+    //         path,
+    //         drive::getPose,
+    //         drive::getChassisSpeeds,
+    //         (pathSpeeds) -> {
+    //             pathSpeeds.omegaRadiansPerSecond = heading.applyAsDouble(drive.getPose().getRotation(), Optional.empty());
+    //             drive.driveVelocity(pathSpeeds);
+    //         },
+    //         Drive.autoConfigSup.get(),
+    //         AllianceFlipUtil::shouldFlip,
+    //         drive
+    //     ).withName("a").asProxy().alongWith(
+    //         shooter.shoot(shootAtPos).asProxy()
+    //         .deadlineWith(
+    //             pivot.autoAim(shootAtPos),
+    //             SuperCommands.shootWhenReady(shooter, pivot, kicker)
+    //         )
+    //     );
+    // }
 
-    public static Command autoAimAsIfAt(Translation2d pos, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
-        return SuperCommands.autoAim(SuperCommands.autoAimFORR(() -> pos, ChassisSpeeds::new), ChassisSpeeds::new, drive, shooter, pivot);
+    public static Command autoAimAsIfAt(Translation2d pos, Drive.Rotational rotational, Shooter shooter, Pivot pivot, Kicker kicker) {
+        return SuperCommands.autoAim(SuperCommands.autoAimFORR(() -> pos, ChassisSpeeds::new), rotational, shooter, pivot);
     }
 
     public static Command autoIntake(double throttle, Drive drive, Intake intake, NoteVision noteVision) {
         return intake.intake(drive::getChassisSpeeds).asProxy()
             .deadlineWith(
-                new FieldOrientedDrive(
-                    drive,
-                    noteVision.getAutoIntakeTransSpeed(() -> throttle).orElseGet(ChassisSpeeds::new),
-                    FieldOrientedDrive.pidControlledHeading(
-                        FieldOrientedDrive.pointTo(
-                            noteVision.autoIntakeTargetLocation(),
-                            () -> RobotConstants.intakeForward
-                        ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
-                    )
-                )
+                drive.translationSubsystem.fieldRelative(noteVision.getAutoIntakeTransSpeed(() -> throttle).orElseGet(ChassisSpeeds::new)),
+                drive.rotationalSubsystem.pidControlledHeading(Drive.Rotational.pointTo(noteVision.autoIntakeTargetLocation(), () -> RobotConstants.intakeForward))
+                // new FieldOrientedDrive(
+                //     drive,
+                //     noteVision.getAutoIntakeTransSpeed(() -> throttle).orElseGet(ChassisSpeeds::new),
+                //     FieldOrientedDrive.pidControlledHeading(
+                //         FieldOrientedDrive.pointTo(
+                //             noteVision.autoIntakeTargetLocation(),
+                //             () -> RobotConstants.intakeForward
+                //         ).orElse(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(180))))
+                //     )
+                // )
             )
+            .withName("AUTO Autointake")
         ;
     }
 

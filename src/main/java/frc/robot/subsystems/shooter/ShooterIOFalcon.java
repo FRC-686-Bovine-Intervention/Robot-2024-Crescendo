@@ -33,8 +33,8 @@ public class ShooterIOFalcon implements ShooterIO {
         rightConfiguration.Slot0.GravityType = GravityTypeValue.Elevator_Static;
         leftConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         rightConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        leftConfiguration.ClosedLoopRamps.DutyCycleClosedLoopRampPeriod = 1;
-        rightConfiguration.ClosedLoopRamps.DutyCycleClosedLoopRampPeriod = 1;
+        leftConfiguration.ClosedLoopRamps.DutyCycleClosedLoopRampPeriod = 0.5;
+        rightConfiguration.ClosedLoopRamps.DutyCycleClosedLoopRampPeriod = 0.5;
         applyMotorConfig();
     }
 

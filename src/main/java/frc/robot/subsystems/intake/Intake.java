@@ -99,10 +99,10 @@ public class Intake extends SubsystemBase {
       () -> {
         var velocityX = driveSpeedRobotRelative.get().vxMetersPerSecond;
         if (velocityX < -reverseSpeedThresold.get()) {
-          intakeReversed = true;
+          intakeReversed = false;
         }
         if (velocityX > reverseSpeedThresold.get()) {
-          intakeReversed = false;
+          intakeReversed = true;
         }    
         startIntake();
       },

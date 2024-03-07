@@ -8,9 +8,12 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.pathplanner.lib.commands.FollowPathHolonomic;
+import com.pathplanner.lib.path.PathPlannerPath;
+
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -20,13 +23,14 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.CenterLineRun;
+import frc.robot.auto.CleanSpikes;
 import frc.robot.auto.SpikeMarkAndCenterLine;
 import frc.robot.auto.SpikeMarkShots;
 import frc.robot.subsystems.drive.Drive;
@@ -223,6 +227,10 @@ public class RobotContainer {
         driveController.y().toggleOnTrue(pivot.gotoAmp());
 
         driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(drive.rotationalSubsystem, shooter, pivot));
+        // driveController.leftBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
+        // driveController.leftBumper().onTrue(new FollowPathHolonomic(PathPlannerPath.fromPathFile("amazing awesome"), drive::getPose, drive::getChassisSpeeds, drive.translationSubsystem::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem));
+        driveController.leftBumper().toggleOnTrue(SuperCommands.autoAim(SuperCommands.autoAimFORR(() -> new Translation2d(2.38, 4.69), ChassisSpeeds::new), drive.rotationalSubsystem, shooter, pivot));
+        // driveController.rightBumper().toggleOnTrue(drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(Rotation2d.fromDegrees(90))).withName("lol"));
 
         // driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
         //     new FieldOrientedDrive(
@@ -259,10 +267,10 @@ public class RobotContainer {
         //     DriverStation.isTeleopEnabled()
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
 
-        new Trigger(() -> 
-            SuperCommands.readyToShoot(shooter, pivot) && 
-            DriverStation.isTeleopEnabled()
-        ).onTrue(kicker.kick().onlyWhile(() -> shooter.getCurrentCommand() != null));
+        // new Trigger(() -> 
+        //     SuperCommands.readyToShoot(shooter, pivot) && 
+        //     DriverStation.isTeleopEnabled()
+        // ).onTrue(kicker.kick().onlyWhile(() -> shooter.getCurrentCommand() != null));
         
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
             .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
@@ -299,8 +307,9 @@ public class RobotContainer {
         //         drive::getCharacterizationVelocity
         //     )
         // ));
-        autoSelector.addDefaultRoutine(new SpikeMarkShots(this));
-        autoSelector.addDefaultRoutine(new SpikeMarkAndCenterLine(this));
+        autoSelector.addRoutine(new SpikeMarkShots(this));
+        autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
+        autoSelector.addDefaultRoutine(new CleanSpikes(this));
         autoSelector.addRoutine(new CenterLineRun(this));
     }
 
