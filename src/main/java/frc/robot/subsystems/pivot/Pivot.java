@@ -28,7 +28,6 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.ShooterConstants;
-import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Pivot extends SubsystemBase {
@@ -165,11 +164,11 @@ public class Pivot extends SubsystemBase {
     }).withName("Go to Tunable");
   }
 
-  public Command autoAim(Supplier<Translation2d> shootAtPos) {
+  public Command autoAim(Supplier<Translation2d> FORR) {
     return go(() -> {
       int lowerBound = 0;
       int upperBound = 0;
-      double distanceToSpeaker = shootAtPos.get().getDistance(RobotState.getInstance().getPose().getTranslation());
+      double distanceToSpeaker = FORR.get().getNorm();
       for(int i = 0; i < ShooterConstants.distance.length; i++) {
         upperBound = i;
         if(distanceToSpeaker < ShooterConstants.distance[i]) {

@@ -105,6 +105,10 @@ public class AutoCommons {
         );
     }
 
+    public static Command autoAimAsIfAt(Translation2d pos, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
+        return SuperCommands.autoAim(SuperCommands.autoAimFORR(() -> pos, ChassisSpeeds::new), ChassisSpeeds::new, drive, shooter, pivot);
+    }
+
     public static Command autoIntake(double throttle, Drive drive, Intake intake, NoteVision noteVision) {
         return intake.intake(drive::getChassisSpeeds).asProxy()
             .deadlineWith(
