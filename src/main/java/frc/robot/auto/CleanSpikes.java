@@ -27,7 +27,7 @@ public class CleanSpikes extends AutoRoutine {
             List.of(),
             () -> {
                 PathPlannerPath startToSpike = AutoPaths.loadPath(String.format(AutoPaths.startToSpike, "Amp"));
-                PathPlannerPath ampSpikeToCenterSpike = AutoPaths.loadPath("Amp Wing to Center Spike");
+                PathPlannerPath ampSpikeToCenterSpike = AutoPaths.loadPath("Amp Spike to Center Spike");
                 PathPlannerPath centerSpikeToPodiumSpike = AutoPaths.loadPath("Center Spike to Podium Spike");
 
                 var preloadShot = startToSpike.getPoint(startToSpike.numPoints() - 1).position;
@@ -47,7 +47,7 @@ public class CleanSpikes extends AutoRoutine {
                         .alongWith(
                             AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         ),
-                        AutoCommons.autoAimAsIfAt(note1Shot, drive.rotationalSubsystem, shooter, pivot, kicker)
+                        SuperCommands.autoAim(drive.rotationalSubsystem, shooter, pivot)
                         .deadlineWith(
                             Commands.waitUntil(() -> drive.getPose().getTranslation().getDistance(note1Shot) < 0.2)
                             .andThen(

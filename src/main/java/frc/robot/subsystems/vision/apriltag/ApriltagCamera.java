@@ -23,7 +23,7 @@ public class ApriltagCamera {
 
     public void periodic() {
         cameraIO.updateInputs(inputs);
-        Logger.processInputs("Vision/Camera/" + name, inputs);
+        Logger.processInputs("ApriltagVision/Camera/" + name, inputs);
         
         if(inputs.hasResult && inputs.result.cameraToTargetDist < 3) {
             RobotState.getInstance().addVisionMeasurement(

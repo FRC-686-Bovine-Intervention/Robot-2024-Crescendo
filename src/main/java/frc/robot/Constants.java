@@ -255,59 +255,47 @@ public final class Constants {
 
     public static final class VisionConstants {
         public static enum Camera {
-            AprilTagVision(
-                "AprilTagCam",
+            LeftApriltag(
+                "Left Apriltag Cam",
                 new Transform3d(
                     new Translation3d(
-                        Meters.of(0.349584),
-                        Meters.of(0),
-                        Meters.of(0.499868)
+                        Inches.of(+12.225),
+                        Inches.of(+9.557),
+                        Inches.of(+10.932)
                     ),
                     new Rotation3d(
-                        Units.degreesToRadians(-90),
-                        -Units.degreesToRadians(30),
-                        Units.degreesToRadians(0)
+                        Units.degreesToRadians(+(90.0-87.654)),
+                        Units.degreesToRadians(-32.414),
+                        Units.degreesToRadians(+9.707)
+                    )
+                )
+            ),
+            RightApriltag(
+                "Right Apriltag Cam",
+                new Transform3d(
+                    new Translation3d(
+                        Inches.of(+12.225),
+                        Inches.of(-9.557),
+                        Inches.of(+10.932)
+                    ),
+                    new Rotation3d(
+                        Units.degreesToRadians(-(90.0-87.654)),
+                        Units.degreesToRadians(-32.414),
+                        Units.degreesToRadians(-9.707)
                     )
                 )
             ),
             NoteVision(
-                "NoteVisionCam",
-                // Intake Transform
-                // new Transform3d(
-                //     new Translation3d(
-                //         Centimeters.of(-73.5/2),
-                //         Centimeters.of(20),
-                //         Centimeters.of(24)
-                //     ),
-                //     new Rotation3d(
-                //         0,
-                //         0,
-                //         Math.PI
-                //     )
-                // )
-                // Backwards Pivot Transform
-                // new Transform3d(
-                //     new Translation3d(
-                //         Centimeters.of(73.5/2-2.5),
-                //         Centimeters.of(0),
-                //         Centimeters.of(49)
-                //     ),
-                //     new Rotation3d(
-                //         0,
-                //         0,
-                //         Math.PI
-                //     )
-                // )
-                // CAD Transform
+                "Note Cam",
                 new Transform3d(
                     new Translation3d(
-                        Inches.of(-18.647965),
-                        Inches.of(0),
-                        Inches.of(-1.756603)
+                        Inches.of(-14.047),
+                        Inches.of(+0),
+                        Inches.of(+12.584)
                     ),
                     new Rotation3d(
                         0,
-                        Degrees.of(15).in(Radians),
+                        Degrees.of(30).in(Radians),
                         Math.PI
                     )
                 )

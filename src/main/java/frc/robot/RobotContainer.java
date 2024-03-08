@@ -8,9 +8,6 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
-import com.pathplanner.lib.commands.FollowPathHolonomic;
-import com.pathplanner.lib.path.PathPlannerPath;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -67,7 +64,6 @@ import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
-import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
@@ -114,8 +110,8 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIOFalcon());
                 amp = new Amp(new AmpIONeo550());
                 pivot = new Pivot(new PivotIOFalcon());
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
-                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
                 // ledSystem = new Leds(
                 //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
                 // );
@@ -134,7 +130,7 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIOSim());
                 amp = new Amp(new AmpIONeo550());
                 noteVision = new NoteVision(new NoteVisionIOSim());
-                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
             default:
             case REPLAY:
@@ -151,7 +147,7 @@ public class RobotContainer {
                 shooter = new Shooter(new ShooterIO() {});
                 amp = new Amp(new AmpIO() {});
                 noteVision = null;
-                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
         }
         ledSystem = null;
