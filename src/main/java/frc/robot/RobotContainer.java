@@ -228,17 +228,7 @@ public class RobotContainer {
         driveController.leftBumper().toggleOnTrue(SuperCommands.autoAim(SuperCommands.autoAimFORR(() -> new Translation2d(2.38, 4.69), ChassisSpeeds::new), drive.rotationalSubsystem, shooter, pivot));
         // driveController.rightBumper().toggleOnTrue(drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(Rotation2d.fromDegrees(90))).withName("lol"));
 
-        // driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
-        //     new FieldOrientedDrive(
-        //         drive,
-        //         noteVision.getAutoIntakeTransSpeed(noteVision.applyDotProduct(joystickTranslational)).orElseGet(joystickTranslational),
-        //         FieldOrientedDrive.pidControlledHeading(
-        //             FieldOrientedDrive.pointTo(noteVision.autoIntakeTargetLocation(), () -> RobotConstants.intakeForward).orElse(driveCustomFlick)
-        //         )
-        //     )
-        //     .onlyWhile(() -> !intake.hasNote())
-        //     .withName("Auto Intake")
-        // );
+        driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWithTunableNumber());
 
         driveController.povLeft().whileTrue(amp.zero());

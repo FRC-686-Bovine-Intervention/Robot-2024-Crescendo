@@ -14,6 +14,7 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -251,6 +252,20 @@ public final class Constants {
             Degrees.of(37.8).in(Radians),
             Degrees.of(31.5).in(Radians)
         };
+        public static double distanceLerp(double dist, double[] lerpTarget) {
+            int lowerBound = 0;
+            int upperBound = 0;
+            for(int i = 0; i < distance.length; i++) {
+                upperBound = i;
+                if(dist < distance[i]) {
+                    break;
+                }
+                lowerBound = i;
+            }
+            double t = MathUtil.inverseInterpolate(distance[lowerBound], distance[upperBound], dist);
+            double target = MathUtil.interpolate(lerpTarget[lowerBound], lerpTarget[upperBound], t);
+            return target;
+        }
     }
 
     public static final class VisionConstants {

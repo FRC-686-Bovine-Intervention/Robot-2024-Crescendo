@@ -18,9 +18,13 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants;
+import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
+import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
@@ -33,11 +37,11 @@ public class NoteVision extends VirtualSubsystem {
 
     private final ArrayList<TrackedNote> noteMemories = new ArrayList<>();
 
-    private static final LoggedTunableNumber updateDistanceThreshold = new LoggedTunableNumber("Vision/updateDistanceThreshold", 5);
-    private static final LoggedTunableNumber posUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.8);
-    private static final LoggedTunableNumber confUpdatingFilteringFactor = new LoggedTunableNumber("Vision/posUpdatingFilteringFactor", 0.5);
-    public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/confidencePerAreaPercent", 1);
-    private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/confidenceDecayPerSecond", 1);
+    private static final LoggedTunableNumber updateDistanceThreshold = new LoggedTunableNumber("Vision/Note/updateDistanceThreshold", 5);
+    private static final LoggedTunableNumber posUpdatingFilteringFactor = new LoggedTunableNumber("Vision/Note/posUpdatingFilteringFactor", 0.8);
+    private static final LoggedTunableNumber confUpdatingFilteringFactor = new LoggedTunableNumber("Vision/Note/posUpdatingFilteringFactor", 0.5);
+    public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/Note/confidencePerAreaPercent", 1);
+    private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/Note/confidenceDecayPerSecond", 1);
 
     private static final double acquireConfidenceThreshold = 1;
     private static final double detargetConfidenceThreshold = 0.5;
@@ -133,6 +137,21 @@ public class NoteVision extends VirtualSubsystem {
             intakeTargetLocked = true;
             return target.fieldPos;
         });
+    }
+
+    public boolean hasTarget() {
+        return optIntakeTarget.isPresent();
+    }
+
+    public Command autoIntake(DoubleSupplier throttle, Drive drive, Intake intake) {
+        return 
+            drive.translationSubsystem.fieldRelative(getAutoIntakeTransSpeed(throttle).orElseGet(ChassisSpeeds::new))
+            .alongWith(
+                drive.rotationalSubsystem.pidControlledHeading(Drive.Rotational.pointTo(autoIntakeTargetLocation(), () -> RobotConstants.intakeForward))
+            )
+            .onlyWhile(() -> !intake.hasNote())
+            .withName("Auto Intake")
+        ;
     }
 
     private static Pose3d targetToPose(TrackedNote note) {

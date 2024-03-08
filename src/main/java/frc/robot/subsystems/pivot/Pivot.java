@@ -165,21 +165,7 @@ public class Pivot extends SubsystemBase {
   }
 
   public Command autoAim(Supplier<Translation2d> FORR) {
-    return go(() -> {
-      int lowerBound = 0;
-      int upperBound = 0;
-      double distanceToSpeaker = FORR.get().getNorm();
-      for(int i = 0; i < ShooterConstants.distance.length; i++) {
-        upperBound = i;
-        if(distanceToSpeaker < ShooterConstants.distance[i]) {
-          break;
-        }
-        lowerBound = i;
-      }
-      double t = MathUtil.inverseInterpolate(ShooterConstants.distance[lowerBound], ShooterConstants.distance[upperBound], distanceToSpeaker);
-      double angle = MathUtil.interpolate(ShooterConstants.angle[lowerBound], ShooterConstants.angle[upperBound], t);
-      return angle;
-    }).withName("Auto Aim");
+    return go(() -> ShooterConstants.distanceLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
   }
 
   public boolean atPos() {
@@ -187,7 +173,7 @@ public class Pivot extends SubsystemBase {
   }
 
   public boolean isAtAngle(double angleRad) {
-    return Math.abs(inputs.pivotEncoder.positionRad - angleRad) <= Units.degreesToRadians(toleranceDeg.get());
+    return MathUtil.isNear(angleRad, inputs.pivotEncoder.positionRad, Units.degreesToRadians(toleranceDeg.get()));
   }
 
   public boolean ampYayZone() {

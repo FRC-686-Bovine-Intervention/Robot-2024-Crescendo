@@ -30,7 +30,7 @@ public class Shooter extends SubsystemBase {
   private static final double smoothingFactor = 0.15;
   private double smoothedAverageRPS;
 
-  private static final double followUpTime = 0.5;
+  private static final double followUpTime = 0.25;
   private final Timer followUpTimer = new Timer();
 
   private static final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 3);
@@ -99,21 +99,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public Command shoot(Supplier<Translation2d> FORR) {
-    return shootWith(() -> {
-      int lowerBound = 0;
-      int upperBound = 0;
-      double distanceToSpeaker = FORR.get().getNorm();
-      for(int i = 0; i < ShooterConstants.distance.length; i++) {
-        upperBound = i;
-        if(distanceToSpeaker < ShooterConstants.distance[i]) {
-          break;
-        }
-        lowerBound = i;
-      }
-      double t = MathUtil.inverseInterpolate(ShooterConstants.distance[lowerBound], ShooterConstants.distance[upperBound], distanceToSpeaker);
-      double rps = MathUtil.interpolate(ShooterConstants.RPS[lowerBound], ShooterConstants.RPS[upperBound], t);
-      return rps;
-    }).withName("Shoot at pos");
+    return shootWith(() -> ShooterConstants.distanceLerp(FORR.get().getNorm(), ShooterConstants.RPS)).withName("Shoot at pos");
   }
 
   public Command preemptiveSpinup() {
