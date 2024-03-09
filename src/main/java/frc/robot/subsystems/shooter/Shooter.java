@@ -33,7 +33,7 @@ public class Shooter extends SubsystemBase {
   private static final double followUpTime = 0.25;
   private final Timer followUpTimer = new Timer();
 
-  private static final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 3);
+  private static final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 1.5);
   private boolean readyToShoot;
 
   public Shooter(ShooterIO shooterIO) {

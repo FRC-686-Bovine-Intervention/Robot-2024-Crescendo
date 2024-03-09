@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
@@ -28,6 +29,7 @@ import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.CenterLineRun;
 import frc.robot.auto.CleanSpikes;
+import frc.robot.auto.Rush6Note;
 import frc.robot.auto.SpikeMarkAndCenterLine;
 import frc.robot.auto.SpikeMarkShots;
 import frc.robot.subsystems.drive.Drive;
@@ -38,6 +40,7 @@ import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOFalcon550;
 import frc.robot.subsystems.intake.IntakeIOSim;
@@ -112,9 +115,6 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOFalcon());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
-                // ledSystem = new Leds(
-                //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
-                // );
             break;
             case SIM:
                 drive = new Drive(
@@ -150,17 +150,19 @@ public class RobotContainer {
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
         }
-        ledSystem = null;
         // ledSystem = new Leds(
-        //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix),
+        //     () -> false,
         //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
         //     () -> intake.getIntakeReversed(),
-        //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.SECURE_NOTE)),
-        //     () -> intake.noteReady(),
         //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
         //     () -> kicker.hasNote()
+        //     // () -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix),
+        //     // () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
+        //     // () -> intake.getIntakeReversed(),
+        //     // () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
+        //     // () -> kicker.hasNote()
         // );
-
+        ledSystem = null;
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
@@ -223,10 +225,8 @@ public class RobotContainer {
         driveController.y().toggleOnTrue(pivot.gotoAmp());
 
         driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(drive.rotationalSubsystem, shooter, pivot));
-        // driveController.leftBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
-        // driveController.leftBumper().onTrue(new FollowPathHolonomic(PathPlannerPath.fromPathFile("amazing awesome"), drive::getPose, drive::getChassisSpeeds, drive.translationSubsystem::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem));
-        driveController.leftBumper().toggleOnTrue(SuperCommands.autoAim(SuperCommands.autoAimFORR(() -> new Translation2d(2.38, 4.69), ChassisSpeeds::new), drive.rotationalSubsystem, shooter, pivot));
-        // driveController.rightBumper().toggleOnTrue(drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(Rotation2d.fromDegrees(90))).withName("lol"));
+        driveController.leftBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
+        // driveController.leftBumper().toggleOnTrue(SuperCommands.autoAim(SuperCommands.autoAimFORR(() -> new Translation2d(2.38, 4.69), ChassisSpeeds::new), drive.rotationalSubsystem, shooter, pivot));
 
         driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWithTunableNumber());
@@ -295,7 +295,8 @@ public class RobotContainer {
         // ));
         autoSelector.addRoutine(new SpikeMarkShots(this));
         autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
-        autoSelector.addDefaultRoutine(new CleanSpikes(this));
+        autoSelector.addRoutine(new CleanSpikes(this));
+        autoSelector.addDefaultRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new CenterLineRun(this));
     }
 

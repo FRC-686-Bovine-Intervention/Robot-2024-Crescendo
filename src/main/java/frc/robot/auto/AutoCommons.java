@@ -74,7 +74,7 @@ public class AutoCommons {
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
         return Commands.waitUntil(() -> 
-            kicker.hasNote() && 
+            // kicker.hasNote() && 
             shooter.readyToShoot() && 
             pivot.isAtAngle(ShooterConstants.distanceLerp(dist, ShooterConstants.angle)) && 
             MathExtraUtil.isNear(shootPos, drive.getPose(), 0.2, Units.degreesToRadians(2)) && 

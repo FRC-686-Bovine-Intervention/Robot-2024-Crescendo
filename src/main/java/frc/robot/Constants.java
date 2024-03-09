@@ -310,7 +310,7 @@ public final class Constants {
                     ),
                     new Rotation3d(
                         0,
-                        Degrees.of(30).in(Radians),
+                        Degrees.of(15).in(Radians),
                         Math.PI
                     )
                 )

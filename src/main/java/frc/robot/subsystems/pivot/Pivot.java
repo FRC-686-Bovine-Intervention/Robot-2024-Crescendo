@@ -34,16 +34,16 @@ public class Pivot extends SubsystemBase {
   private final PivotIO pivotIO;
   private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
-  public static final double POS_ZERO = 0;
+  public static final double POS_ZERO = Units.degreesToRadians(2);
   public static final double POS_AMP = Units.degreesToRadians(108/* .193359375 */);
 
-  private final LoggedTunableNumber pidkP = new LoggedTunableNumber("Pivot/PID/kP", 15);
+  private final LoggedTunableNumber pidkP = new LoggedTunableNumber("Pivot/PID/kP", 20);
   private final LoggedTunableNumber pidkI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
   private final LoggedTunableNumber pidkD = new LoggedTunableNumber("Pivot/PID/kD", 0);
   private final LoggedTunableNumber pidkV = new LoggedTunableNumber("Pivot/PID/kV", 5);
   private final LoggedTunableNumber pidkA = new LoggedTunableNumber("Pivot/PID/kA", 10);
   private final LoggedTunableNumber pidIZone = new LoggedTunableNumber("Pivot/PID/IZone", Units.degreesToRadians(3));
-  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 2);
+  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
   private final ProfiledPIDController pivotPID = 
     new ProfiledPIDController(
       pidkP.get(),
@@ -56,7 +56,7 @@ public class Pivot extends SubsystemBase {
     );
 
   private final LoggedTunableNumber ffkS = new LoggedTunableNumber("Pivot/FF/kS", 0);
-  private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Pivot/FF/kG", 0);
+  private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Pivot/FF/kG", 0.15);
   private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Pivot/FF/kV", 1.5);
   private final LoggedTunableNumber ffkA = new LoggedTunableNumber("Pivot/FF/kA", 0);
   private ArmFeedforward feedforward = 

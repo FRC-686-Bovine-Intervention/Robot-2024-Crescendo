@@ -23,7 +23,7 @@ public class ShooterIOFalcon implements ShooterIO {
     private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0.03);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Shooter/PID/kI", 0);
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Shooter/PID/kD", 0);
-    private final LoggedTunableNumber kV = new LoggedTunableNumber("Shooter/PID/kV", 0.01);
+    private final LoggedTunableNumber kV = new LoggedTunableNumber("Shooter/PID/kV", 0.011);
     private final LoggedTunableNumber kA = new LoggedTunableNumber("Shooter/PID/kA", 0);
     private final LoggedTunableNumber kG = new LoggedTunableNumber("Shooter/PID/kG", 0);
     private final LoggedTunableNumber kS = new LoggedTunableNumber("Shooter/PID/kS", 0);

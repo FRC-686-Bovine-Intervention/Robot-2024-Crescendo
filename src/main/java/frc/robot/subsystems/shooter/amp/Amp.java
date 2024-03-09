@@ -48,7 +48,7 @@ public class Amp extends SubsystemBase {
             }
             @Override
             public void execute() {
-                ampIO.setVoltage(2);
+                ampIO.setVoltage(4);
             }
             @Override
             public void end(boolean interrupted) {
@@ -63,7 +63,7 @@ public class Amp extends SubsystemBase {
             }
             @Override
             public void execute() {
-                ampIO.setVoltage(-2);
+                ampIO.setVoltage(-4);
             }
             @Override
             public void end(boolean interrupted) {
