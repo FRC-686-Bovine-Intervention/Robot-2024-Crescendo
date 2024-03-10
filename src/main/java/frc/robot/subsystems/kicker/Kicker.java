@@ -84,7 +84,7 @@ public class Kicker extends SubsystemBase {
       },
       () -> false,
       this
-    ).withName("Anti Deadzone");
+    ).withName("Anti Deadzone|");
   }
 
   public Command doNothing() {
@@ -98,7 +98,7 @@ public class Kicker extends SubsystemBase {
       },
       () -> false,
       this
-    ).withName("Do Nothing");
+    ).withName("Do Nothing|");
   }
 
   public boolean hasNote() {

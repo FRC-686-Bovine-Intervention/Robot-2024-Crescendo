@@ -18,7 +18,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 
 public class CenterLineRun extends AutoRoutine {
-    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", StartPosition::values); 
+    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", StartPosition::values);
 
     public CenterLineRun(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);

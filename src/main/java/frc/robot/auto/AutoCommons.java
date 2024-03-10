@@ -33,7 +33,7 @@ public class AutoCommons {
         Amp(new Pose2d(
             new Translation2d(
                 1.40,
-                7.00
+                6.80
             ),
             Rotation2d.fromDegrees(180)
         )),
@@ -74,10 +74,10 @@ public class AutoCommons {
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
         return Commands.waitUntil(() -> 
-            // kicker.hasNote() && 
+            kicker.hasNote() && 
             shooter.readyToShoot() && 
             pivot.isAtAngle(ShooterConstants.distanceLerp(dist, ShooterConstants.angle)) && 
-            MathExtraUtil.isNear(shootPos, drive.getPose(), 0.2, Units.degreesToRadians(2)) && 
+            MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
             MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
         )
         .andThen(kicker.kick().asProxy().onlyWhile(() -> shooter.getCurrentCommand() != null));

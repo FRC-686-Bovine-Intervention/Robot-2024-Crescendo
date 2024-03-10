@@ -30,7 +30,7 @@ public class Shooter extends SubsystemBase {
   private static final double smoothingFactor = 0.15;
   private double smoothedAverageRPS;
 
-  private static final double followUpTime = 0.25;
+  private static final double followUpTime = 0.5;
   private final Timer followUpTimer = new Timer();
 
   private static final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 1.5);
@@ -87,7 +87,7 @@ public class Shooter extends SubsystemBase {
         shooterIO.setLeftVelocity(0);
         shooterIO.setRightVelocity(0);
         readyToShoot = false;
-        Logger.recordOutput("Shooter/Target RPS", 0);
+        Logger.recordOutput("Shooter/Target RPS", 0.0);
       },
       () -> followUpTimer.hasElapsed(followUpTime),
       this
@@ -113,7 +113,7 @@ public class Shooter extends SubsystemBase {
       (interrupted) -> {
         shooterIO.setLeftVelocity(0);
         shooterIO.setRightVelocity(0);
-        Logger.recordOutput("Shooter/Target RPS", 0);
+        Logger.recordOutput("Shooter/Target RPS", 0.0);
       },
       () -> false,
       this
@@ -137,7 +137,7 @@ public class Shooter extends SubsystemBase {
       public void end(boolean interrupted) {
         shooterIO.setLeftVelocity(0);
         shooterIO.setRightVelocity(0);
-        Logger.recordOutput("Shooter/Target RPS", 0);
+        Logger.recordOutput("Shooter/Target RPS", 0.0);
       }
     };
   }

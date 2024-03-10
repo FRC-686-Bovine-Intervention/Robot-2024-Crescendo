@@ -143,6 +143,10 @@ public class NoteVision extends VirtualSubsystem {
         return optIntakeTarget.isPresent();
     }
 
+    public void clearMemory() {
+        noteMemories.clear();
+    }
+
     public Command autoIntake(DoubleSupplier throttle, Drive drive, Intake intake) {
         return 
             drive.translationSubsystem.fieldRelative(getAutoIntakeTransSpeed(throttle).orElseGet(ChassisSpeeds::new))
