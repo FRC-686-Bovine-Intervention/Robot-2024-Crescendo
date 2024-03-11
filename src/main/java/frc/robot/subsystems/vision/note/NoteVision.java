@@ -32,7 +32,7 @@ import frc.robot.util.MathExtraUtil;
 import frc.robot.util.VirtualSubsystem;
 
 public class NoteVision extends VirtualSubsystem {
-    private final NoteVisionIO io;
+    private final NoteVisionIO noteVisionIO;
     private final NoteVisionIOInputsAutoLogged inputs = new NoteVisionIOInputsAutoLogged();
 
     private final ArrayList<TrackedNote> noteMemories = new ArrayList<>();
@@ -49,8 +49,10 @@ public class NoteVision extends VirtualSubsystem {
     private Optional<TrackedNote> optIntakeTarget = Optional.empty();
     private boolean intakeTargetLocked = false;
 
-    public NoteVision(NoteVisionIO io) {
-        this.io = io;
+    public NoteVision(NoteVisionIO noteVisionIO) {
+        System.out.println("[Init NoteVision] Instantiating NoteVision");
+        this.noteVisionIO = noteVisionIO;
+        System.out.println("[Init NoteVision] NoteVision IO: " + this.noteVisionIO.getClass().getSimpleName());
 
         CommandScheduler.getInstance().onCommandFinish((comm) -> {if (comm.getName() == IntakeCommand.INTAKE.name()) {
             optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
@@ -60,7 +62,7 @@ public class NoteVision extends VirtualSubsystem {
 
     @Override
     public void periodic() {
-        io.updateInputs(inputs);
+        noteVisionIO.updateInputs(inputs);
         Logger.processInputs("NoteVision", inputs);
         var frameTargets = Arrays.asList(inputs.trackedNotes);
         var connections = new ArrayList<PhotonMemoryConnection>();

@@ -76,7 +76,7 @@ public class AutoCommons {
         return Commands.waitUntil(() -> 
             kicker.hasNote() && 
             shooter.readyToShoot() && 
-            pivot.isAtAngle(ShooterConstants.distanceLerp(dist, ShooterConstants.angle)) && 
+            pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
             MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
             MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
         )

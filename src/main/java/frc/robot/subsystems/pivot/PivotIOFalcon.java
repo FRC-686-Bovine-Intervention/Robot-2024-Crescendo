@@ -30,8 +30,8 @@ public class PivotIOFalcon implements PivotIO {
         var motorConfig = new TalonFXConfiguration();
         motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        motorConfig.Feedback.RotorToSensorRatio = PivotConstants.motorToEncoderRatio.drivenToDrive();
-        motorConfig.Feedback.SensorToMechanismRatio = PivotConstants.encoderToMechanismRatio.drivenToDrive();
+        motorConfig.Feedback.RotorToSensorRatio = PivotConstants.motorToEncoderRatio.ratio();
+        motorConfig.Feedback.SensorToMechanismRatio = PivotConstants.encoderToMechanismRatio.ratio();
         motorConfig.Feedback.FeedbackRemoteSensorID = pivotEncoder.getDeviceID();
         motorConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;

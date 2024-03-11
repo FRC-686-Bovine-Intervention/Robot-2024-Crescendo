@@ -4,6 +4,7 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LoggedTunableNumber;
@@ -22,7 +23,10 @@ public class Amp extends SubsystemBase {
     private static final LoggedTunableNumber spikeTime = new LoggedTunableNumber("Shooter/Amp/Spike Time", 0.5);
 
     public Amp(AmpIO ampIO) {
+        System.out.println("[Init Amp] Instantiating Amp");
         this.ampIO = ampIO;
+        System.out.println("[Init Amp] Amp IO: " + this.ampIO.getClass().getSimpleName());
+        SmartDashboard.putData("Subsystems/Amp", this);  
     }
 
     @AutoLogOutput(key = "Shooter/Amp/Position Rads")

@@ -21,7 +21,9 @@ public class Kicker extends SubsystemBase {
   private final LoggedTunableNumber antiDeadzoneVolts = new LoggedTunableNumber("Kicker/Anti Deadzone Voltage", 1.5);
 
   public Kicker(KickerIO kickerIO) {
+    System.out.println("[Init Kicker] Instantiating Kicker");
     this.kickerIO = kickerIO;
+    System.out.println("[Init Kicker] Kicker IO: " + this.kickerIO.getClass().getSimpleName());
     SmartDashboard.putData("Subsystems/Kicker", this);   
   }
 
