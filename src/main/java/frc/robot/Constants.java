@@ -237,7 +237,7 @@ public final class Constants {
             .gear(+10).gear(+100).axle()
         ;
         public static final GearRatio encoderToMechanismRatio = new GearRatio()
-            .gear(+1).gear(+1).axle()
+            // .gear(+1).gear(+1).axle()
         ;
         public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.concat(encoderToMechanismRatio.inverse());
     }

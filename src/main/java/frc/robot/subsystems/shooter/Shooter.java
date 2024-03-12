@@ -26,7 +26,7 @@ public class Shooter extends SubsystemBase {
     private final ShooterIO shooterIO;
     private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
-    private static final LoggedTunableNumber tuningMPS = new LoggedTunableNumber("Shooter/Tuning MPS", 65);
+    private static final LoggedTunableNumber tuningMPS = new LoggedTunableNumber("Shooter/Tuning MPS", 20);
     private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 30);
     private static final LoggedTunableNumber preMPS = new LoggedTunableNumber("Shooter/Preemptive MPS", 30);
     private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection", 1);
@@ -88,8 +88,8 @@ public class Shooter extends SubsystemBase {
         if(shot()) {
             followUpTimer.start();
         }
-        Logger.recordOutput("Shooter/Average MPS", getAverageSurfaceSpeed());
-        Logger.recordOutput("Shooter/Smoothed MPS", smoothedAverageSurfaceSpeed);
+        Logger.recordOutput("Shooter/Average Surface Speed", getAverageSurfaceSpeed());
+        Logger.recordOutput("Shooter/Smoothed Surface Speed", smoothedAverageSurfaceSpeed);
         Logger.recordOutput("Shooter/Timer", followUpTimer.get());
         Logger.recordOutput("Shooter/Shot", shot());
     }
