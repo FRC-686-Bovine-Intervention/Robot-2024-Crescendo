@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.372685024478224,
-        "y": 6.815871864609129
+        "x": 2.1785399144704156,
+        "y": 6.959286717912824
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.9326858802355094,
-        "y": 6.802213307151635
+        "x": 2.3287840465028586,
+        "y": 6.959286717912824
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.4653696210778056,
-        "y": 6.815871864609129
+        "x": 2.629272310567743,
+        "y": 6.959286717912824
       },
       "prevControl": {
-        "x": 1.9190273227780146,
-        "y": 6.809042585880382
+        "x": 2.4175646699765743,
+        "y": 6.938798881726582
       },
       "nextControl": null,
       "isLocked": false,
@@ -43,7 +43,7 @@
     "rotateFast": false
   },
   "reversed": false,
-  "folder": "Ideal Amp 6 Note",
+  "folder": "Rush 6 Note",
   "previewStartingState": {
     "rotation": 180.0,
     "velocity": 0

@@ -24,7 +24,7 @@ public class Intake extends SubsystemBase {
 
   private final LoggedTunableNumber intakingRollerVoltage = new LoggedTunableNumber("Intake/Intaking/Roller Voltage", 6);
   private final LoggedTunableNumber intakingBeltVoltage = new LoggedTunableNumber("Intake/Intaking/Belt Voltage", 6);
-  private final LoggedTunableNumber feedingRollerVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 3);
+  private final LoggedTunableNumber feedingRollerVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 4);
   private final LoggedTunableNumber feedingBeltVoltage = new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 3);
   private final LoggedTunableNumber antiDeadzoneBeltVoltage = new LoggedTunableNumber("Intake/Anti Deadzone/Belt Voltage", 1);
   private final LoggedTunableNumber reverseSpeedThresold = new LoggedTunableNumber("Intake/Reverse Speed Threshold", 0.1);
@@ -99,10 +99,10 @@ public class Intake extends SubsystemBase {
       () -> {
         var velocityX = driveSpeedRobotRelative.get().vxMetersPerSecond;
         if (velocityX < -reverseSpeedThresold.get()) {
-          intakeReversed = true;
+          intakeReversed = false;
         }
         if (velocityX > reverseSpeedThresold.get()) {
-          intakeReversed = false;
+          intakeReversed = true;
         }    
         startIntake();
       },

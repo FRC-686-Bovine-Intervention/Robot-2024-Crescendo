@@ -17,12 +17,13 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -41,10 +42,16 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.RobotState;
+import frc.robot.subsystems.drive.commands.FieldOrientedDrive.SpectatorType;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.AllianceFlipUtil.FieldFlipType;
+import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.VirtualSubsystem;
+import frc.robot.util.controllers.Joystick;
+import frc.robot.util.pathplanner.AutoBuilder;
 
-public class Drive extends SubsystemBase {
+public class Drive extends VirtualSubsystem {
     private final GyroIO gyroIO;
     private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
     private Rotation2d prevGyroYaw = new Rotation2d();
@@ -83,7 +90,7 @@ public class Drive extends SubsystemBase {
         System.out.println("[Init Drive] Instantiating Drive");
         this.gyroIO = gyroIO;
         System.out.println("[Init Drive] Gyro IO: " + this.gyroIO.getClass().getSimpleName());
-        SmartDashboard.putData("Subsystems/Drive", this);
+        // SmartDashboard.putData("Subsystems/Drive", this);
         ModuleIO[] moduleIOs = new ModuleIO[]{flModuleIO, frModuleIO, blModuleIO, brModuleIO};
         for(DriveModulePosition position : DriveModulePosition.values()) {
             System.out.println("[Init Drive] Instantiating Module " + position.name() + " with Module IO: " + moduleIOs[position.ordinal()].getClass().getSimpleName());
@@ -99,6 +106,9 @@ public class Drive extends SubsystemBase {
         RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
         prevGyroYaw = getPose().getRotation();
 
+        this.translationSubsystem = new Translational(this);
+        this.rotationalSubsystem = new Rotational(this);
+
         if (!AutoBuilder.isConfigured()) {
             AutoBuilder.configureHolonomic(
                 this::getPose,
@@ -107,7 +117,8 @@ public class Drive extends SubsystemBase {
                 this::driveVelocity,
                 autoConfigSup.get(),
                 AllianceFlipUtil::shouldFlip,
-                this
+                translationSubsystem,
+                rotationalSubsystem
             );
         }
     }
@@ -232,6 +243,153 @@ public class Drive extends SubsystemBase {
 
         // save values for next loop
         prevGyroYaw = gyroAngle;
+    }
+
+    public final Translational translationSubsystem;
+    public static class Translational extends SubsystemBase {
+        public final Drive drive;
+        
+        private Translational(Drive drive) {
+            this.drive = drive;
+            setName("Drive/Translational");
+            SmartDashboard.putData("Subsystems/Drive/Translational", this);
+        }
+
+        public void driveVelocity(ChassisSpeeds speeds) {
+            drive.setpoint.vxMetersPerSecond = speeds.vxMetersPerSecond;
+            drive.setpoint.vyMetersPerSecond = speeds.vyMetersPerSecond;
+        }
+
+        public void stop() {
+            driveVelocity(new ChassisSpeeds());
+        }
+
+        public Command fieldRelative(Supplier<ChassisSpeeds> speeds) {
+            var subsystem = this;
+            return new Command() {
+                {
+                    addRequirements(subsystem);
+                    setName("Field Relative");
+                }
+                @Override
+                public void execute() {
+                    driveVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), drive.getRotation()));
+                }
+                @Override
+                public void end(boolean interrupted) {
+                    stop();
+                }
+            };
+        }
+
+        public static Supplier<ChassisSpeeds> joystickSpectatorToFieldRelative(Joystick translationalJoystick, BooleanSupplier precisionSupplier) {
+            return () -> {
+                var specTrans = new Translation2d(
+                    translationalJoystick.x().getAsDouble() * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1),
+                    translationalJoystick.y().getAsDouble()	 * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
+                );
+                var fieldTrans = SpectatorType.getCurrentType().toField(specTrans);
+                return AllianceFlipUtil.applyFieldRelative(
+                    new ChassisSpeeds(
+                        fieldTrans.getX(),
+                        fieldTrans.getY(),
+                        0
+                    ),
+                    FieldFlipType.CenterPointFlip
+                );
+            };
+        }
+    }
+    public final Rotational rotationalSubsystem;
+    public static class Rotational extends SubsystemBase {
+        public final Drive drive;
+        
+        private Rotational(Drive drive) {
+            this.drive = drive;
+            setName("Drive/Rotational");
+            SmartDashboard.putData("Subsystems/Drive/Rotational", this);
+        }
+
+        public void driveVelocity(double omega) {
+            drive.setpoint.omegaRadiansPerSecond = omega;
+        }
+        public void driveVelocity(ChassisSpeeds speeds) {
+            driveVelocity(speeds.omegaRadiansPerSecond);
+        }
+        public void stop() {
+            driveVelocity(0);
+        }
+
+        public Command pidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier) {
+            var subsystem = this;
+            return new Command() {
+                private final PIDController headingPID = new PIDController(DriveConstants.headingKp, DriveConstants.headingKi, DriveConstants.headingKd);
+                {
+                    addRequirements(subsystem);
+                    setName("PID Controlled Heading");
+                    headingPID.enableContinuousInput(-Math.PI, Math.PI);  // since gyro angle is not limited to [-pi, pi]
+                    headingPID.setTolerance(DriveConstants.headingTolerance);
+                }
+                private Rotation2d desiredHeading;
+                @Override
+                public void initialize() {
+                    desiredHeading = drive.getPose().getRotation();
+                }
+                @Override
+                public void execute() {
+                    headingSupplier.get().ifPresent((r) -> desiredHeading = r);
+                    double turnInput = headingPID.calculate(drive.getRotation().getRadians(), desiredHeading.getRadians());
+                    turnInput = headingPID.atSetpoint() ? 0 : turnInput;
+                    turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
+                    driveVelocity(turnInput * DriveConstants.maxTurnRateRadiansPerSec);
+                }
+                @Override
+                public void end(boolean interrupted) {
+                    driveVelocity(0);
+                }
+            };
+        }
+
+        public static LazyOptional<Rotation2d> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
+            return new LazyOptional<Rotation2d>() {
+                private final Timer preciseTurnTimer = new Timer();
+                private final double preciseTurnTimeThreshold = 0.5;
+                private Optional<Rotation2d> outputFilter(Rotation2d i) {
+                    return Optional.of(i.minus(forwardDirectionSupplier.get()));
+                }
+                @Override
+                public Optional<Rotation2d> get() {
+                    if(joystick.magnitude() == 0) {
+                        preciseTurnTimer.restart();
+                        return Optional.empty();
+                    }
+                    var joyVec = new Translation2d(joystick.x().getAsDouble(), joystick.y().getAsDouble());
+                    joyVec = SpectatorType.getCurrentType().toField(joyVec);
+                    Rotation2d joyHeading = AllianceFlipUtil.apply(Rotation2d.fromRadians(Math.atan2(joyVec.getY(), joyVec.getX())), FieldFlipType.CenterPointFlip);
+                    if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
+                        return outputFilter(joyHeading);
+                    }
+                    var snapPoints = snapPointsSupplier.get();
+                    int smallestDistanceIndex = 0;
+                    double smallestDistance = Double.MAX_VALUE;
+                    for(int i = 0; i < snapPoints.length; i++) {
+                        var dist = Math.abs(joyHeading.minus(AllianceFlipUtil.apply(snapPoints[i])).getRadians());
+                        if(dist < smallestDistance) {
+                            smallestDistance = dist;
+                            smallestDistanceIndex = i;
+                        }
+                    }
+                    return outputFilter(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
+                }
+            };
+        }
+
+        public static LazyOptional<Rotation2d> pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
+            return () -> posToPointTo.get().map((pointTo) -> Rotation2d.fromRadians(Math.atan2(
+                pointTo.getY() - RobotState.getInstance().getPose().getY(),
+                pointTo.getX() - RobotState.getInstance().getPose().getX()
+            )).minus(forward.get()));
+        }
     }
 
     // TODO: remove this when 2024 WPILib comes out

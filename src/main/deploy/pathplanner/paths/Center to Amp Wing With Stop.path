@@ -16,12 +16,12 @@
     },
     {
       "anchor": {
-        "x": 5.5658621639291175,
-        "y": 6.269529566309338
+        "x": 5.360983802066697,
+        "y": 6.39928586215554
       },
       "prevControl": {
-        "x": 6.112204462228908,
-        "y": 6.296846681224329
+        "x": 6.207814364431371,
+        "y": 6.5153836005442445
       },
       "nextControl": null,
       "isLocked": false,
@@ -43,10 +43,10 @@
     "rotateFast": false
   },
   "reversed": false,
-  "folder": "Ideal Amp 6 Note",
+  "folder": "Rush 6 Note",
   "previewStartingState": {
     "rotation": 149.6887867733184,
     "velocity": 0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

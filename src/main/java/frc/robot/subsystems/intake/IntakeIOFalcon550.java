@@ -22,7 +22,7 @@ public class IntakeIOFalcon550 implements IntakeIO {
     private final DigitalInput sensor = new DigitalInput(DIOPorts.intakeSensorPort);
     
     public IntakeIOFalcon550() {
-        rollerMotor.setInverted(true);
+        rollerMotor.setInverted(false);
         rollerMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
         var beltConfig = new TalonFXConfiguration();
         beltConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;

@@ -11,7 +11,9 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.RobotState;
 import frc.robot.subsystems.vision.note.NoteVision.TrackedNote;
+import frc.robot.util.Alert;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.Alert.AlertType;
 
 public class NoteVisionIOPhotonVision implements NoteVisionIO {
     private final PhotonCamera cam;
@@ -24,8 +26,10 @@ public class NoteVisionIOPhotonVision implements NoteVisionIO {
         this.camMeta = camera;
     }
 
+    private final Alert notConnectedAlert = new Alert("Note Cam is not connected", AlertType.ERROR);
     @Override
     public void updateInputs(NoteVisionIOInputs inputs) {
+        notConnectedAlert.set(!cam.isConnected());
         inputs.trackedNotes = 
             cam
             .getLatestResult()

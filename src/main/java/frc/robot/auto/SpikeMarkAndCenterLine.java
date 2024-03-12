@@ -31,7 +31,7 @@ public class SpikeMarkAndCenterLine extends AutoRoutine {
 
                 return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
                     .andThen(
-                        AutoCommons.autoAimAndFollowPath(startToCenterLine, drive, shooter, pivot, kicker)
+                        // AutoCommons.autoAimAndFollowPath(startToCenterLine, drive, shooter, pivot, kicker)
                         // AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker),
                         // AutoCommons.followPathFlipped(startToCenterLine, drive),
                         // AutoCommons.autoIntake(1.5, drive, intake, noteVision),

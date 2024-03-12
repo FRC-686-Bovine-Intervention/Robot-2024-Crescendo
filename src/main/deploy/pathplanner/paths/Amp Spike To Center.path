@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 6.597083251969972,
-        "y": 6.897823209354097
+        "x": 6.754156662731162,
+        "y": 6.549529994187981
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.389279584504669,
-        "y": 6.7612376347791505
+        "x": 7.471230929249637,
+        "y": 6.617822781475455
       },
       "isLocked": false,
       "linkedName": null
@@ -20,8 +20,8 @@
         "y": 4.377819358446314
       },
       "prevControl": {
-        "x": 6.897571516034858,
-        "y": 5.600260250892095
+        "x": 7.259523288658468,
+        "y": 5.559284578519611
       },
       "nextControl": null,
       "isLocked": false,
@@ -31,15 +31,32 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.0,
-      "rotationDegrees": -165.75898741854397,
+      "rotationDegrees": -175.17923392190735,
+      "rotateFast": false
+    },
+    {
+      "waypointRelativePos": 0.45,
+      "rotationDegrees": 156.5498195657015,
       "rotateFast": false
     }
   ],
-  "constraintZones": [],
+  "constraintZones": [
+    {
+      "name": "New Constraints Zone",
+      "minWaypointRelativePos": 0,
+      "maxWaypointRelativePos": 1.0,
+      "constraints": {
+        "maxVelocity": 1.5,
+        "maxAcceleration": 3.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0
+      }
+    }
+  ],
   "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 3.0,
-    "maxAcceleration": 3.0,
+    "maxAcceleration": 6.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
@@ -49,10 +66,10 @@
     "rotateFast": false
   },
   "reversed": false,
-  "folder": "Ideal Amp 6 Note",
+  "folder": "Rush 6 Note",
   "previewStartingState": {
-    "rotation": -163.8556612197166,
+    "rotation": -173.73650938566547,
     "velocity": 0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

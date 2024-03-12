@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.drive.Drive;
 
 public class WheelCalibration extends Command {
-    private final Drive drive;
+    private final Drive.Translational drive;
     private final Timer timer = new Timer();
 
     private static final ChassisSpeeds driveSpeed = new ChassisSpeeds(1, 0, 0);
@@ -17,7 +17,7 @@ public class WheelCalibration extends Command {
 
     private double timeEnd;
 
-    public WheelCalibration(Drive drive) {
+    public WheelCalibration(Drive.Translational drive) {
         addRequirements(drive);
         this.drive = drive;
     }
@@ -38,7 +38,7 @@ public class WheelCalibration extends Command {
             }
             drive.stop();
         } else {
-            drive.driveVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(driveSpeed, drive.getPose().getRotation()));
+            drive.driveVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(driveSpeed, drive.drive.getRotation()));
         }
     }
 
@@ -51,7 +51,7 @@ public class WheelCalibration extends Command {
     }
 
     private double getCurrentDistDelta() {
-        return Arrays.stream(drive.getModulePositionDeltas()).mapToDouble((a) -> Math.abs(a.distanceMeters)).average().getAsDouble();
+        return Arrays.stream(drive.drive.getModulePositionDeltas()).mapToDouble((a) -> Math.abs(a.distanceMeters)).average().getAsDouble();
     }
 
     private double getDist() {
