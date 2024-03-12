@@ -12,15 +12,13 @@ public class TunableProfiledPID {
     private final LoggedTunableNumber kV;
     private final LoggedTunableNumber kA;
 
-    public TunableProfiledPID(String key, ProfiledPIDController pid,
-        double kP, double kI, double kD, double kV, double kA
-    ) {
+    public TunableProfiledPID(String key, ProfiledPIDController pid) {
         this.pid = pid;
-        this.kP = new LoggedTunableNumber(key + "/kP", kP);
-        this.kI = new LoggedTunableNumber(key + "/kI", kI);
-        this.kD = new LoggedTunableNumber(key + "/kD", kD);
-        this.kV = new LoggedTunableNumber(key + "/kV", kV);
-        this.kA = new LoggedTunableNumber(key + "/kA", kA);
+        this.kP = new LoggedTunableNumber(key + "/kP", pid.getP());
+        this.kI = new LoggedTunableNumber(key + "/kI", pid.getI());
+        this.kD = new LoggedTunableNumber(key + "/kD", pid.getD());
+        this.kV = new LoggedTunableNumber(key + "/kV", pid.getConstraints().maxVelocity);
+        this.kA = new LoggedTunableNumber(key + "/kA", pid.getConstraints().maxAcceleration);
     }
 
     public void update() {

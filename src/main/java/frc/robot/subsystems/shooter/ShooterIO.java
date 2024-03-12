@@ -17,7 +17,7 @@ public interface ShooterIO {
 
     public default void updateInputs(ShooterIOInputs inputs) {}
 
-    public default void setLeftVelocity(double rps) {}
+    public default void setLeftVoltage(double volts) {}
 
-    public default void setRightVelocity(double rps) {}
+    public default void setRightVoltage(double volts) {}
 }

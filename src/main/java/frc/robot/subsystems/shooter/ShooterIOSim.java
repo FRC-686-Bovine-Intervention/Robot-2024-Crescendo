@@ -63,7 +63,7 @@ public class ShooterIOSim implements ShooterIO {
     }
 
     @Override
-    public void setLeftVelocity(double rps) {
+    public void setLeftVoltage(double rps) {
         var volts = leftMotorPID.calculate(Units.radiansToRotations(leftMotor.getAngularVelocityRadPerSec()), rps);
         leftAppliedVolts = MathUtil.clamp(volts, -12, 12);
             
@@ -71,7 +71,7 @@ public class ShooterIOSim implements ShooterIO {
     }
 
     @Override
-    public void setRightVelocity(double rps) {
+    public void setRightVoltage(double rps) {
         var volts = rightMotorPID.calculate(Units.radiansToRotations(rightMotor.getAngularVelocityRadPerSec()), rps);
         rightAppliedVolts = MathUtil.clamp(volts, -12, 12);
         
