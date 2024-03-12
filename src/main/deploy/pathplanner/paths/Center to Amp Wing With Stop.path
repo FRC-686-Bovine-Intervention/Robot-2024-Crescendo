@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.3808801589527209,
-        "y": 5.548357732553615
+        "x": 6.972693582051077,
+        "y": 4.903673820559862
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.8808801589527209,
-        "y": 5.548357732553615
+        "x": 6.849766564933625,
+        "y": 6.18757822156437
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.3479060269433503,
-        "y": 5.548357732553615
+        "x": 5.360983802066697,
+        "y": 6.39928586215554
       },
       "prevControl": {
-        "x": 1.8479060269433503,
-        "y": 5.548357732553615
+        "x": 6.207814364431371,
+        "y": 6.5153836005442445
       },
       "nextControl": null,
       "isLocked": false,
@@ -32,21 +32,21 @@
   "constraintZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.0,
-    "maxAcceleration": 6.0,
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
   "goalEndState": {
-    "velocity": 0,
-    "rotation": 180.0,
+    "velocity": 0.0,
+    "rotation": -170.90421916185426,
     "rotateFast": false
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Rush 6 Note",
   "previewStartingState": {
-    "rotation": 180.0,
+    "rotation": 149.6887867733184,
     "velocity": 0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

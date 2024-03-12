@@ -2,11 +2,11 @@ package frc.robot.auto;
 
 import java.util.List;
 
+import com.fasterxml.jackson.core.sym.Name;
 import com.pathplanner.lib.path.PathPlannerPath;
 
-import frc.robot.Constants.FieldConstants;
 import frc.robot.RobotContainer;
-import frc.robot.auto.AutoCommons.PathNameFormats;
+import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
@@ -27,11 +27,11 @@ public class SpikeMarkAndCenterLine extends AutoRoutine {
         super("SpikeMarkAndCenterLine",
             List.of(startPosition),
             () -> {
-                PathPlannerPath startToCenterLine = PathPlannerPath.fromPathFile(String.format(PathNameFormats.toCenterLine, startPosition.getResponse().toString()));
+                PathPlannerPath startToCenterLine = AutoPaths.loadPath(String.format(AutoPaths.toCenterLine, startPosition.getResponse().name()));
 
                 return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
                     .andThen(
-                        AutoCommons.autoAimAndFollowPath(startToCenterLine, drive, shooter, pivot, kicker)
+                        // AutoCommons.autoAimAndFollowPath(startToCenterLine, drive, shooter, pivot, kicker)
                         // AutoCommons.autoAimAndShootWhenReady(drive, shooter, pivot, kicker),
                         // AutoCommons.followPathFlipped(startToCenterLine, drive),
                         // AutoCommons.autoIntake(1.5, drive, intake, noteVision),

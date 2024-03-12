@@ -28,23 +28,22 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.ShooterConstants;
-import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Pivot extends SubsystemBase {
   private final PivotIO pivotIO;
   private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
-  public static final double POS_ZERO = 0;
-  public static final double POS_AMP = 1.4864273834611863;
+  public static final double POS_ZERO = Units.degreesToRadians(2);
+  public static final double POS_AMP = Units.degreesToRadians(108/* .193359375 */);
 
-  private final LoggedTunableNumber pidkP = new LoggedTunableNumber("Pivot/PID/k0P", 5);
-  private final LoggedTunableNumber pidkI = new LoggedTunableNumber("Pivot/PID/k1I", 5); 
-  private final LoggedTunableNumber pidkD = new LoggedTunableNumber("Pivot/PID/k2D", 0);
-  private final LoggedTunableNumber pidkV = new LoggedTunableNumber("Pivot/PID/k3V", 2);
-  private final LoggedTunableNumber pidkA = new LoggedTunableNumber("Pivot/PID/k4A", 4);
+  private final LoggedTunableNumber pidkP = new LoggedTunableNumber("Pivot/PID/kP", 20);
+  private final LoggedTunableNumber pidkI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
+  private final LoggedTunableNumber pidkD = new LoggedTunableNumber("Pivot/PID/kD", 0);
+  private final LoggedTunableNumber pidkV = new LoggedTunableNumber("Pivot/PID/kV", 5);
+  private final LoggedTunableNumber pidkA = new LoggedTunableNumber("Pivot/PID/kA", 10);
   private final LoggedTunableNumber pidIZone = new LoggedTunableNumber("Pivot/PID/IZone", Units.degreesToRadians(3));
-  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 2);
+  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
   private final ProfiledPIDController pivotPID = 
     new ProfiledPIDController(
       pidkP.get(),
@@ -57,8 +56,8 @@ public class Pivot extends SubsystemBase {
     );
 
   private final LoggedTunableNumber ffkS = new LoggedTunableNumber("Pivot/FF/kS", 0);
-  private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Pivot/FF/kG", 0);
-  private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Pivot/FF/kV", 5);
+  private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Pivot/FF/kG", 0.15);
+  private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Pivot/FF/kV", 1.5);
   private final LoggedTunableNumber ffkA = new LoggedTunableNumber("Pivot/FF/kA", 0);
   private ArmFeedforward feedforward = 
     new ArmFeedforward(
@@ -135,7 +134,7 @@ public class Pivot extends SubsystemBase {
         Logger.recordOutput("Pivot/PID out", output);
         Logger.recordOutput("Pivot/Profile Position", setpoint.position);
         Logger.recordOutput("Pivot/Profile Velocity", setpoint.velocity);
-        var ff = feedforward.calculate(inputs.pivotEncoder.positionRad, setpoint.velocity);
+        var ff = feedforward.calculate(setpoint.position, setpoint.velocity);
         Logger.recordOutput("Pivot/FF out", ff);
         pivotIO.setPivotVoltage(output + ff);
       },
@@ -165,22 +164,8 @@ public class Pivot extends SubsystemBase {
     }).withName("Go to Tunable");
   }
 
-  public Command autoAim(Supplier<Translation2d> shootAtPos) {
-    return go(() -> {
-      int lowerBound = 0;
-      int upperBound = 0;
-      double distanceToSpeaker = shootAtPos.get().getDistance(RobotState.getInstance().getPose().getTranslation());
-      for(int i = 0; i < ShooterConstants.distance.length; i++) {
-        upperBound = i;
-        if(distanceToSpeaker < ShooterConstants.distance[i]) {
-          break;
-        }
-        lowerBound = i;
-      }
-      double t = MathUtil.inverseInterpolate(ShooterConstants.distance[lowerBound], ShooterConstants.distance[upperBound], distanceToSpeaker);
-      double angle = MathUtil.interpolate(ShooterConstants.angle[lowerBound], ShooterConstants.angle[upperBound], t);
-      return angle;
-    }).withName("Auto Aim");
+  public Command autoAim(Supplier<Translation2d> FORR) {
+    return go(() -> ShooterConstants.distanceLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
   }
 
   public boolean atPos() {
@@ -188,10 +173,10 @@ public class Pivot extends SubsystemBase {
   }
 
   public boolean isAtAngle(double angleRad) {
-    return Math.abs(inputs.pivotEncoder.positionRad - angleRad) <= Units.degreesToRadians(toleranceDeg.get());
+    return MathUtil.isNear(angleRad, inputs.pivotEncoder.positionRad, Units.degreesToRadians(toleranceDeg.get()));
   }
 
-  public boolean readyToFeed() {
-    return isAtAngle(POS_ZERO);
+  public boolean ampYayZone() {
+    return inputs.pivotEncoder.positionRad >= Units.degreesToRadians(15);
   }
 }

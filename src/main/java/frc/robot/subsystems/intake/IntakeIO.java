@@ -11,8 +11,7 @@ import frc.robot.util.loggerUtil.LoggedMotor;
 public interface IntakeIO {
     @AutoLog
     public static class IntakeIOInputs {
-        public boolean noteAtBottom;
-        public boolean noteAtTop;
+        public boolean sensor;
 
         public LoggedMotor beltMotor = new LoggedMotor();
         public LoggedMotor rollerMotor = new LoggedMotor();

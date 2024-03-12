@@ -3,41 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.290597959227301,
-        "y": 4.087081954477746
+        "x": 1.693661124729351,
+        "y": 5.736845825467043
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.290597959227302,
-        "y": 4.087081954477746
-      },
-      "isLocked": false,
-      "linkedName": "Podium"
-    },
-    {
-      "anchor": {
-        "x": 3.667897778020947,
-        "y": 2.9511308095369406
-      },
-      "prevControl": {
-        "x": 2.4851032868970147,
-        "y": 2.974552482628502
-      },
-      "nextControl": {
-        "x": 4.67781315934599,
-        "y": 2.9311324851542677
+        "x": 1.8985394865917724,
+        "y": 6.904652488082846
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 6.642450260649451,
-        "y": 4.087081954477746
+        "x": 3.680981234794839,
+        "y": 5.736845825467043
       },
       "prevControl": {
-        "x": 5.412812423342392,
-        "y": 4.19247948338978
+        "x": 3.6741519560660922,
+        "y": 6.877335373167856
+      },
+      "nextControl": {
+        "x": 3.687936076743888,
+        "y": 4.575387219975843
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.38,
+        "y": 4.69
+      },
+      "prevControl": {
+        "x": 2.789756723724843,
+        "y": 4.191462652801442
       },
       "nextControl": null,
       "isLocked": false,
@@ -48,8 +48,8 @@
   "constraintZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.0,
-    "maxAcceleration": 6.0,
+    "maxVelocity": 1.0,
+    "maxAcceleration": 2.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
@@ -59,10 +59,7 @@
     "rotateFast": false
   },
   "reversed": false,
-  "folder": null,
-  "previewStartingState": {
-    "rotation": 0,
-    "velocity": 0
-  },
-  "useDefaultConstraints": true
+  "folder": "New Folder",
+  "previewStartingState": null,
+  "useDefaultConstraints": false
 }

@@ -16,14 +16,12 @@ public class IntakeIOSim implements IntakeIO {
     private final DCMotorSim beltMotor = new DCMotorSim(DCMotor.getFalcon500(1), 1, 1);;
 
     private final BooleanSupplier bottomSensor;
-    private final BooleanSupplier topSensor;
 
     private double rollerAppliedVolts = 0;
     private double beltAppliedVolts = 0;
 
-    public IntakeIOSim(BooleanSupplier noteAtBottom, BooleanSupplier noteAtTop) {
+    public IntakeIOSim(BooleanSupplier noteAtBottom) {
         this.bottomSensor = noteAtBottom;
-        this.topSensor = noteAtTop;
     }
 
     @Override
@@ -34,8 +32,7 @@ public class IntakeIOSim implements IntakeIO {
         inputs.rollerMotor.updateFrom(rollerMotor, rollerAppliedVolts);
         inputs.beltMotor.updateFrom(beltMotor, beltAppliedVolts);
         
-        inputs.noteAtBottom = bottomSensor.getAsBoolean();
-        inputs.noteAtTop = topSensor.getAsBoolean();
+        inputs.sensor = bottomSensor.getAsBoolean();
     }
 
     @Override

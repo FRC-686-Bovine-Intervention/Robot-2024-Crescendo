@@ -9,12 +9,15 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.pathplanner.lib.commands.FollowPathHolonomic;
+
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -25,8 +28,13 @@ import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
+import frc.robot.auto.AutoCommons.AutoPaths;
+import frc.robot.auto.AutoCommons;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.CenterLineRun;
+import frc.robot.auto.CleanSpikes;
+import frc.robot.auto.Rush6Note;
+import frc.robot.auto.Source4Note;
 import frc.robot.auto.SpikeMarkAndCenterLine;
 import frc.robot.auto.SpikeMarkShots;
 import frc.robot.subsystems.drive.Drive;
@@ -54,14 +62,17 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.amp.Amp;
+import frc.robot.subsystems.shooter.amp.AmpIO;
+import frc.robot.subsystems.shooter.amp.AmpIONeo550;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIOPhotonVision;
 import frc.robot.subsystems.vision.apriltag.ApriltagVision;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
-import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.Alert.AlertType;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
@@ -74,6 +85,7 @@ public class RobotContainer {
     public final Pivot pivot;
     public final Kicker kicker;
     public final Shooter shooter;
+    public final Amp amp;
     public final NoteVision noteVision;
     public final ApriltagVision apriltagVision;
     public final Leds ledSystem;
@@ -105,12 +117,10 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOFalcon550());
                 kicker = new Kicker(new KickerIONeo550());
                 shooter = new Shooter(new ShooterIOFalcon());
+                amp = new Amp(new AmpIO() {});
                 pivot = new Pivot(new PivotIOFalcon());
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision.withRobotToIntermediate(pivot::getRobotToPivot)));
-                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
-                // ledSystem = new Leds(
-                //     () -> drive.getCurrentCommand() != null && drive.getCurrentCommand() != drive.getDefaultCommand()
-                // );
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
             break;
             case SIM:
                 drive = new Drive(
@@ -120,12 +130,13 @@ public class RobotContainer {
                     new ModuleIOSim(),
                     new ModuleIOSim()
                 );
-                intake = new Intake(new IntakeIOSim(simJoystick.button(1), simJoystick.button(2)));
+                intake = new Intake(new IntakeIOSim(simJoystick.button(1)));
                 pivot = new Pivot(new PivotIOSim());
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
+                amp = new Amp(new AmpIO() {});
                 noteVision = new NoteVision(new NoteVisionIOSim());
-                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
             default:
             case REPLAY:
@@ -140,20 +151,24 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIO() {});
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
+                amp = new Amp(new AmpIO() {});
                 noteVision = null;
-                apriltagVision = new ApriltagVision(Camera.AprilTagVision.toApriltagCamera());
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
         }
-        ledSystem = new Leds(
-            () -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix),
-            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
-            () -> intake.getIntakeReversed(),
-            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.SECURE_NOTE)),
-            () -> intake.noteReady(),
-            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
-            () -> kicker.hasNote()
-        );
-
+        // ledSystem = new Leds(
+        //     () -> false,
+        //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
+        //     () -> intake.getIntakeReversed(),
+        //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
+        //     () -> kicker.hasNote()
+        //     // () -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix),
+        //     // () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
+        //     // () -> intake.getIntakeReversed(),
+        //     // () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
+        //     // () -> kicker.hasNote()
+        // );
+        ledSystem = null;
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
@@ -210,75 +225,71 @@ public class RobotContainer {
 
     private void configureButtonBindings() {
         driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
-        driveController.b().and(() -> drive.getChassisSpeeds().vxMetersPerSecond * (intake.getIntakeReversed() ? 1 : -1) >= 0.5).whileTrue(intake.outtake().alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
+        driveController.b().and(() -> Math.abs(drive.getChassisSpeeds().vxMetersPerSecond) >= 0.5).whileTrue(intake.outtake(drive::getChassisSpeeds).alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
         
         driveController.x().whileTrue(kicker.kick());
         driveController.y().toggleOnTrue(pivot.gotoAmp());
 
-        driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(joystickTranslational, drive, shooter, pivot));
+        driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(drive.rotationalSubsystem, shooter, pivot));
+        // driveController.leftBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
+        driveController.leftBumper().toggleOnTrue(AutoCommons.shootWhenReady(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()), drive, shooter, pivot, kicker).deadlineWith(AutoCommons.autoAim(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()), shooter, pivot, drive.rotationalSubsystem)));
+        // driveController.leftBumper().toggleOnTrue(new FollowPathHolonomic(AutoPaths.loadPath("Amp Spike To Center"), drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem,drive.rotationalSubsystem));
+        // driveController.leftBumper().toggleOnTrue(SuperCommands.autoAim(SuperCommands.autoAimFORR(() -> new Translation2d(2.38, 4.69), ChassisSpeeds::new), drive.rotationalSubsystem, shooter, pivot));
 
-        driveController.leftTrigger.aboveThreshold(0.5).whileTrue(
-            new FieldOrientedDrive(
-                drive,
-                noteVision.getAutoIntakeTransSpeed(noteVision.applyDotProduct(joystickTranslational)).orElseGet(joystickTranslational),
-                FieldOrientedDrive.pidControlledHeading(
-                    FieldOrientedDrive.pointTo(noteVision.autoIntakeTargetLocation(), () -> RobotConstants.intakeForward).orElse(driveCustomFlick)
-                )
-            )
-            .onlyWhile(() -> !intake.hasNote())
-            .withName("Auto Intake")
-        );
-        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWith(() -> 90));
+        driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
+        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWithTunableNumber());
 
-        driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
-        driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
-        driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
+        driveController.povLeft().whileTrue(amp.zero());
+        driveController.povRight().whileTrue(amp.amp());
+        // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
+        // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
+        // driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
+//new Pose2d(drive.getPose().getTranslation(), AllianceFlipUtil.apply(RobotConstants.intakeForward)))
+        driveController.rightStickButton().onTrue(Commands.runOnce(() -> drive.setPose(FieldConstants.subwooferFront)));
 
-        driveController.rightStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), AllianceFlipUtil.apply(RobotConstants.intakeForward)))));
+        // new Trigger(() -> 
+        //     drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
+        //     MathUtil.isNear(
+        //         Math.atan2(
+        //             AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).getY() - drive.getPose().getY(),
+        //             AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).getX() - drive.getPose().getX()
+        //         ),
+        //         drive.getRotation().getRadians(),
+        //         1
+        //     ) &&
+        //     kicker.hasNote() && 
+        //     DriverStation.isTeleopEnabled()
+        // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
 
-        new Trigger(() -> 
-            drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
-            MathUtil.isNear(
-                Math.atan2(
-                    AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).getY() - drive.getPose().getY(),
-                    AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).getX() - drive.getPose().getX()
-                ),
-                drive.getRotation().getRadians(),
-                1
-            ) &&
-            kicker.hasNote() && 
-            DriverStation.isTeleopEnabled()
-        ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
-
-        new Trigger(() -> 
-            SuperCommands.readyToShoot(shooter, pivot) && 
-            DriverStation.isTeleopEnabled()
-        ).onTrue(kicker.kick().onlyWhile(() -> shooter.getCurrentCommand() != null));
+        // new Trigger(() -> 
+        //     SuperCommands.readyToShoot(shooter, pivot) && 
+        //     DriverStation.isTeleopEnabled()
+        // ).onTrue(kicker.kick().onlyWhile(() -> shooter.getCurrentCommand() != null));
         
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
-            .and(() -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
-            .onTrue(drive.getDefaultCommand());
+            .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
+            .onTrue(drive.translationSubsystem.getDefaultCommand());
     }
 
     private void configureSubsystems() {
-        drive.setDefaultCommand(
-            new FieldOrientedDrive(
-                drive,
-                joystickTranslational,
-                FieldOrientedDrive.pidControlledHeading(
-                    driveCustomFlick
-                )
-            )
+        drive.translationSubsystem.setDefaultCommand(
+            drive.translationSubsystem.fieldRelative(joystickTranslational)
+        );
+        drive.rotationalSubsystem.setDefaultCommand(
+            drive.rotationalSubsystem.pidControlledHeading(driveCustomFlick)
         );
 
-        intake.setDefaultCommand(intake.doNothing());
+        intake.setDefaultCommand(intake.antiDeadzone());
+        kicker.setDefaultCommand(kicker.antiDeadzone());
+        new Trigger(kicker::hasNote).and(() -> Optional.ofNullable(kicker.getCurrentCommand()).map((c) -> c.getName().contains("|")).orElse(false)).and(DriverStation::isEnabled).whileTrue(intake.doNothing().asProxy().alongWith(kicker.doNothing().asProxy()));
 
         pivot.setDefaultCommand(pivot.gotoZero());
 
-        new Trigger(pivot::readyToFeed).and(intake::noteReady).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        new Trigger(intake::hasNote).and(() -> !kicker.hasNote() && kicker.getCurrentCommand() == kicker.getDefaultCommand()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
     }
 
     private void configureAutos() {
+        AutoPaths.preload();
         // autoSelector.addRoutine(new AutoRoutine(
         //     "Drive Characterization",
         //     new ArrayList<>(0),
@@ -290,8 +301,10 @@ public class RobotContainer {
         //         drive::getCharacterizationVelocity
         //     )
         // ));
-        autoSelector.addDefaultRoutine(new SpikeMarkShots(this));
-        autoSelector.addDefaultRoutine(new SpikeMarkAndCenterLine(this));
+        autoSelector.addRoutine(new SpikeMarkShots(this));
+        autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
+        autoSelector.addRoutine(new CleanSpikes(this));
+        autoSelector.addDefaultRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new CenterLineRun(this));
     }
 

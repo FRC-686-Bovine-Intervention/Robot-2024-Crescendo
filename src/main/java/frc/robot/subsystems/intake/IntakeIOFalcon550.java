@@ -19,11 +19,10 @@ public class IntakeIOFalcon550 implements IntakeIO {
     private final CANSparkMax rollerMotor = new CANSparkMax(CANDevices.intakeRollerMotorID, MotorType.kBrushless);
     private final TalonFX beltMotor = new TalonFX(CANDevices.intakeBeltMotorID, CANDevices.driveCanBusName);
 
-    private final DigitalInput bottomSensor = new DigitalInput(DIOPorts.intakeBottomSensorPort);
-    private final DigitalInput topSensor = new DigitalInput(DIOPorts.intakeTopSensorPort);
+    private final DigitalInput sensor = new DigitalInput(DIOPorts.intakeSensorPort);
     
     public IntakeIOFalcon550() {
-        rollerMotor.setInverted(true);
+        rollerMotor.setInverted(false);
         rollerMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
         var beltConfig = new TalonFXConfiguration();
         beltConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
@@ -36,8 +35,7 @@ public class IntakeIOFalcon550 implements IntakeIO {
         inputs.beltMotor.updateFrom(beltMotor);
         inputs.rollerMotor.updateFrom(rollerMotor);
 
-        inputs.noteAtBottom = !bottomSensor.get();
-        inputs.noteAtTop = !topSensor.get();
+        inputs.sensor = !sensor.get();
     }
     
     @Override
