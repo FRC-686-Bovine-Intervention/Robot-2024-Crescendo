@@ -114,10 +114,8 @@ public class Joystick {
     // private double previousAngle;
     // public Joystick radialSlewRateLimit(double slewRatePerSec) {
     //     SlewRateLimiter slewRateLimiter = new SlewRateLimiter(slewRatePerSec);
-    //     return fromAngleMagnitude(() -> {
-    //         if (magnitude() > 0.1) previousAngle = radsFromNegXCCW();
-    //         return previousAngle;
-    //     }, () -> slewRateLimiter.calculate(magnitude()));
+    //     if (magnitude() > 0.1) previousAngle = radsFromNegXCCW();
+    //     return fromAngleMagnitude(() -> previousAngle, () -> slewRateLimiter.calculate(magnitude()));
     // }
 
     private DoubleUnaryOperator sensitivityFunction(double sensitivityVal) {

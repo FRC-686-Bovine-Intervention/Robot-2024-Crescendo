@@ -28,7 +28,6 @@ import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
 import frc.robot.util.GearRatio.Wheel;
-import frc.robot.util.swerve.ModuleLimits;
 
 public final class Constants {
 
@@ -169,6 +168,8 @@ public final class Constants {
         }
         public static final int numDriveModules = DriveModulePosition.values().length;
 
+        public static final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveModulePosition.moduleTranslations);
+
         /**Weight with battery and bumpers*/
         public static final double weightKg = Pounds.of(58.0).in(Kilograms);
         
@@ -195,9 +196,8 @@ public final class Constants {
         public static final double driveSnapKi = 0;
         public static final double driveSnapKd = 0;
 
+
         public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
-        // TODO: Find the correct max acceleration (m)/(s^2)
-        public static final double maxDriveAccelerationMetersPerSecPerSec = MetersPerSecondPerSecond.of(2).in(MetersPerSecondPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(RobotConstants.trackWidthXMeters/2, RobotConstants.trackWidthYMeters/2);
         /**full speed in 0.25 sec*/
@@ -220,14 +220,6 @@ public final class Constants {
         public static final double headingKi = 0;
         public static final double headingKd = 0;
         public static final double headingTolerance = Degrees.of(1).in(Radians);
-
-        public static final ModuleLimits moduleLimitsFree = new ModuleLimits(
-            maxDriveSpeedMetersPerSec,
-            maxDriveAccelerationMetersPerSecPerSec,
-            maxTurnRateRadiansPerSec
-        );
-
-        public static final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveModulePosition.moduleTranslations);
     }
 
     public static final class PivotConstants {
