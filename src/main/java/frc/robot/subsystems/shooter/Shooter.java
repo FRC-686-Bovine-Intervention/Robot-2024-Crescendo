@@ -30,6 +30,7 @@ public class Shooter extends SubsystemBase {
     private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 30);
     private static final LoggedTunableNumber preMPS = new LoggedTunableNumber("Shooter/Preemptive MPS", 30);
     private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection", 1);
+    public static final LoggedTunableNumber maxVolts = new LoggedTunableNumber("Shooter/Max Voltage", 10);
 
     private static final double smoothingFactor = 0.15;
     private double smoothedAverageSurfaceSpeed;
@@ -88,6 +89,8 @@ public class Shooter extends SubsystemBase {
         if(shot()) {
             followUpTimer.start();
         }
+        Logger.recordOutput("Shooter/Left Wheel/Surface Speed", ShooterConstants.motorToSurface.apply(inputs.leftMotor.velocityRadPerSec));
+        Logger.recordOutput("Shooter/Right Wheel/Surface Speed", ShooterConstants.motorToSurface.apply(inputs.rightMotor.velocityRadPerSec));
         Logger.recordOutput("Shooter/Average Surface Speed", getAverageSurfaceSpeed());
         Logger.recordOutput("Shooter/Smoothed Surface Speed", smoothedAverageSurfaceSpeed);
         Logger.recordOutput("Shooter/Timer", followUpTimer.get());
@@ -115,6 +118,8 @@ public class Shooter extends SubsystemBase {
             }
             @Override
             public void initialize() {
+                leftPID.reset(ShooterConstants.motorToSurface.apply(inputs.leftMotor.velocityRadPerSec));
+                rightPID.reset(ShooterConstants.motorToSurface.apply(inputs.rightMotor.velocityRadPerSec));
                 smoothedAverageSurfaceSpeed = getAverageSurfaceSpeed();
             }
             @Override

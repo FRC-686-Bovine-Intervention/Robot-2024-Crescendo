@@ -8,6 +8,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import edu.wpi.first.math.MathUtil;
 import frc.robot.Constants.CANDevices;
 
 public class ShooterIOFalcon implements ShooterIO {
@@ -31,11 +32,11 @@ public class ShooterIOFalcon implements ShooterIO {
     
     @Override
     public void setLeftVoltage(double volts) {
-        leftMotor.setVoltage(volts);
+        leftMotor.setVoltage(MathUtil.clamp(volts, -Shooter.maxVolts.get(), Shooter.maxVolts.get()));
     }
 
     @Override
     public void setRightVoltage(double volts) {
-        rightMotor.setVoltage(volts);
+        rightMotor.setVoltage(MathUtil.clamp(volts, -Shooter.maxVolts.get(), Shooter.maxVolts.get()));;
     }
 }
