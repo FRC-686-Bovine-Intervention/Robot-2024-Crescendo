@@ -34,7 +34,7 @@ public class ShooterIOFalcon implements ShooterIO {
     public ShooterIOFalcon() {
         var config = new TalonFXConfiguration();
         // config.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.5;
-        config.Feedback.SensorToMechanismRatio = ShooterConstants.motorToSurface.surfacePerRot();
+        // config.Feedback.SensorToMechanismRatio = ShooterConstants.motorToSurface.surfacePerRot();
         config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         leftMotor.getConfigurator().apply(config);
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
@@ -61,15 +61,15 @@ public class ShooterIOFalcon implements ShooterIO {
         ) {
             var pidConfig = new Slot0Configs();
             var profileConfig = new MotionMagicConfigs();
-            pidConfig.kP = kP.get();
-            pidConfig.kI = kI.get();
-            pidConfig.kD = kD.get();
-            profileConfig.MotionMagicAcceleration = kA.get();
-            profileConfig.MotionMagicJerk = kJ.get();
-            pidConfig.kV = ffkV.get();
-            pidConfig.kA = ffkA.get();
-            pidConfig.kG = ffkG.get();
-            pidConfig.kS = ffkS.get();
+            pidConfig.kP = kP.get() * ShooterConstants.motorToSurface.rotPerSurface();
+            pidConfig.kI = kI.get() * ShooterConstants.motorToSurface.rotPerSurface();
+            pidConfig.kD = kD.get() * ShooterConstants.motorToSurface.rotPerSurface();
+            profileConfig.MotionMagicAcceleration = kA.get() * ShooterConstants.motorToSurface.rotPerSurface();
+            profileConfig.MotionMagicJerk = kJ.get() * ShooterConstants.motorToSurface.rotPerSurface();
+            pidConfig.kV = ffkV.get() * ShooterConstants.motorToSurface.rotPerSurface();
+            pidConfig.kA = ffkA.get() * ShooterConstants.motorToSurface.rotPerSurface();
+            pidConfig.kG = ffkG.get() * ShooterConstants.motorToSurface.rotPerSurface();
+            pidConfig.kS = ffkS.get() * ShooterConstants.motorToSurface.rotPerSurface();
 
             leftMotor.getConfigurator().apply(pidConfig);
             rightMotor.getConfigurator().apply(pidConfig);
@@ -110,12 +110,12 @@ public class ShooterIOFalcon implements ShooterIO {
 
     @Override
     public void setLeftSurfaceSpeed(double rps) {
-        leftMotor.setControl(request.withVelocity(rps));
+        leftMotor.setControl(request.withVelocity(ShooterConstants.motorToSurface.surfaceToRots(rps)));
     }
 
     @Override
     public void setRightSurfaceSpeed(double rps) {
-        rightMotor.setControl(request.withVelocity(rps));
+        rightMotor.setControl(request.withVelocity(ShooterConstants.motorToSurface.surfaceToRots(rps)));
     }
 
     @Override
