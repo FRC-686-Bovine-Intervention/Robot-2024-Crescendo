@@ -119,7 +119,7 @@ public class NoteVision extends VirtualSubsystem {
             var targetRelRobotNormalized = targetRelRobot.div(targetRelRobot.getNorm());
             var joystickSpeed = joystickFieldRelative.get();
             var joy = new Translation2d(joystickSpeed.vxMetersPerSecond, joystickSpeed.vyMetersPerSecond);
-            var throttle = MathExtraUtil.dotProduct(targetRelRobotNormalized, joy);
+            var throttle = targetRelRobotNormalized.toVector().dot(joy.toVector());
             return throttle;
         }).orElse(0.0);
     }

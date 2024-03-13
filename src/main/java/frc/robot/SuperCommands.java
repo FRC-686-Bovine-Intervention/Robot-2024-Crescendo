@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -18,7 +19,6 @@ import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.util.AllianceFlipUtil;
-import frc.robot.util.MathExtraUtil;
 
 public class SuperCommands {
     public static Command feedToKicker(Intake intake, Kicker kicker) {
@@ -37,21 +37,21 @@ public class SuperCommands {
         return Commands.waitUntil(() -> kicker.hasNote() && readyToShoot(shooter, pivot)).andThen(kicker.kick().asProxy());
     }
 
-    public static Supplier<Translation2d> autoAimShootAtPos(Drive drive) {
-        return () -> {
-            var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
-            var chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds(), drive.getPose().getRotation());
-            var robotToSpeaker = speakerTrans.minus(drive.getPose().getTranslation());
-            var robotToSpeakerNorm = robotToSpeaker.div(robotToSpeaker.getNorm());
-            var velocityTowardsSpeaker = MathExtraUtil.dotProduct(robotToSpeakerNorm, new Translation2d(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond));
-            var timeToSpeaker = drive.getPose().getTranslation().getDistance(speakerTrans) / (ShooterConstants.exitVelocity + velocityTowardsSpeaker);
-            var chassisOffset = chassisSpeeds.times(timeToSpeaker);
-            var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
-            var pointTo = speakerTrans.minus(translationalOffset);
-            Logger.recordOutput("Shooter/Shoot at", pointTo);
-            return pointTo;
-        };
-    }
+    // public static Supplier<Translation2d> autoAimShootAtPos(Drive drive) {
+    //     return () -> {
+    //         var speakerTrans = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
+    //         var chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds(), drive.getPose().getRotation());
+    //         var robotToSpeaker = speakerTrans.minus(drive.getPose().getTranslation());
+    //         var robotToSpeakerNorm = robotToSpeaker.div(robotToSpeaker.getNorm());
+    //         var velocityTowardsSpeaker = MathExtraUtil.dotProduct(robotToSpeakerNorm, new Translation2d(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond));
+    //         var timeToSpeaker = drive.getPose().getTranslation().getDistance(speakerTrans) / (ShooterConstants.exitVelocity + velocityTowardsSpeaker);
+    //         var chassisOffset = chassisSpeeds.times(timeToSpeaker);
+    //         var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
+    //         var pointTo = speakerTrans.minus(translationalOffset);
+    //         Logger.recordOutput("Shooter/Shoot at", pointTo);
+    //         return pointTo;
+    //     };
+    // }
 
     public static Supplier<Translation2d> autoAimFORR(Drive drive) {
         return autoAimFORR(() -> drive.getPose().getTranslation(), () -> ChassisSpeeds.fromRobotRelativeSpeeds(drive.getChassisSpeeds(), drive.getRotation()));
@@ -64,7 +64,7 @@ public class SuperCommands {
             var chassisSpeeds = robotVelocityFieldRel.get();
             var robotToSpeaker = speakerTrans.minus(robotTrans);
             var robotToSpeakerNorm = robotToSpeaker.div(robotToSpeaker.getNorm());
-            var velocityTowardsSpeaker = MathExtraUtil.dotProduct(robotToSpeakerNorm, new Translation2d(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond));
+            var velocityTowardsSpeaker = robotToSpeakerNorm.toVector().dot(VecBuilder.fill(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond));
             var timeToSpeaker = robotTrans.getDistance(speakerTrans) / (ShooterConstants.exitVelocity + velocityTowardsSpeaker);
             var chassisOffset = chassisSpeeds.times(timeToSpeaker);
             var translationalOffset = new Translation2d(chassisOffset.vxMetersPerSecond, chassisOffset.vyMetersPerSecond);
