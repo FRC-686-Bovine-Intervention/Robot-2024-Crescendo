@@ -86,8 +86,7 @@ public class Shooter extends SubsystemBase {
         Logger.recordOutput("Shooter/Target RPS", speed);
       },
       (interrupted) -> {
-        shooterIO.setLeftVelocity(0);
-        shooterIO.setRightVelocity(0);
+        shooterIO.stop();
         readyToShoot = false;
         Logger.recordOutput("Shooter/Target RPS", 0.0);
       },
@@ -113,8 +112,7 @@ public class Shooter extends SubsystemBase {
         Logger.recordOutput("Shooter/Target RPS", 45);
       },
       (interrupted) -> {
-        shooterIO.setLeftVelocity(0);
-        shooterIO.setRightVelocity(0);
+        shooterIO.stop();
         Logger.recordOutput("Shooter/Target RPS", 0.0);
       },
       () -> false,
@@ -137,8 +135,7 @@ public class Shooter extends SubsystemBase {
       }
       @Override
       public void end(boolean interrupted) {
-        shooterIO.setLeftVelocity(0);
-        shooterIO.setRightVelocity(0);
+        shooterIO.stop();
         Logger.recordOutput("Shooter/Target RPS", 0.0);
       }
     };

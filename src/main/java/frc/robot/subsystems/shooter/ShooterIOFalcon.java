@@ -5,7 +5,9 @@
 package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityDutyCycle;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -20,10 +22,10 @@ public class ShooterIOFalcon implements ShooterIO {
     private final TalonFXConfiguration leftConfiguration = new TalonFXConfiguration();
     private final TalonFXConfiguration rightConfiguration = new TalonFXConfiguration();
 
-    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0.03);
+    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0.7*12);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Shooter/PID/kI", 0);
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Shooter/PID/kD", 0);
-    private final LoggedTunableNumber kV = new LoggedTunableNumber("Shooter/PID/kV", 0.011);
+    private final LoggedTunableNumber kV = new LoggedTunableNumber("Shooter/PID/kV", 0.02*12);
     private final LoggedTunableNumber kA = new LoggedTunableNumber("Shooter/PID/kA", 0);
     private final LoggedTunableNumber kG = new LoggedTunableNumber("Shooter/PID/kG", 0);
     private final LoggedTunableNumber kS = new LoggedTunableNumber("Shooter/PID/kS", 0);
@@ -88,7 +90,7 @@ public class ShooterIOFalcon implements ShooterIO {
     private final boolean kLimitForwardMotion = false;
     private final boolean kLimitReverseMotion = false;
 
-    private final VelocityDutyCycle request = new VelocityDutyCycle(
+    private final VelocityVoltage request = new VelocityVoltage(
         0,
         kAcceleration,
         kEnableFOC,
@@ -109,5 +111,11 @@ public class ShooterIOFalcon implements ShooterIO {
     public void setRightVelocity(double rps) {
         request.withVelocity(rps);
         rightMotor.setControl(request);
+    }
+
+    @Override
+    public void stop() {
+        leftMotor.setControl(new NeutralOut());
+        rightMotor.setControl(new NeutralOut());
     }
 }

@@ -20,4 +20,6 @@ public interface ShooterIO {
     public default void setLeftVelocity(double rps) {}
 
     public default void setRightVelocity(double rps) {}
+
+    public default void stop() {}
 }
