@@ -4,6 +4,10 @@
 
 package frc.robot.subsystems.shooter;
 
+import org.littletonrobotics.junction.Logger;
+
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
@@ -17,12 +21,12 @@ public class ShooterIOFalcon implements ShooterIO {
     private final TalonFX leftMotor = new TalonFX(CANDevices.shooterLeftID);
     private final TalonFX rightMotor = new TalonFX(CANDevices.shooterRightID);
 
-    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0.7*12);
+    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Shooter/PID/kI", 0);
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Shooter/PID/kD", 0);
     private final LoggedTunableNumber kA = new LoggedTunableNumber("Shooter/PID/Profile/kA", 0);
     private final LoggedTunableNumber kJ = new LoggedTunableNumber("Shooter/PID/Profile/kJ", 0);
-    private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Shooter/FF/kV", 0.02*12);
+    private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Shooter/FF/kV", 0);
     private final LoggedTunableNumber ffkA = new LoggedTunableNumber("Shooter/FF/kA", 0);
     private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Shooter/FF/kG", 0);
     private final LoggedTunableNumber ffkS = new LoggedTunableNumber("Shooter/FF/kS", 0);
@@ -30,18 +34,14 @@ public class ShooterIOFalcon implements ShooterIO {
     public ShooterIOFalcon() {
         var config = new TalonFXConfiguration();
         config.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.5;
-        config.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.5;
-        updateTunables(config);
-    }
-
-    private void applyMotorConfig(TalonFXConfiguration config) {
         config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         leftMotor.getConfigurator().apply(config);
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         rightMotor.getConfigurator().apply(config);
+        updateTunables();
     }
 
-    private void updateTunables(TalonFXConfiguration config) {
+    private void updateTunables() {
         if(
             kP.hasChanged(hashCode()) |
             kI.hasChanged(hashCode()) |
@@ -53,18 +53,20 @@ public class ShooterIOFalcon implements ShooterIO {
             ffkG.hasChanged(hashCode()) |
             ffkS.hasChanged(hashCode())
         ) {
-            if(config == null) config = new TalonFXConfiguration();
-            config.Slot0.kP = kP.get();
-            config.Slot0.kI = kI.get();
-            config.Slot0.kD = kD.get();
-            config.MotionMagic.MotionMagicAcceleration = kA.get();
-            config.MotionMagic.MotionMagicJerk = kJ.get();
-            config.Slot0.kV = ffkV.get();
-            config.Slot0.kA = ffkA.get();
-            config.Slot0.kG = ffkG.get();
-            config.Slot0.kS = ffkS.get();
+            var pidConfig = new Slot0Configs();
+            var profileConfig = new MotionMagicConfigs();
+            pidConfig.kP = kP.get();
+            pidConfig.kI = kI.get();
+            pidConfig.kD = kD.get();
+            profileConfig.MotionMagicAcceleration = kA.get();
+            profileConfig.MotionMagicJerk = kJ.get();
+            pidConfig.kV = ffkV.get();
+            pidConfig.kA = ffkA.get();
+            pidConfig.kG = ffkG.get();
+            pidConfig.kS = ffkS.get();
 
-            applyMotorConfig(config);
+            leftMotor.getConfigurator().apply(pidConfig);
+            leftMotor.getConfigurator().apply(pidConfig);
         }
     } 
 
@@ -73,26 +75,24 @@ public class ShooterIOFalcon implements ShooterIO {
         inputs.leftMotor.updateFrom(leftMotor);
         inputs.rightMotor.updateFrom(rightMotor);
 
-        updateTunables(null);
-    }
+        updateTunables();
 
-    private final boolean kEnableFOC = false;
-    private final double kAcceleration = 1;
-    private final double kFeedForward = 0;
-    private final int kPIDSlot = 0;
-    private final boolean kOverrideBrakeDurNeutral = false;
-    private final boolean kLimitForwardMotion = false;
-    private final boolean kLimitReverseMotion = false;
+        Logger.recordOutput("Shooter/Left Motor/Output", leftMotor.getClosedLoopOutput().getValueAsDouble());
+        Logger.recordOutput("Shooter/Left Motor/FF Out", leftMotor.getClosedLoopFeedForward().getValueAsDouble());
+        Logger.recordOutput("Shooter/Left Motor/P Out", leftMotor.getClosedLoopProportionalOutput().getValueAsDouble());
+        Logger.recordOutput("Shooter/Left Motor/Profile Velocity", leftMotor.getClosedLoopReference().getValueAsDouble());
+        Logger.recordOutput("Shooter/Left Motor/Profile Accleration", leftMotor.getClosedLoopReferenceSlope().getValueAsDouble());
+    }
 
     private final MotionMagicVelocityVoltage request = new MotionMagicVelocityVoltage(
         0,
         0,
-        kEnableFOC,
-        kFeedForward,
-        kPIDSlot,
-        kOverrideBrakeDurNeutral,
-        kLimitForwardMotion,
-        kLimitReverseMotion
+        false,
+        0,
+        0,
+        false,
+        false,
+        false
     );
 
     @Override
