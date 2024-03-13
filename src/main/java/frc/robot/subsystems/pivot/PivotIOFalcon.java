@@ -9,7 +9,7 @@ import static edu.wpi.first.units.Units.Rotations;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
@@ -48,7 +48,7 @@ public class PivotIOFalcon implements PivotIO {
         encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         pivotEncoder.getConfigurator().apply(encoderConfig);
 
-        pivotRightMotor.setControl(new Follower(CANDevices.pivotLeftMotorID, true));
+        pivotRightMotor.setControl(new StrictFollower(CANDevices.pivotLeftMotorID));
     }
 
     @Override
