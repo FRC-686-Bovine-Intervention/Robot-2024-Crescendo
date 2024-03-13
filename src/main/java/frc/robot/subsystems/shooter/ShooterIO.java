@@ -6,13 +6,16 @@ package frc.robot.subsystems.shooter;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import frc.robot.util.loggerUtil.LoggedEncoder;
 import frc.robot.util.loggerUtil.LoggedMotor;
 
 public interface ShooterIO {
     @AutoLog
     public static class ShooterIOInputs {
         public LoggedMotor leftMotor = new LoggedMotor();
+        public LoggedEncoder leftEncoder = new LoggedEncoder();
         public LoggedMotor rightMotor = new LoggedMotor();
+        public LoggedEncoder rightEncoder = new LoggedEncoder();
     }
 
     public default void updateInputs(ShooterIOInputs inputs) {}

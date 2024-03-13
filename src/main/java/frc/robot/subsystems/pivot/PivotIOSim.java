@@ -31,6 +31,7 @@ public class PivotIOSim implements PivotIO {
         pivotSim.update(Constants.dtSeconds);
 
         inputs.pivotLeftMotor.updateFrom(pivotSim, pivotAppliedVolts);
+        inputs.pivotRightMotor.updateFrom(pivotSim, pivotAppliedVolts);
         inputs.pivotEncoder.updateFrom(pivotSim);
     }
     

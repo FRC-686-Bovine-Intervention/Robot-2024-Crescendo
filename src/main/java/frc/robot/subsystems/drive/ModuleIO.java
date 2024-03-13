@@ -2,6 +2,7 @@ package frc.robot.subsystems.drive;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import frc.robot.util.loggerUtil.LoggedEncoder;
 import frc.robot.util.loggerUtil.LoggedMotor;
 
 public interface ModuleIO {
@@ -10,9 +11,11 @@ public interface ModuleIO {
     public static class ModuleIOInputs {
         public double driveSetpointRadPerSec = 0.0;
         public LoggedMotor driveMotor = new LoggedMotor();
+        public LoggedEncoder driveEncoder = new LoggedEncoder();
 
         public double turnAbsolutePositionRad = 0.0;
         public LoggedMotor turnMotor = new LoggedMotor();
+        public LoggedEncoder turnEncoder = new LoggedEncoder();
     }
 
     /** Updates the set of loggable inputs. */

@@ -66,7 +66,7 @@ public class Shooter extends SubsystemBase {
   }
 
   private double getAverageRPS() {
-    return Units.radiansToRotations((inputs.leftMotor.velocityRadPerSec + inputs.rightMotor.velocityRadPerSec) * 0.5);
+    return Units.radiansToRotations((inputs.leftEncoder.velocityRadPerSec + inputs.rightEncoder.velocityRadPerSec) * 0.5);
   }
 
   public boolean shot() {

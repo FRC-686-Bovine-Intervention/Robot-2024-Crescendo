@@ -31,8 +31,8 @@ public class KickerIOSim implements KickerIO {
         
         inputs.notePresent = sensor.getAsBoolean();
 
-        inputs.leftMotor.updateFrom(leftMotor);
-        inputs.rightMotor.updateFrom(rightMotor);
+        inputs.leftMotor.updateFrom(leftMotor, leftAppliedVolts);
+        inputs.rightMotor.updateFrom(rightMotor, rightAppliedVolts);
     }
 
     @Override

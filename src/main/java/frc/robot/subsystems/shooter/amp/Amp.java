@@ -31,7 +31,7 @@ public class Amp extends SubsystemBase {
 
     @AutoLogOutput(key = "Shooter/Amp/Position Rads")
     private double getPos() {
-        return inputs.ampMotor.positionRad - calibVal;
+        return inputs.ampEncoder.positionRad - calibVal;
     }
 
     @Override

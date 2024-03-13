@@ -51,8 +51,6 @@ public class Module {
         this.io = io;
         this.index = index;
         prevModulePosition = getPosition();
-        inputs.driveMotor.positionRad = 0;
-        inputs.turnMotor.positionRad = 0;
 
         turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
     }
@@ -95,7 +93,7 @@ public class Module {
         double velocityRadPerSec = optimizedState.speedMetersPerSecond / wheelRadius.get();
         io.setDriveVoltage(
                 driveFeedforward.calculate(velocityRadPerSec)
-                        + driveFeedback.calculate(inputs.driveMotor.velocityRadPerSec, velocityRadPerSec));
+                        + driveFeedback.calculate(inputs.driveEncoder.velocityRadPerSec, velocityRadPerSec));
 
         return optimizedState;
     }
@@ -123,22 +121,22 @@ public class Module {
 
     /** Returns the current turn angle of the module. */
     public Rotation2d getAngle() {
-        return new Rotation2d(MathUtil.angleModulus(inputs.turnMotor.positionRad));
+        return new Rotation2d(MathUtil.angleModulus(inputs.turnEncoder.positionRad));
     }
 
     /** Returns the current drive position of the module in radians. */
     public double getPositionRadians() {
-        return inputs.driveMotor.positionRad;
+        return inputs.driveEncoder.positionRad;
     }
 
     /** Returns the current drive position of the module in meters. */
     public double getPositionMeters() {
-        return inputs.driveMotor.positionRad * wheelRadius.get();
+        return inputs.driveEncoder.positionRad * wheelRadius.get();
     }
 
     /** Returns the current drive velocity of the module in meters per second. */
     public double getVelocityMetersPerSec() {
-        return inputs.driveMotor.velocityRadPerSec * wheelRadius.get();
+        return inputs.driveEncoder.velocityRadPerSec * wheelRadius.get();
     }
 
     public double getCurrentAmps() {
@@ -164,7 +162,7 @@ public class Module {
 
     /** Returns the drive velocity in radians/sec. */
     public double getCharacterizationVelocity() {
-        return inputs.driveMotor.velocityRadPerSec;
+        return inputs.driveEncoder.velocityRadPerSec;
     }
 
     /** Returns the drive wheel radius. */

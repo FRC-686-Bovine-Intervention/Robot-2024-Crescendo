@@ -76,6 +76,8 @@ public class ShooterIOFalcon implements ShooterIO {
     public void updateInputs(ShooterIOInputs inputs) {
         inputs.leftMotor.updateFrom(leftMotor);
         inputs.rightMotor.updateFrom(rightMotor);
+        inputs.leftEncoder.updateFrom(leftMotor);
+        inputs.rightEncoder.updateFrom(rightMotor);
 
         updateTunables();
     }

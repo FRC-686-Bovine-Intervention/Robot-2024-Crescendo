@@ -64,15 +64,13 @@ public class ModuleIOFalcon550 implements ModuleIO {
     }
 
     public void updateInputs(ModuleIOInputs inputs) {
-        inputs.driveMotor.positionRad =       Units.rotationsToRadians(driveMotor.getPosition().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveMotor.velocityRadPerSec = Units.rotationsToRadians(driveMotor.getVelocity().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveMotor.appliedVolts =      driveMotor.getSupplyVoltage().getValue();
-        inputs.driveMotor.currentAmps =       driveMotor.getSupplyCurrent().getValue();
+        inputs.driveEncoder.positionRad =       Units.rotationsToRadians(driveMotor.getPosition().getValue()) / DriveConstants.driveWheelGearReduction;
+        inputs.driveEncoder.velocityRadPerSec = Units.rotationsToRadians(driveMotor.getVelocity().getValue()) / DriveConstants.driveWheelGearReduction;
+        inputs.driveMotor.updateFrom(driveMotor);
 
-        inputs.turnMotor.positionRad =        MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians;
-        inputs.turnMotor.velocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
-        inputs.turnMotor.appliedVolts =       turnMotor.getAppliedOutput();
-        inputs.turnMotor.currentAmps =        turnMotor.getOutputCurrent();
+        inputs.turnEncoder.positionRad =        MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians;
+        inputs.turnEncoder.velocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
+        inputs.turnMotor.updateFrom(turnMotor);
     }
 
     public void zeroEncoders() {
