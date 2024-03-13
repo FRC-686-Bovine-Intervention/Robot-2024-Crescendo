@@ -26,6 +26,7 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
+import frc.robot.util.GearRatio.Wheel;
 
 public final class Constants {
 
@@ -168,14 +169,20 @@ public final class Constants {
 
         /**Weight with battery and bumpers*/
         public static final double weightKg = Pounds.of(58.0).in(Kilograms);
-
         
         public static final double driveBaseRadius = Arrays.stream(DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
         private static final double correctionVal = 314.0 / 320.55;
         public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters) * correctionVal;
 
-        public static final GearRatio driveWheelGearRatio = GearRatio.start(14).drive(22).driven(15).drive(45);
-        public static final GearRatio turnWheelGearRatio = GearRatio.start(15).drive(32).driven(10).drive(60);
+        public static final GearRatio driveWheelGearRatio = new GearRatio()
+            .gear(14).gear(22).axle()
+            .gear(15).gear(45).axle()
+        ;
+        public static final Wheel driveWheel = driveWheelGearRatio.wheelRadius(wheelRadiusMeters);
+        public static final GearRatio turnWheelGearRatio = new GearRatio()
+            .gear(15).gear(32).axle()
+            .gear(10).gear(60).axle()
+        ;
         public static final double driveWheelGearReduction = 1.0 / (1.0/4.0);
         public static final double turnWheelGearReduction = 1.0 / ((15.0/32.0)*(10.0/60.0));
 
@@ -214,29 +221,27 @@ public final class Constants {
 
     public static final class PivotConstants {
         public static final double pivotMagnetOffset = -0.332763671875;//-0.330322265625;//0.32958984375;
-        public static final GearRatio motorToMechanismRatio = GearRatio
-            .start(8).drive(72) // Planetary 1
-            .driven(10).drive(100) // Planetary 2
-            ;
-        public static final GearRatio encoderToMechanismRatio = GearRatio.start(1).drive(1);
-        public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.andThen(encoderToMechanismRatio.inverse());
+        public static final GearRatio motorToMechanismRatio = new GearRatio()
+            .gear(+8).gear(+72).axle()
+            .gear(+10).gear(+100).axle()
+        ;
+        public static final GearRatio encoderToMechanismRatio = new GearRatio()
+            .gear(+1).gear(+1).axle()
+        ;
+        public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.concat(encoderToMechanismRatio.inverse());
     }
 
     public static final class ShooterConstants {
         public static final double exitVelocity = 5;
 
-        // public static final double[] distance = new double[] {
-        //     FieldConstants.subwooferToSpeakerDist,
-        //     FieldConstants.podiumToSpeakerDist
-        // };
-        // public static final double[] RPS = new double[] {
-        //     90,
-        //     90
-        // };
-        // public static final double[] angle = new double[] {
-        //     Degrees.of(0).in(Radians),
-        //     Degrees.of(22).in(Radians)
-        // };
+        public static final double wheelRadius = Inches.of(2).in(Meters);
+
+        public static final Wheel motorToSurface = new GearRatio()
+            .sprocket(+48).sprocket(+24)
+            .wheelRadius(wheelRadius)
+        ;
+        public static final Wheel surfaceToMotor = motorToSurface.inverse();
+
         public static final double[] distance = new double[] {
             FieldConstants.subwooferToSpeakerDist,
             FieldConstants.podiumToSpeakerDist,
@@ -252,7 +257,7 @@ public final class Constants {
             Degrees.of(37.8).in(Radians),
             Degrees.of(31.5).in(Radians)
         };
-        public static double distanceLerp(double dist, double[] lerpTarget) {
+        public static double distLerp(double dist, double[] lerpTarget) {
             int lowerBound = 0;
             int upperBound = 0;
             for(int i = 0; i < distance.length; i++) {

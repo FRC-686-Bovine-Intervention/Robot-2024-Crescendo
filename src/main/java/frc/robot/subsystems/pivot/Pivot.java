@@ -93,7 +93,9 @@ public class Pivot extends SubsystemBase {
   }
 
   public Pivot(PivotIO pivotIO) {
+    System.out.println("[Init Pivot] Instantiating Pivot");
     this.pivotIO = pivotIO;
+    System.out.println("[Init Pivot] Pivot IO: " + this.pivotIO.getClass().getSimpleName());
     SmartDashboard.putData("Subsystems/Pivot", this);
   }
 
@@ -165,7 +167,7 @@ public class Pivot extends SubsystemBase {
   }
 
   public Command autoAim(Supplier<Translation2d> FORR) {
-    return go(() -> ShooterConstants.distanceLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
+    return go(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
   }
 
   public boolean atPos() {

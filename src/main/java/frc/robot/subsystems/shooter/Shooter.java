@@ -37,7 +37,9 @@ public class Shooter extends SubsystemBase {
   private boolean readyToShoot;
 
   public Shooter(ShooterIO shooterIO) {
+    System.out.println("[Init Shooter] Instantiating Pivot");
     this.shooterIO = shooterIO;
+    System.out.println("[Init Shooter] Shooter IO: " + this.shooterIO.getClass().getSimpleName());
     SmartDashboard.putData("Subsystems/Shooter", this);
   }
 
@@ -99,7 +101,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public Command shoot(Supplier<Translation2d> FORR) {
-    return shootWith(() -> ShooterConstants.distanceLerp(FORR.get().getNorm(), ShooterConstants.RPS)).withName("Shoot at pos");
+    return shootWith(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.RPS)).withName("Shoot at pos");
   }
 
   public Command preemptiveSpinup() {

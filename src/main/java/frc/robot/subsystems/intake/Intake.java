@@ -40,7 +40,9 @@ public class Intake extends SubsystemBase {
   };
 
   public Intake(IntakeIO intakeIO) {
+    System.out.println("[Init Intake] Instantiating Intake");
     this.intakeIO = intakeIO;
+    System.out.println("[Init Intake] Intake IO: " + this.intakeIO.getClass().getSimpleName());
     SmartDashboard.putData("Subsystems/Intake", this);
   }
 
