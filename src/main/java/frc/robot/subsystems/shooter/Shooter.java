@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.MathExtraUtil;
 
 public class Shooter extends SubsystemBase {
     private final ShooterIO shooterIO;
@@ -67,7 +68,7 @@ public class Shooter extends SubsystemBase {
     }
 
     private double getAverageSurfaceSpeed() {
-        return Units.radiansToRotations((inputs.leftMotor.velocityRadPerSec + inputs.rightMotor.velocityRadPerSec) * 0.5);
+        return ShooterConstants.motorToSurface.apply(MathExtraUtil.average(inputs.leftMotor.velocityRadPerSec, inputs.rightMotor.velocityRadPerSec));
     }
 
     public boolean shot() {

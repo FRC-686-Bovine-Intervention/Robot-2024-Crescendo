@@ -94,8 +94,11 @@ public class GearRatio {
             this.ratio = ratio;
         }
 
-        public double ratio() {
+        public double ratioRads() {
             return ratio.ratio() * radius;
+        }
+        public double ratioRots() {
+            return ratio.ratio() * radius * 2 * Math.PI;
         }
 
         public double apply(double rads) {
