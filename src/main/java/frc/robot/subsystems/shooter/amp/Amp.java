@@ -14,13 +14,16 @@ public class Amp extends SubsystemBase {
     private final AmpIOInputsAutoLogged inputs = new AmpIOInputsAutoLogged();
 
     private static final double POS_ZERO = 0;
-    private static final double POS_AMP = 0;
+    private static final double POS_AMP = Math.PI;
 
     private double calibVal = 0;
 
     private final Timer spikeTimer = new Timer();
-    private static final LoggedTunableNumber spikeThreshold = new LoggedTunableNumber("Shooter/Amp/Spike Threshold", 500);
-    private static final LoggedTunableNumber spikeTime = new LoggedTunableNumber("Shooter/Amp/Spike Time", 0.5);
+    private static final LoggedTunableNumber spikeThreshold = new LoggedTunableNumber("Amp/Spike Threshold", 500);
+    private static final LoggedTunableNumber spikeTime = new LoggedTunableNumber("Amp/Spike Time", 0.5);
+
+    private static final LoggedTunableNumber deployVolts = new LoggedTunableNumber("Amp/Deploy Volts", 4);
+    private static final LoggedTunableNumber retractVolts = new LoggedTunableNumber("Amp/Retract Volts", 4);
 
     public Amp(AmpIO ampIO) {
         System.out.println("[Init Amp] Instantiating Amp");
@@ -45,16 +48,16 @@ public class Amp extends SubsystemBase {
             spikeTimer.reset();
         }
     }
-    public Command amp() {
+    public Command deploy() {
         var subsystem = this;
         return new Command() {
             {
                 addRequirements(subsystem);
-                setName("Amp");
+                setName("Deploy");
             }
             @Override
             public void execute() {
-                ampIO.setVoltage(4);
+                ampIO.setVoltage(deployVolts.get());
             }
             @Override
             public void end(boolean interrupted) {
@@ -62,16 +65,17 @@ public class Amp extends SubsystemBase {
             }
         };
     }
-    public Command zero() {
+
+    public Command retract() {
         var subsystem = this;
         return new Command() {
             {
                 addRequirements(subsystem);
-                setName("Zero");
+                setName("Retract");
             }
             @Override
             public void execute() {
-                ampIO.setVoltage(-4);
+                ampIO.setVoltage(-retractVolts.get());
             }
             @Override
             public void end(boolean interrupted) {
