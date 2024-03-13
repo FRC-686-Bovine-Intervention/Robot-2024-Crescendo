@@ -46,8 +46,10 @@ public class Amp extends SubsystemBase {
         }
     }
     public Command amp() {
+        var subsystem = this;
         return new Command() {
             {
+                addRequirements(subsystem);
                 setName("Amp");
             }
             @Override
@@ -61,8 +63,10 @@ public class Amp extends SubsystemBase {
         };
     }
     public Command zero() {
+        var subsystem = this;
         return new Command() {
             {
+                addRequirements(subsystem);
                 setName("Zero");
             }
             @Override

@@ -9,7 +9,6 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -23,8 +22,8 @@ public class Shooter extends SubsystemBase {
     private final ShooterIO shooterIO;
     private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
-    private static final LoggedTunableNumber tuningMPS = new LoggedTunableNumber("Shooter/Tuning MPS", 65);
-    private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 30);
+    private static final LoggedTunableNumber tuningMPS = new LoggedTunableNumber("Shooter/Tuning MPS", 30);
+    private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 20);
     private static final LoggedTunableNumber preemtiveMPS = new LoggedTunableNumber("Shooter/Pre-emptive MPS", 30);
     private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection MPS", 1);
 
@@ -34,7 +33,7 @@ public class Shooter extends SubsystemBase {
     private static final LoggedTunableNumber followUpTime = new LoggedTunableNumber("Shooter/Follow Up Time", 0.5);
     private final Timer followUpTimer = new Timer();
 
-    private static final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 1.5);
+    // private static final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 1.5);
     private boolean readyToShoot;
 
     public Shooter(ShooterIO shooterIO) {
@@ -74,7 +73,11 @@ public class Shooter extends SubsystemBase {
         return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - shotDetMPS.get();
     }
 
-    private Command surfaceSpeed(DoubleSupplier mps) {
+    private Command surfaceSpeed(DoubleSupplier MPS) {
+        return surfaceSpeed(MPS, () -> MPS.getAsDouble() - 1);
+    }
+
+    private Command surfaceSpeed(DoubleSupplier MPS, DoubleSupplier acceptableMPS) {
         var subsystem = this;
         return new Command() {
             {
@@ -87,10 +90,10 @@ public class Shooter extends SubsystemBase {
             }
             @Override
             public void execute() {
-                var speed = mps.getAsDouble();
+                var speed = MPS.getAsDouble();
                 shooterIO.setLeftSurfaceSpeed(speed);
                 shooterIO.setRightSurfaceSpeed(speed);
-                readyToShoot = MathUtil.isNear(speed, getAverageSurfaceSpeed(), readyToShootTolerance.get());
+                readyToShoot = getAverageSurfaceSpeed() >= acceptableMPS.getAsDouble();
             }
             @Override
             public void end(boolean interrupted) {
@@ -103,13 +106,16 @@ public class Shooter extends SubsystemBase {
     private Command surfaceSpeedWithFinish(DoubleSupplier mps) {
         return surfaceSpeed(mps).until(() -> followUpTimer.hasElapsed(followUpTime.get())).withName("Set Surface Speed Finish");
     }
+    private Command surfaceSpeedWithFinish(DoubleSupplier mps, DoubleSupplier acceptableMPS) {
+        return surfaceSpeed(mps, acceptableMPS).until(() -> followUpTimer.hasElapsed(followUpTime.get())).withName("Set Surface Speed Finish");
+    }
 
     public Command shootWithTunableNumber() {
         return surfaceSpeed(tuningMPS::get).withName("Shoot with tunable number");
     }
 
     public Command shoot(Supplier<Translation2d> FORR) {
-        return surfaceSpeedWithFinish(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.surfaceSpeed)).withName("Shoot at pos");
+        return surfaceSpeedWithFinish(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.surfaceSpeed), () -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.acceptableSurfaceSpeed)).withName("Shoot at pos");
     }
 
     public Command preemptiveSpinup() {

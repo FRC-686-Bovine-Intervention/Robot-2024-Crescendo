@@ -248,7 +248,7 @@ public final class Constants {
             .gear(+10).gear(+100).axle()
         ;
         public static final GearRatio encoderToMechanismRatio = new GearRatio()
-            .gear(+1).gear(+1).axle()
+            // .gear(+1).gear(+1).axle()
         ;
         public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.concat(encoderToMechanismRatio.inverse());
     }
@@ -268,22 +268,22 @@ public final class Constants {
         public static final double[] distance = new double[] {
             FieldConstants.subwooferToSpeakerDist,
             FieldConstants.podiumToSpeakerDist,
-            Centimeters.of(565).minus(RobotConstants.robotLength.divide(2)).in(Meters),
+            Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters),
         };
         public static final double[] surfaceSpeed = new double[] {
+            15,
+            20,
             30,
-            65,
-            65,
         };
-        public static final double[] readyToShootSurfaceSpeed = new double[] {
-            30,
-            65,
-            65,
+        public static final double[] acceptableSurfaceSpeed = new double[] {
+            12,
+            18,
+            29.5,
         };
         public static final double[] angle = new double[] {
             Degrees.of(59.39).in(Radians),
-            Degrees.of(37.8).in(Radians),
-            Degrees.of(31.5).in(Radians),
+            Degrees.of(39.2).in(Radians),
+            Degrees.of(29.7).in(Radians),
         };
         public static double distLerp(double dist, double[] lerpTarget) {
             int lowerBound = 0;

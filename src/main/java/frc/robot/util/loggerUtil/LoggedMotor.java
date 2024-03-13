@@ -22,7 +22,7 @@ public class LoggedMotor implements StructSerializable {
 
     public void updateFrom(TalonFX talon) {
         this.positionRad = Units.rotationsToRadians(talon.getPosition().getValueAsDouble());
-        this.velocityRadPerSec = Units.rotationsToRadians(talon.getVelocity().getValueAsDouble());
+        this.velocityRadPerSec = Units.rotationsToRadians(talon.getRotorVelocity().getValueAsDouble());
         this.appliedVolts = talon.getMotorVoltage().getValueAsDouble();
         this.currentAmps = talon.getStatorCurrent().getValueAsDouble();
         this.tempCelsius = talon.getDeviceTemp().getValueAsDouble();
