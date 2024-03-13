@@ -26,6 +26,7 @@ public class Shooter extends SubsystemBase {
     private static final LoggedTunableNumber tuningMPS = new LoggedTunableNumber("Shooter/Tuning MPS", 65);
     private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 30);
     private static final LoggedTunableNumber preemtiveMPS = new LoggedTunableNumber("Shooter/Pre-emptive MPS", 30);
+    private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection MPS", 1);
 
     private static final double smoothingFactor = 0.15;
     private double smoothedAverageSurfaceSpeed;
@@ -70,7 +71,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public boolean shot() {
-        return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - 4;
+        return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - shotDetMPS.get();
     }
 
     private Command surfaceSpeed(DoubleSupplier mps) {
