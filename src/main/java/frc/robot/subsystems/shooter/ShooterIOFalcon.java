@@ -10,7 +10,6 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
-import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
@@ -111,19 +110,17 @@ public class ShooterIOFalcon implements ShooterIO {
 
     @Override
     public void setLeftSurfaceSpeed(double rps) {
-        request.withVelocity(rps);
-        leftMotor.setControl(request);
+        leftMotor.setControl(request.withVelocity(rps));
     }
 
     @Override
     public void setRightSurfaceSpeed(double rps) {
-        request.withVelocity(rps);
-        rightMotor.setControl(request);
+        rightMotor.setControl(request.withVelocity(rps));
     }
 
     @Override
     public void stop() {
-        leftMotor.setControl(new NeutralOut());
-        rightMotor.setControl(new NeutralOut());
+        leftMotor.disable();
+        rightMotor.disable();
     }
 }
