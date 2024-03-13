@@ -1,5 +1,7 @@
 package frc.robot.util;
 
+import edu.wpi.first.math.util.Units;
+
 public class GearRatio {
     private final double ratio;
 
@@ -88,18 +90,40 @@ public class GearRatio {
     public static class Wheel {
         private final double radius;
         private final GearRatio ratio;
+        private final GearRatio inverseRatio;
 
         private Wheel(double radius, GearRatio ratio) {
             this.radius = radius;
             this.ratio = ratio;
+            this.inverseRatio = this.ratio.inverse();
         }
 
-        public double apply(double rads) {
-            return ratio.apply(rads) * radius;
+        public double surfacePerRad() {
+            return ratio.ratio() * radius;
+        }
+        public double surfacePerRot() {
+            return Units.rotationsToRadians(surfacePerRad());
         }
 
-        public Wheel inverse() {
-            return new Wheel(radius, ratio);
+        public double radPerSurface() {
+            return inverseRatio.ratio() / radius;
+        }
+        public double rotPerSurface() {
+            return Units.radiansToRotations(radPerSurface());
+        }
+
+        public double radsToSurface(double rads) {
+            return surfacePerRad() * rads;
+        }
+        public double rotsToSurface(double rots) {
+            return surfacePerRot() * rots;
+        }
+
+        public double surfaceToRads(double surface) {
+            return radPerSurface() * surface;
+        }
+        public double surfaceToRots(double surface) {
+            return rotPerSurface() * surface;
         }
     }
 }
