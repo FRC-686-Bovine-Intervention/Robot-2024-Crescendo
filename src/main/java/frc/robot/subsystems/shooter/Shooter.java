@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -25,15 +26,15 @@ public class Shooter extends SubsystemBase {
     private static final LoggedTunableNumber tuningMPS = new LoggedTunableNumber("Shooter/Tuning MPS", 30);
     private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 20);
     private static final LoggedTunableNumber preemtiveMPS = new LoggedTunableNumber("Shooter/Pre-emptive MPS", 30);
-    private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection MPS", 1);
+    private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection/MPS", 1);
+    private static final LoggedTunableNumber shotDetCurrent = new LoggedTunableNumber("Shooter/Shot Detection/Current", 1);
 
-    private static final double smoothingFactor = 0.15;
+    private static final double surfaceSpeedSmoothingFactor = 0.15;
     private double smoothedAverageSurfaceSpeed;
 
     private static final LoggedTunableNumber followUpTime = new LoggedTunableNumber("Shooter/Follow Up Time", 0.5);
     private final Timer followUpTimer = new Timer();
 
-    // private static final LoggedTunableNumber readyToShootTolerance = new LoggedTunableNumber("Shooter/Ready To Shoot Tolerance", 1.5);
     private boolean readyToShoot;
 
     public Shooter(ShooterIO shooterIO) {
@@ -47,7 +48,7 @@ public class Shooter extends SubsystemBase {
     public void periodic() {
         shooterIO.updateInputs(inputs);
         Logger.processInputs("Shooter", inputs);
-        smoothedAverageSurfaceSpeed = (getAverageSurfaceSpeed() * smoothingFactor) + (smoothedAverageSurfaceSpeed * (1-smoothingFactor));
+        smoothedAverageSurfaceSpeed = MathUtil.interpolate(smoothedAverageSurfaceSpeed, getAverageSurfaceSpeed(), surfaceSpeedSmoothingFactor);
         if(getCurrentCommand() == null) {
             followUpTimer.stop();
             followUpTimer.reset();
@@ -57,6 +58,7 @@ public class Shooter extends SubsystemBase {
         }
         Logger.recordOutput("Shooter/Average RPS", getAverageSurfaceSpeed());
         Logger.recordOutput("Shooter/Smoothed RPS", smoothedAverageSurfaceSpeed);
+        Logger.recordOutput("Shooter/Average Current", getAverageCurrent());
         Logger.recordOutput("Shooter/Timer", followUpTimer.get());
         Logger.recordOutput("Shooter/Shot", shot());
     }
@@ -69,8 +71,12 @@ public class Shooter extends SubsystemBase {
         return ShooterConstants.motorToSurface.radsToSurface(MathExtraUtil.average(inputs.leftMotor.velocityRadPerSec, inputs.rightMotor.velocityRadPerSec));
     }
 
+    private double getAverageCurrent() {
+        return MathExtraUtil.average(inputs.leftMotor.currentAmps, inputs.rightMotor.currentAmps);
+    }
+
     public boolean shot() {
-        return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - shotDetMPS.get();
+        return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - shotDetMPS.get() && getAverageCurrent() > shotDetCurrent.get();
     }
 
     private Command surfaceSpeed(DoubleSupplier MPS) {

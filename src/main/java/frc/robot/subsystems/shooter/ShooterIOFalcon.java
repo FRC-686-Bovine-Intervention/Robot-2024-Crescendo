@@ -45,6 +45,9 @@ public class ShooterIOFalcon implements ShooterIO {
         leftMotor.getClosedLoopOutput().setUpdateFrequency(50);
         leftMotor.getClosedLoopReference().setUpdateFrequency(50);
         rightMotor.getRotorVelocity().setUpdateFrequency(50);
+        leftMotor.getStatorCurrent().setUpdateFrequency(50);
+        rightMotor.getStatorCurrent().setUpdateFrequency(50);
+        leftMotor.getClosedLoopReferenceSlope().setUpdateFrequency(50);
     }
 
     private void updateTunables() {
