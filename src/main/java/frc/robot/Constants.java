@@ -263,7 +263,6 @@ public final class Constants {
             .sprocket(+24).sprocket(+24)
             .wheelRadius(wheelRadius)
         ;
-        public static final Wheel surfaceToMotor = motorToSurface.inverse();
 
         public static final double[] distance = new double[] {
             FieldConstants.subwooferToSpeakerDist,

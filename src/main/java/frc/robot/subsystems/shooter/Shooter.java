@@ -66,7 +66,7 @@ public class Shooter extends SubsystemBase {
     }
 
     private double getAverageSurfaceSpeed() {
-        return ShooterConstants.motorToSurface.apply(MathExtraUtil.average(inputs.leftMotor.velocityRadPerSec, inputs.rightMotor.velocityRadPerSec));
+        return ShooterConstants.motorToSurface.radsToSurface(MathExtraUtil.average(inputs.leftMotor.velocityRadPerSec, inputs.rightMotor.velocityRadPerSec));
     }
 
     public boolean shot() {
