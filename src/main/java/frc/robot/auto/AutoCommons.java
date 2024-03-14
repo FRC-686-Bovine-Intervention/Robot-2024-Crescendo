@@ -73,14 +73,21 @@ public class AutoCommons {
         var FORR = getFORR(pos);
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
-        return Commands.waitUntil(() -> 
-            kicker.hasNote() && 
+        return kicker.kick().asProxy().onlyIf(() -> 
+            // kicker.hasNote() && 
             shooter.readyToShoot() && 
             pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
             MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
             MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
-        )
-        .andThen(kicker.kick().asProxy().onlyWhile(() -> shooter.getCurrentCommand() != null));
+        ).repeatedly().until(shooter::endingCommand);
+        // return Commands.waitUntil(() -> 
+        //     // kicker.hasNote() && 
+        //     shooter.readyToShoot() && 
+        //     pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
+        //     MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
+        //     MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
+        // )
+        // .andThen(kicker.kick().asProxy().until(shooter::endingCommand));
     }
 
     private static Translation2d getFORR(Translation2d pos) {

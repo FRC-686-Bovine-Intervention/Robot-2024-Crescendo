@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.pathplanner.lib.path.PathPlannerPath;
 
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
@@ -41,7 +40,6 @@ public class CleanSpikes extends AutoRoutine {
                         ),
                         AutoCommons.shootWhenReady(ampSpikeShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
-                            Commands.print("[Rush6Note] Shot Preload"),
                             intake.intake(drive::getChassisSpeeds),
                             AutoCommons.autoAim(ampSpikeShot, shooter, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)

@@ -27,7 +27,7 @@ public class Shooter extends SubsystemBase {
     private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 20);
     private static final LoggedTunableNumber preemtiveMPS = new LoggedTunableNumber("Shooter/Pre-emptive MPS", 30);
     private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection/MPS", 1);
-    private static final LoggedTunableNumber shotDetCurrent = new LoggedTunableNumber("Shooter/Shot Detection/Current", 1);
+    private static final LoggedTunableNumber shotDetCurrent = new LoggedTunableNumber("Shooter/Shot Detection/Current", 20);
 
     private static final double surfaceSpeedSmoothingFactor = 0.15;
     private double smoothedAverageSurfaceSpeed;
@@ -49,10 +49,10 @@ public class Shooter extends SubsystemBase {
         shooterIO.updateInputs(inputs);
         Logger.processInputs("Shooter", inputs);
         smoothedAverageSurfaceSpeed = MathUtil.interpolate(smoothedAverageSurfaceSpeed, getAverageSurfaceSpeed(), surfaceSpeedSmoothingFactor);
-        if(getCurrentCommand() == null) {
-            followUpTimer.stop();
-            followUpTimer.reset();
-        }
+        // if(endingCommand()) {
+        //     followUpTimer.stop();
+        //     followUpTimer.reset();
+        // }
         if(shot()) {
             followUpTimer.start();
         }
@@ -64,7 +64,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public boolean readyToShoot() {
-        return readyToShoot;
+        return readyToShoot && getAverageCurrent() > 0;
     }
 
     private double getAverageSurfaceSpeed() {
@@ -77,6 +77,9 @@ public class Shooter extends SubsystemBase {
 
     public boolean shot() {
         return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - shotDetMPS.get() && getAverageCurrent() > shotDetCurrent.get();
+    }
+    public boolean endingCommand() {
+        return followUpTimer.hasElapsed(followUpTime.get());
     }
 
     private Command surfaceSpeed(DoubleSupplier MPS) {
@@ -93,6 +96,9 @@ public class Shooter extends SubsystemBase {
             @Override
             public void initialize() {
                 smoothedAverageSurfaceSpeed = getAverageSurfaceSpeed();
+                followUpTimer.stop();
+                followUpTimer.reset();
+                // execute();
             }
             @Override
             public void execute() {
@@ -110,10 +116,10 @@ public class Shooter extends SubsystemBase {
     }
 
     private Command surfaceSpeedWithFinish(DoubleSupplier mps) {
-        return surfaceSpeed(mps).until(() -> followUpTimer.hasElapsed(followUpTime.get())).withName("Set Surface Speed Finish");
+        return surfaceSpeed(mps).until(this::endingCommand).withName("Set Surface Speed Finish");
     }
     private Command surfaceSpeedWithFinish(DoubleSupplier mps, DoubleSupplier acceptableMPS) {
-        return surfaceSpeed(mps, acceptableMPS).until(() -> followUpTimer.hasElapsed(followUpTime.get())).withName("Set Surface Speed Finish");
+        return surfaceSpeed(mps, acceptableMPS).until(this::endingCommand).withName("Set Surface Speed Finish");
     }
 
     public Command shootWithTunableNumber() {

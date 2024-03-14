@@ -29,6 +29,7 @@ import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.CenterLineRun;
 import frc.robot.auto.CleanSpikes;
+import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.SpikeMarkAndCenterLine;
 import frc.robot.auto.SpikeMarkShots;
@@ -258,7 +259,7 @@ public class RobotContainer {
         new Trigger(() -> 
             SuperCommands.readyToShoot(shooter, pivot) && 
             DriverStation.isTeleopEnabled()
-        ).onTrue(kicker.kick().onlyWhile(() -> shooter.getCurrentCommand() != null));
+        ).onTrue(kicker.kick().until(shooter::endingCommand));
         
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
             .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
@@ -295,11 +296,12 @@ public class RobotContainer {
         //         drive::getCharacterizationVelocity
         //     )
         // ));
-        autoSelector.addRoutine(new SpikeMarkShots(this));
-        autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
-        autoSelector.addRoutine(new CleanSpikes(this));
-        autoSelector.addDefaultRoutine(new Rush6Note(this));
-        autoSelector.addRoutine(new CenterLineRun(this));
+        // autoSelector.addRoutine(new SpikeMarkShots(this));
+        // autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
+        // autoSelector.addRoutine(new CleanSpikes(this));
+        autoSelector.addRoutine(new Rush6Note(this));
+        // autoSelector.addRoutine(new CenterLineRun(this));
+        autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
     }
 
     /**
