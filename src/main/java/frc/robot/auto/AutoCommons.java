@@ -120,6 +120,9 @@ public class AutoCommons {
         public static void preload() {
             preloading = true;
             loadPath(String.format(AutoPaths.startToSpike, "Amp"));
+            loadPath("MASW Amp Spike to Center Spike");
+            loadPath("MASW Center Spike to Podium Spike");
+            loadPath("MASW Podium Spike to Amp Wing");
             preloading = false;
             System.out.println("[Init AutoPaths] Loaded paths");
         }

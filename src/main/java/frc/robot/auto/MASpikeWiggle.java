@@ -32,6 +32,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 PathPlannerPath startToSpike = AutoPaths.loadPath(String.format(AutoPaths.startToSpike, "Amp"));
                 PathPlannerPath ampSpikeToCenterSpike = AutoPaths.loadPath("MASW Amp Spike to Center Spike");
                 PathPlannerPath centerSpikeToPodiumSpike = AutoPaths.loadPath("MASW Center Spike to Podium Spike");
+                PathPlannerPath podiumSpikeToWing = AutoPaths.loadPath("MASW Podium Spike to Amp Wing");
 
                 var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
                 var ampSpikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
@@ -70,6 +71,14 @@ public class MASpikeWiggle extends AutoRoutine {
                             .until(intake::hasNote)
                             .andThen(
                                 AutoCommons.autoAim(podiumSpikeShot, drive.rotationalSubsystem)
+                            )
+                        ),
+                        AutoCommons.followPathFlipped(podiumSpikeToWing, drive)
+                        .onlyWhile(() -> !noteVision.hasTarget())
+                        .andThen(
+                            intake.intake(drive::getChassisSpeeds)
+                            .deadlineWith(
+                                noteVision.autoIntake(() -> 1.5, drive, intake)
                             )
                         )
                     )
