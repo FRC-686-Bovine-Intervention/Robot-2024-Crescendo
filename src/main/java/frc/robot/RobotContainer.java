@@ -259,7 +259,7 @@ public class RobotContainer {
         new Trigger(() -> 
             SuperCommands.readyToShoot(shooter, pivot) && 
             DriverStation.isTeleopEnabled()
-        ).onTrue(kicker.kick().until(shooter::endingCommand));
+        ).onTrue(kicker.kick().until(() -> shooter.endingCommand() || shooter.getCurrentCommand() == null));
         
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
             .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))

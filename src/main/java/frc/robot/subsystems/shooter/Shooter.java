@@ -64,7 +64,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public boolean readyToShoot() {
-        return readyToShoot && getAverageCurrent() > 0;
+        return readyToShoot && getAverageCurrent() > 3;
     }
 
     private double getAverageSurfaceSpeed() {
