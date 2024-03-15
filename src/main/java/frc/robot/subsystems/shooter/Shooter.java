@@ -27,10 +27,12 @@ public class Shooter extends SubsystemBase {
     private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 20);
     private static final LoggedTunableNumber preemtiveMPS = new LoggedTunableNumber("Shooter/Pre-emptive MPS", 30);
     private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection/MPS", 1);
-    private static final LoggedTunableNumber shotDetCurrent = new LoggedTunableNumber("Shooter/Shot Detection/Current", 10);
+    private static final LoggedTunableNumber shotDetCurrent = new LoggedTunableNumber("Shooter/Shot Detection/Current", 2);
 
-    private static final double surfaceSpeedSmoothingFactor = 0.15;
+    private static final LoggedTunableNumber surfaceSpeedSmoothingFactor = new LoggedTunableNumber("Shooter/Smoothing/MPS", 0.15);
     private double smoothedAverageSurfaceSpeed;
+    private static final LoggedTunableNumber currentSmoothingFactor = new LoggedTunableNumber("Shooter/Smoothing/Current", 0.3);
+    private double smoothedAverageCurrent;
 
     private static final LoggedTunableNumber followUpTime = new LoggedTunableNumber("Shooter/Follow Up Time", 0.5);
     private final Timer followUpTimer = new Timer();
@@ -48,7 +50,8 @@ public class Shooter extends SubsystemBase {
     public void periodic() {
         shooterIO.updateInputs(inputs);
         Logger.processInputs("Shooter", inputs);
-        smoothedAverageSurfaceSpeed = MathUtil.interpolate(smoothedAverageSurfaceSpeed, getAverageSurfaceSpeed(), surfaceSpeedSmoothingFactor);
+        smoothedAverageSurfaceSpeed = MathUtil.interpolate(smoothedAverageSurfaceSpeed, getAverageSurfaceSpeed(), surfaceSpeedSmoothingFactor.get());
+        smoothedAverageCurrent = MathUtil.interpolate(smoothedAverageCurrent, getAverageCurrent(), currentSmoothingFactor.get());
         // if(endingCommand()) {
         //     followUpTimer.stop();
         //     followUpTimer.reset();
@@ -59,8 +62,11 @@ public class Shooter extends SubsystemBase {
         Logger.recordOutput("Shooter/Average RPS", getAverageSurfaceSpeed());
         Logger.recordOutput("Shooter/Smoothed RPS", smoothedAverageSurfaceSpeed);
         Logger.recordOutput("Shooter/Average Current", getAverageCurrent());
+        Logger.recordOutput("Shooter/Smoothed Current", smoothedAverageCurrent);
         Logger.recordOutput("Shooter/Timer", followUpTimer.get());
         Logger.recordOutput("Shooter/Shot", shot());
+        Logger.recordOutput("Shooter/Surface Correct", surfaceSpeedCorrect());
+        Logger.recordOutput("Shooter/Current Correct", currentCorrect());
     }
 
     public boolean readyToShoot() {
@@ -75,8 +81,14 @@ public class Shooter extends SubsystemBase {
         return MathExtraUtil.average(inputs.leftMotor.currentAmps, inputs.rightMotor.currentAmps);
     }
 
+    private boolean surfaceSpeedCorrect() {
+        return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - shotDetMPS.get();
+    }
+    private boolean currentCorrect() {
+        return getAverageCurrent() > smoothedAverageCurrent + shotDetCurrent.get();
+    }
     public boolean shot() {
-        return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - shotDetMPS.get() && getAverageCurrent() > shotDetCurrent.get();
+        return surfaceSpeedCorrect() && currentCorrect();
     }
     public boolean endingCommand() {
         return followUpTimer.hasElapsed(followUpTime.get());
@@ -95,10 +107,11 @@ public class Shooter extends SubsystemBase {
             }
             @Override
             public void initialize() {
+                smoothedAverageCurrent = getAverageCurrent();
                 smoothedAverageSurfaceSpeed = getAverageSurfaceSpeed();
                 followUpTimer.stop();
                 followUpTimer.reset();
-                // execute();
+                execute();
             }
             @Override
             public void execute() {
