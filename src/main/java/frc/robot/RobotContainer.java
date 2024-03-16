@@ -30,6 +30,7 @@ import frc.robot.auto.AutoSelector;
 import frc.robot.auto.BabyAuto;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
+import frc.robot.auto.Source4Note;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -313,7 +314,7 @@ public class RobotContainer {
         // autoSelector.addRoutine(new CleanSpikes(this));
         autoSelector.addRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new BabyAuto(this));
-        // autoSelector.addRoutine(new CenterLineRun(this));
+        autoSelector.addRoutine(new Source4Note(this));
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
     }
 

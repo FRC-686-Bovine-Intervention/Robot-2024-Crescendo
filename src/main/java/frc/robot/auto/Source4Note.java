@@ -29,7 +29,7 @@ public class Source4Note extends AutoRoutine {
                 var wingToCenter = AutoPaths.loadPath("Source Wing to Center");
                 var centerToWingStop = AutoPaths.loadPath("Center to Source Wing With Stop");
 
-                var preloadShot = AllianceFlipUtil.apply(StartPosition.Source.startPose.getTranslation());
+                var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
                 var centerShot1 = AllianceFlipUtil.apply(centerToWingStop.getPoint(centerToWingStop.numPoints() - 1).position);
                 var centerShot2 = centerShot1;
                 var centerShot3 = centerShot2;
