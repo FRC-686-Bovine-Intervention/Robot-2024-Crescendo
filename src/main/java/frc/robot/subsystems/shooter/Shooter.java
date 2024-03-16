@@ -114,7 +114,7 @@ public class Shooter extends SubsystemBase {
                 var speed = mps.getAsDouble();
                 shooterIO.setLeftSurfaceSpeed(speed);
                 shooterIO.setRightSurfaceSpeed(speed);
-                readyToShoot = getAverageSurfaceSpeed() >= acceptableMPS.getAsDouble();
+                readyToShoot = getAverageSurfaceSpeed() >= acceptableMPS.getAsDouble() && getAverageSurfaceSpeed() <= mps.getAsDouble() + 2;
             }
             @Override
             public void end(boolean interrupted) {

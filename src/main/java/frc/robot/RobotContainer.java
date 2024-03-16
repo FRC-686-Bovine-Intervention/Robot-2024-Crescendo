@@ -11,6 +11,7 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -24,15 +25,11 @@ import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
-import frc.robot.auto.AutoCommons;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
-import frc.robot.auto.CenterLineRun;
-import frc.robot.auto.CleanSpikes;
+import frc.robot.auto.BabyAuto;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
-import frc.robot.auto.SpikeMarkAndCenterLine;
-import frc.robot.auto.SpikeMarkShots;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -41,6 +38,7 @@ import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOFalcon550;
 import frc.robot.subsystems.intake.IntakeIOSim;
@@ -59,7 +57,6 @@ import frc.robot.subsystems.shooter.ShooterIOFalcon;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.amp.Amp;
 import frc.robot.subsystems.shooter.amp.AmpIO;
-import frc.robot.subsystems.shooter.amp.AmpIONeo550;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIOPhotonVision;
 import frc.robot.subsystems.vision.apriltag.ApriltagVision;
 import frc.robot.subsystems.vision.note.NoteVision;
@@ -67,8 +64,8 @@ import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
-import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LazyOptional;
+import frc.robot.util.MathExtraUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.controllers.XboxController;
@@ -113,7 +110,7 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIONeo550());
                 shooter = new Shooter(new ShooterIOFalcon());
                 amp = new Amp(new AmpIO() {});
-                pivot = new Pivot(new PivotIOFalcon());
+                pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
             break;
@@ -126,7 +123,7 @@ public class RobotContainer {
                     new ModuleIOSim()
                 );
                 intake = new Intake(new IntakeIOSim(simJoystick.button(1)));
-                pivot = new Pivot(new PivotIOSim());
+                pivot = new Pivot(new PivotIOSim(), ()->false,()->false);
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
                 amp = new Amp(new AmpIO() {});
@@ -143,7 +140,7 @@ public class RobotContainer {
                     new ModuleIO() {}
                 );
                 intake = new Intake(new IntakeIO() {});
-                pivot = new Pivot(new PivotIO() {});
+                pivot = new Pivot(new PivotIO() {}, ()->false,()->false);
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
                 amp = new Amp(new AmpIO() {});
@@ -260,9 +257,14 @@ public class RobotContainer {
         //     kicker.hasNote() && 
         //     DriverStation.isTeleopEnabled()
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
-
+        
         new Trigger(() -> 
             SuperCommands.readyToShoot(shooter, pivot) && 
+            MathExtraUtil.isNear(
+                autoAimRotation(),
+                drive.getRotation(),
+                Units.degreesToRadians(3)
+            ) && 
             DriverStation.isTeleopEnabled()
         ).onTrue(kicker.kick().asProxy().until(() -> shooter.getCurrentCommand() == null));
         
@@ -270,6 +272,10 @@ public class RobotContainer {
             .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
             .onTrue(drive.translationSubsystem.getDefaultCommand())
         ;
+    }
+    private Rotation2d autoAimRotation() {
+        var FORR = SuperCommands.autoAimFORR(drive);
+        return new Rotation2d(FORR.get().getX(), FORR.get().getY());
     }
 
     private void configureSubsystems() {
@@ -306,6 +312,7 @@ public class RobotContainer {
         // autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
         // autoSelector.addRoutine(new CleanSpikes(this));
         autoSelector.addRoutine(new Rush6Note(this));
+        autoSelector.addRoutine(new BabyAuto(this));
         // autoSelector.addRoutine(new CenterLineRun(this));
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
     }

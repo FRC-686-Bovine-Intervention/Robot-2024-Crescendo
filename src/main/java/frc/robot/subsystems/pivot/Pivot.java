@@ -10,6 +10,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
@@ -35,7 +36,7 @@ public class Pivot extends SubsystemBase {
   private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
   public static final double POS_ZERO = Units.degreesToRadians(2);
-  public static final double POS_AMP = Units.degreesToRadians(108/* .193359375 */);
+  public static final double POS_AMP = Units.degreesToRadians(109/* .193359375 */);
 
   private final LoggedTunableNumber pidkP = new LoggedTunableNumber("Pivot/PID/kP", 20);
   private final LoggedTunableNumber pidkI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
@@ -92,10 +93,12 @@ public class Pivot extends SubsystemBase {
     }
   }
 
-  public Pivot(PivotIO pivotIO) {
+  public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
     System.out.println("[Init Pivot] Instantiating Pivot");
     this.pivotIO = pivotIO;
     System.out.println("[Init Pivot] Pivot IO: " + this.pivotIO.getClass().getSimpleName());
+    this.increaseRuntimeOffset = increaseRuntimeOffset;
+    this.decreaseRuntimeOffset = decreaseRuntimeOffset;
     SmartDashboard.putData("Subsystems/Pivot", this);
   }
 
@@ -105,6 +108,14 @@ public class Pivot extends SubsystemBase {
     Logger.processInputs("Pivot", inputs);
     updateTunables();
     Logger.recordOutput("Mechanism3d/Shooter", getRobotToPivot());
+    if(increaseRuntimeOffset.getAsBoolean() && !prevInc) {
+      runtimeOffset += 0.5;
+    }
+    if(decreaseRuntimeOffset.getAsBoolean() && !prevDec) {
+      runtimeOffset -= 0.5;
+    }
+    prevInc = increaseRuntimeOffset.getAsBoolean();
+    prevDec = decreaseRuntimeOffset.getAsBoolean();
   }
 
   public Transform3d getRobotToPivot() {
@@ -127,11 +138,19 @@ public class Pivot extends SubsystemBase {
     ).withName("Manual");
   }
 
+  @AutoLogOutput(key = "Pivot/Runtime Offset")
+  private double runtimeOffset = 0;
+
+  private boolean prevInc;
+  private final BooleanSupplier increaseRuntimeOffset;
+  private boolean prevDec;
+  private final BooleanSupplier decreaseRuntimeOffset;
+
   private Command go(DoubleSupplier pos) {
     return new ProfiledPIDCommand(
       pivotPID,
       () -> inputs.pivotEncoder.positionRad,
-      pos,
+      () -> pos.getAsDouble() + Units.degreesToRadians(runtimeOffset),
       (output, setpoint) -> {
         Logger.recordOutput("Pivot/PID out", output);
         Logger.recordOutput("Pivot/Profile Position", setpoint.position);
