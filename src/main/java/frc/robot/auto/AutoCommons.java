@@ -73,14 +73,21 @@ public class AutoCommons {
         var FORR = getFORR(pos);
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
+        // return kicker.kick().asProxy().onlyIf(() -> 
+        //     // kicker.hasNote() && 
+        //     shooter.readyToShoot() && 
+        //     pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
+        //     MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
+        //     MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
+        // ).repeatedly().until(shooter::endingCommand);
         return Commands.waitUntil(() -> 
-            kicker.hasNote() && 
+            // kicker.hasNote() && 
             shooter.readyToShoot() && 
             pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
             MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
             MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
         )
-        .andThen(kicker.kick().asProxy().onlyWhile(() -> shooter.getCurrentCommand() != null));
+        .andThen(kicker.kick().asProxy());
     }
 
     private static Translation2d getFORR(Translation2d pos) {
@@ -89,17 +96,17 @@ public class AutoCommons {
     public static Command autoAim(Translation2d pos, Drive.Rotational rotation) {
         return rotation.pidControlledHeading(() -> Optional.of(getFORR(pos)).map((t) -> new Rotation2d(t.getX(), t.getY())));
     }
-    public static Command autoAim(Translation2d pos, Shooter shooter) {
-        return shooter.shoot(() -> getFORR(pos)).asProxy();
+    public static Command autoAim(Translation2d pos, Shooter shooter, Kicker kicker) {
+        return shooter.shoot(() -> getFORR(pos), kicker::sensorFallingEdge).asProxy();
     }
     public static Command autoAim(Translation2d pos, Pivot pivot) {
         return pivot.autoAim(() -> getFORR(pos)).asProxy();
     }
-    public static Command autoAim(Translation2d pos, Shooter shooter, Pivot pivot) {
-        return autoAim(pos, shooter).alongWith(autoAim(pos, pivot));
+    public static Command autoAim(Translation2d pos, Shooter shooter, Kicker kicker, Pivot pivot) {
+        return autoAim(pos, shooter, kicker).alongWith(autoAim(pos, pivot));
     }
-    public static Command autoAim(Translation2d pos, Shooter shooter, Pivot pivot, Drive.Rotational rotation) {
-        return autoAim(pos, shooter, pivot).alongWith(autoAim(pos, rotation));
+    public static Command autoAim(Translation2d pos, Shooter shooter, Kicker kicker, Pivot pivot, Drive.Rotational rotation) {
+        return autoAim(pos, shooter, kicker, pivot).alongWith(autoAim(pos, rotation));
     }
 
     public static class AutoPaths {
@@ -113,6 +120,9 @@ public class AutoCommons {
         public static void preload() {
             preloading = true;
             loadPath(String.format(AutoPaths.startToSpike, "Amp"));
+            loadPath("MASW Amp Spike to Center Spike");
+            loadPath("MASW Center Spike to Podium Spike");
+            loadPath("MASW Podium Spike to Amp Wing");
             preloading = false;
             System.out.println("[Init AutoPaths] Loaded paths");
         }

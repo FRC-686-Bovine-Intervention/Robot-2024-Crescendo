@@ -20,6 +20,9 @@ public class Kicker extends SubsystemBase {
   private final LoggedTunableNumber feedVolts = new LoggedTunableNumber("Kicker/Feed Voltage", 1.5);
   private final LoggedTunableNumber antiDeadzoneVolts = new LoggedTunableNumber("Kicker/Anti Deadzone Voltage", 1.5);
 
+  private boolean prevSensorVal;
+  private boolean sensorFallingEdge;
+
   public Kicker(KickerIO kickerIO) {
     System.out.println("[Init Kicker] Instantiating Kicker");
     this.kickerIO = kickerIO;
@@ -31,6 +34,12 @@ public class Kicker extends SubsystemBase {
   public void periodic() {
     kickerIO.updateInputs(inputs);
     Logger.processInputs("Kicker", inputs);
+    sensorFallingEdge = prevSensorVal && !inputs.notePresent;
+    prevSensorVal = inputs.notePresent;
+  }
+
+  public boolean sensorFallingEdge() {
+    return sensorFallingEdge;
   }
 
   public Command feedIn() {
@@ -56,7 +65,7 @@ public class Kicker extends SubsystemBase {
       (interrupted) -> {
         kickerIO.setKickerVoltage(0);
       },
-      () -> false,
+      this::sensorFallingEdge,
       this
     ).withName("Kick");
   }

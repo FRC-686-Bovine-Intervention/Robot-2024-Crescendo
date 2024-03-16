@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.pathplanner.lib.path.PathPlannerPath;
 
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
@@ -37,25 +36,24 @@ public class CleanSpikes extends AutoRoutine {
                     .andThen(
                         AutoCommons.shootWhenReady(preloadShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
-                            AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
+                            AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
                         ),
                         AutoCommons.shootWhenReady(ampSpikeShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
-                            Commands.print("[Rush6Note] Shot Preload"),
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(ampSpikeShot, shooter, pivot, drive.rotationalSubsystem),
+                            AutoCommons.autoAim(ampSpikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         ),
                         AutoCommons.shootWhenReady(note2Shot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(note2Shot, shooter, pivot, drive.rotationalSubsystem),
+                            AutoCommons.autoAim(note2Shot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(ampSpikeToCenterSpike, drive.translationSubsystem)
                         ),
                         AutoCommons.shootWhenReady(note3Shot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(note3Shot, shooter, pivot, drive.rotationalSubsystem),
+                            AutoCommons.autoAim(note3Shot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(centerSpikeToPodiumSpike, drive.translationSubsystem)
                         )
                     )
