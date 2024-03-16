@@ -268,21 +268,25 @@ public final class Constants {
             FieldConstants.subwooferToSpeakerDist,
             FieldConstants.podiumToSpeakerDist,
             Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters),
+            Centimeters.of(665).plus(RobotConstants.robotLength.divide(2)).in(Meters),
         };
         public static final double[] surfaceSpeed = new double[] {
             15,
             20,
             30,
+            20,
         };
         public static final double[] acceptableSurfaceSpeed = new double[] {
             12,
             18,
             29.5,
+            18,
         };
         public static final double[] angle = new double[] {
             Degrees.of(59.39).in(Radians),
             Degrees.of(39.2).in(Radians),
             Degrees.of(29.7).in(Radians),
+            Degrees.of(50).in(Radians),
         };
         public static double distLerp(double dist, double[] lerpTarget) {
             int lowerBound = 0;
