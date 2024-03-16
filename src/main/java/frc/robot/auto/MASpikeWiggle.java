@@ -43,18 +43,18 @@ public class MASpikeWiggle extends AutoRoutine {
                     .andThen(
                         AutoCommons.shootWhenReady(preloadShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
-                            AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
+                            AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
                         ),
                         AutoCommons.shootWhenReady(ampSpikeShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(ampSpikeShot, shooter, pivot, drive.rotationalSubsystem),
+                            AutoCommons.autoAim(ampSpikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         ),
                         AutoCommons.shootWhenReady(centerSpikeShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(centerSpikeShot, shooter, pivot),
+                            AutoCommons.autoAim(centerSpikeShot, shooter, kicker, pivot),
                             AutoCommons.followPathFlipped(ampSpikeToCenterSpike, drive.translationSubsystem),
                             drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(135))))
                             .until(intake::hasNote)
@@ -65,7 +65,7 @@ public class MASpikeWiggle extends AutoRoutine {
                         AutoCommons.shootWhenReady(podiumSpikeShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(podiumSpikeShot, shooter, pivot),
+                            AutoCommons.autoAim(podiumSpikeShot, shooter, kicker, pivot),
                             AutoCommons.followPathFlipped(centerSpikeToPodiumSpike, drive.translationSubsystem),
                             drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(135))))
                             .until(intake::hasNote)

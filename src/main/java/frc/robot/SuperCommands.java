@@ -74,9 +74,9 @@ public class SuperCommands {
         };
     }
 
-    public static Command autoAim(Supplier<Translation2d> FORR, Drive.Rotational rotation, Shooter shooter, Pivot pivot) {
+    public static Command autoAim(Supplier<Translation2d> FORR, Drive.Rotational rotation, Shooter shooter, Kicker kicker, Pivot pivot) {
         return
-            shooter.shoot(FORR).asProxy()
+            shooter.shoot(FORR, kicker::sensorFallingEdge).asProxy()
             .deadlineWith(
                 rotation.pidControlledHeading(
                     () -> {
@@ -90,7 +90,7 @@ public class SuperCommands {
         ;
     }
 
-    public static Command autoAim(Drive.Rotational rotation, Shooter shooter, Pivot pivot) {
-        return autoAim(autoAimFORR(rotation.drive), rotation, shooter, pivot);
+    public static Command autoAim(Drive.Rotational rotation, Shooter shooter, Kicker kicker, Pivot pivot) {
+        return autoAim(autoAimFORR(rotation.drive), rotation, shooter, kicker, pivot);
     }
 }

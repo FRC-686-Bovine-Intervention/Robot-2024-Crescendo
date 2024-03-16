@@ -43,19 +43,19 @@ public class Rush6Note extends AutoRoutine {
                     .andThen(
                         AutoCommons.shootWhenReady(preloadShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
-                            AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
+                            AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
                         ),
                         AutoCommons.shootWhenReady(ampSpikeShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             Commands.print("[Rush6Note] Shot Preload"),
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(ampSpikeShot, shooter, pivot, drive.rotationalSubsystem),
+                            AutoCommons.autoAim(ampSpikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         ),
                         AutoCommons.shootWhenReady(centerShot1, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             Commands.print("[Rush6Note] Shot Amp Spike"),
-                            AutoCommons.autoAim(centerShot1, shooter, pivot),
+                            AutoCommons.autoAim(centerShot1, shooter, kicker, pivot),
                             Commands.runOnce(noteVision::clearMemory)
                             .andThen(
                                 AutoCommons.followPathFlipped(ampSpikeToCenter, drive)
@@ -75,7 +75,7 @@ public class Rush6Note extends AutoRoutine {
                         AutoCommons.shootWhenReady(centerShot2, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             Commands.print("[Rush6Note] Shot Center 1"),
-                            AutoCommons.autoAim(centerShot2, shooter, pivot),
+                            AutoCommons.autoAim(centerShot2, shooter, kicker, pivot),
                             Commands.runOnce(noteVision::clearMemory)
                             .andThen(
                                 AutoCommons.followPathFlipped(ampSpikeToCenter, drive)
