@@ -448,7 +448,7 @@ public final class Constants {
         public static final Pose2d subwooferAmp =       new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(-120));
         public static final Pose2d subwooferSource =    new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(+120));
         
-        public static final Pose2d amp =                new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(+90));
+        public static final Pose2d amp =                new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(-90));
         public static final Pose2d podium =             new Pose2d(new Translation2d(2.76, 4.44), Rotation2d.fromDegrees(+157.47));
 
         public static final Pose2d pathfindSpeaker =    new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(+180));
