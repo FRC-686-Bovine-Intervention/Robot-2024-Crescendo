@@ -242,7 +242,7 @@ public final class Constants {
     }
 
     public static final class PivotConstants {
-        public static final double pivotMagnetOffset = -0.353759765625;//-0.332763671875;//-0.330322265625;//0.32958984375;
+        public static final double pivotMagnetOffset = -0.35205078125;//-0.353759765625;//-0.332763671875;//-0.330322265625;//0.32958984375;
         public static final GearRatio motorToMechanismRatio = new GearRatio()
             .gear(+8).gear(+72).axle()
             .gear(+10).gear(+100).axle()
