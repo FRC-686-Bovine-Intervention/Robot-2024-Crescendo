@@ -234,8 +234,8 @@ public class RobotContainer {
         driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWithTunableNumber());
 
-        driveController.povLeft().whileTrue(amp.zero());
-        driveController.povRight().whileTrue(amp.amp());
+        driveController.povLeft().whileTrue(amp.retract());
+        driveController.povRight().whileTrue(amp.deploy());
         // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
         // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
         // driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
