@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.185369193199162,
-        "y": 6.829530422066625
+        "x": 2.656589425482732,
+        "y": 5.053917952592305
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.335613325231605,
-        "y": 6.829530422066625
+        "x": 3.6263470049648605,
+        "y": 6.522212879272992
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.622443031838995,
-        "y": 6.829530422066625
+        "x": 7.095620599168531,
+        "y": 6.904652488082846
       },
       "prevControl": {
-        "x": 2.4107353912478264,
-        "y": 6.809042585880383
+        "x": 5.442935146811664,
+        "y": 7.041238062657793
       },
       "nextControl": null,
       "isLocked": false,
@@ -32,20 +32,20 @@
   "constraintZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 1.5,
+    "maxVelocity": 3.0,
     "maxAcceleration": 2.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -151.1701942746986,
+    "rotation": 180.0,
     "rotateFast": false
   },
   "reversed": false,
-  "folder": "Rush 6 Note",
+  "folder": "MA Spike Wiggle",
   "previewStartingState": {
-    "rotation": 180.0,
+    "rotation": 158.73524358419084,
     "velocity": 0
   },
   "useDefaultConstraints": false

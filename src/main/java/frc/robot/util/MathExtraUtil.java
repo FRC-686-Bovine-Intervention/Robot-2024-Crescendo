@@ -1,5 +1,7 @@
 package frc.robot.util;
 
+import java.util.Arrays;
+
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
@@ -9,8 +11,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class MathExtraUtil {
-    public static double dotProduct(Translation2d a, Translation2d b) {
-        return a.getX()*b.getX() + a.getY()*b.getY();
+    public static double average(double... a) {
+        return Arrays.stream(a).average().orElse(0);
     }
 
     public static boolean isNear(Pose2d expected, Pose2d actual, double linearTolerance, double angularTolerance) {

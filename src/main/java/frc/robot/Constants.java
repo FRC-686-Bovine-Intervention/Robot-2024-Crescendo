@@ -4,7 +4,14 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.Centimeters;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Kilograms;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Pounds;
+import static edu.wpi.first.units.Units.Radians;
 
 import java.util.Arrays;
 import java.util.function.Function;
@@ -23,9 +30,12 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
+import frc.robot.util.GearRatio.Wheel;
 
 public final class Constants {
 
@@ -103,9 +113,22 @@ public final class Constants {
         public static final Rotation2d intakeForward = Rotation2d.fromDegrees(180);
 
         /**Distance between the front and back wheels*/
-        public static final double trackWidthXMeters = Inches.of(25.5).in(Meters);
+        public static final Measure<Distance> trackWidthX = Inches.of(25.5);
+        /**Distance between the front and back wheels*/
+        public static final double trackWidthXMeters = trackWidthX.in(Meters);
         /**Distance between the left and right wheels*/
-        public static final double trackWidthYMeters = Inches.of(25.5).in(Meters);
+        public static final Measure<Distance> trackWidthY = Inches.of(25.5);
+        /**Distance between the left and right wheels*/
+        public static final double trackWidthYMeters = trackWidthY.in(Meters);
+
+        /**Distance between back bumper and front bumper, aka in the X axis */
+        public static final Measure<Distance> robotLength = Centimeters.of(90);
+        /**Distance between back bumper and front bumper, aka in the X axis */
+        public static final double robotLengthMeters = robotLength.in(Meters);
+        /**Distance between left bumper and right bumper, aka in the Y axis */
+        public static final Measure<Distance> robotWidth = Centimeters.of(90);
+        /**Distance between left bumper and right bumper, aka in the Y axis */
+        public static final double robotWidthMeters = robotWidth.in(Meters);
     }
 
     public static final class DriveConstants {
@@ -115,8 +138,8 @@ public final class Constants {
                 InvertedValue.CounterClockwise_Positive,
                 0.75,
                 new Translation2d(
-                    +RobotConstants.trackWidthXMeters / 2.0,
-                    +RobotConstants.trackWidthYMeters / 2.0
+                    RobotConstants.trackWidthX.divide(+2),
+                    RobotConstants.trackWidthY.divide(+2)
                 )
             ),
             FRONT_RIGHT(
@@ -124,8 +147,8 @@ public final class Constants {
                 InvertedValue.Clockwise_Positive,
                 0.5,
                 new Translation2d(
-                    +RobotConstants.trackWidthXMeters / 2.0,
-                    -RobotConstants.trackWidthYMeters / 2.0
+                    RobotConstants.trackWidthX.divide(+2),
+                    RobotConstants.trackWidthY.divide(-2)
                 )
             ),
             BACK_LEFT(
@@ -133,8 +156,8 @@ public final class Constants {
                 InvertedValue.CounterClockwise_Positive,
                 0.5,
                 new Translation2d(
-                    -RobotConstants.trackWidthXMeters / 2.0,
-                    +RobotConstants.trackWidthYMeters / 2.0
+                    RobotConstants.trackWidthX.divide(-2),
+                    RobotConstants.trackWidthY.divide(+2)
                 )
             ),
             BACK_RIGHT(
@@ -142,8 +165,8 @@ public final class Constants {
                 InvertedValue.Clockwise_Positive,
                 0.75,
                 new Translation2d(
-                    -RobotConstants.trackWidthXMeters / 2.0,
-                    -RobotConstants.trackWidthYMeters / 2.0
+                    RobotConstants.trackWidthX.divide(-2),
+                    RobotConstants.trackWidthY.divide(-2)
                 )
             ),
             ;
@@ -168,14 +191,20 @@ public final class Constants {
 
         /**Weight with battery and bumpers*/
         public static final double weightKg = Pounds.of(58.0).in(Kilograms);
-
         
         public static final double driveBaseRadius = Arrays.stream(DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
         private static final double correctionVal = 314.0 / 320.55;
         public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters) * correctionVal;
 
-        public static final GearRatio driveWheelGearRatio = GearRatio.start(14).drive(22).driven(15).drive(45);
-        public static final GearRatio turnWheelGearRatio = GearRatio.start(15).drive(32).driven(10).drive(60);
+        public static final GearRatio driveWheelGearRatio = new GearRatio()
+            .gear(14).gear(22).axle()
+            .gear(15).gear(45).axle()
+        ;
+        public static final Wheel driveWheel = driveWheelGearRatio.wheelRadius(wheelRadiusMeters);
+        public static final GearRatio turnWheelGearRatio = new GearRatio()
+            .gear(15).gear(32).axle()
+            .gear(10).gear(60).axle()
+        ;
         public static final double driveWheelGearReduction = 1.0 / (1.0/4.0);
         public static final double turnWheelGearReduction = 1.0 / ((15.0/32.0)*(10.0/60.0));
 
@@ -214,45 +243,48 @@ public final class Constants {
 
     public static final class PivotConstants {
         public static final double pivotMagnetOffset = -0.332763671875;//-0.330322265625;//0.32958984375;
-        public static final GearRatio motorToMechanismRatio = GearRatio
-            .start(8).drive(72) // Planetary 1
-            .driven(10).drive(100) // Planetary 2
-            ;
-        public static final GearRatio encoderToMechanismRatio = GearRatio.start(1).drive(1);
-        public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.andThen(encoderToMechanismRatio.inverse());
+        public static final GearRatio motorToMechanismRatio = new GearRatio()
+            .gear(+8).gear(+72).axle()
+            .gear(+10).gear(+100).axle()
+        ;
+        public static final GearRatio encoderToMechanismRatio = new GearRatio()
+            // .gear(+1).gear(+1).axle()
+        ;
+        public static final GearRatio motorToEncoderRatio = motorToMechanismRatio.concat(encoderToMechanismRatio.inverse());
     }
 
     public static final class ShooterConstants {
         public static final double exitVelocity = 5;
 
-        // public static final double[] distance = new double[] {
-        //     FieldConstants.subwooferToSpeakerDist,
-        //     FieldConstants.podiumToSpeakerDist
-        // };
-        // public static final double[] RPS = new double[] {
-        //     90,
-        //     90
-        // };
-        // public static final double[] angle = new double[] {
-        //     Degrees.of(0).in(Radians),
-        //     Degrees.of(22).in(Radians)
-        // };
+        public static final double wheelRadius = Inches.of(2).in(Meters);
+
+        public static final Wheel motorToSurface = new GearRatio()
+            // .sprocket(+48).sprocket(+24)
+            .sprocket(+24).sprocket(+24)
+            .wheelRadius(wheelRadius)
+        ;
+
         public static final double[] distance = new double[] {
             FieldConstants.subwooferToSpeakerDist,
             FieldConstants.podiumToSpeakerDist,
-            Centimeters.of(565).minus(Inches.of(35)).in(Meters)
+            Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters),
         };
-        public static final double[] RPS = new double[] {
+        public static final double[] surfaceSpeed = new double[] {
+            15,
+            20,
             30,
-            65,
-            65
+        };
+        public static final double[] acceptableSurfaceSpeed = new double[] {
+            12,
+            18,
+            29.5,
         };
         public static final double[] angle = new double[] {
             Degrees.of(59.39).in(Radians),
-            Degrees.of(37.8).in(Radians),
-            Degrees.of(31.5).in(Radians)
+            Degrees.of(39.2).in(Radians),
+            Degrees.of(29.7).in(Radians),
         };
-        public static double distanceLerp(double dist, double[] lerpTarget) {
+        public static double distLerp(double dist, double[] lerpTarget) {
             int lowerBound = 0;
             int upperBound = 0;
             for(int i = 0; i < distance.length; i++) {
@@ -266,6 +298,15 @@ public final class Constants {
             double target = MathUtil.interpolate(lerpTarget[lowerBound], lerpTarget[upperBound], t);
             return target;
         }
+    }
+
+    public static final class AmpConstants {
+        public static final GearRatio motorToMech = new GearRatio()
+            .planetary(1/5)
+            // .planetary(1/5)
+            .planetary(1/5)
+            .sprocket(+24).sprocket(+50)
+        ;
     }
 
     public static final class VisionConstants {
@@ -407,7 +448,7 @@ public final class Constants {
         public static final Pose2d subwooferAmp =       new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(-120));
         public static final Pose2d subwooferSource =    new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(+120));
         
-        public static final Pose2d amp =                new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(+90));
+        public static final Pose2d amp =                new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(-90));
         public static final Pose2d podium =             new Pose2d(new Translation2d(2.76, 4.44), Rotation2d.fromDegrees(+157.47));
 
         public static final Pose2d pathfindSpeaker =    new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(+180));

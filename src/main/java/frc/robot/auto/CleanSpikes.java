@@ -27,8 +27,8 @@ public class CleanSpikes extends AutoRoutine {
                 PathPlannerPath ampSpikeToCenterSpike = AutoPaths.loadPath("Amp Spike to Center Spike");
                 PathPlannerPath centerSpikeToPodiumSpike = AutoPaths.loadPath("Center Spike to Podium Spike");
 
-                var preloadShot = startToSpike.getPoint(startToSpike.numPoints() - 1).position;
-                var note1Shot = preloadShot;
+                var preloadShot = StartPosition.Amp.startPose.getTranslation();
+                var ampSpikeShot = startToSpike.getPoint(startToSpike.numPoints() - 1).position;
                 var note2Shot = ampSpikeToCenterSpike.getPoint(startToSpike.numPoints() - 1).position;
                 var note3Shot = centerSpikeToPodiumSpike.getPoint(startToSpike.numPoints() - 1).position;
 
@@ -36,24 +36,24 @@ public class CleanSpikes extends AutoRoutine {
                     .andThen(
                         AutoCommons.shootWhenReady(preloadShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
-                            AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem),
-                            AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
+                            AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
                         ),
-                        AutoCommons.shootWhenReady(note1Shot, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(ampSpikeShot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(note1Shot, shooter, pivot, drive.rotationalSubsystem)
+                            AutoCommons.autoAim(ampSpikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
+                            AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         ),
                         AutoCommons.shootWhenReady(note2Shot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(note2Shot, shooter, pivot, drive.rotationalSubsystem),
+                            AutoCommons.autoAim(note2Shot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(ampSpikeToCenterSpike, drive.translationSubsystem)
                         ),
                         AutoCommons.shootWhenReady(note3Shot, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(note3Shot, shooter, pivot, drive.rotationalSubsystem),
+                            AutoCommons.autoAim(note3Shot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(centerSpikeToPodiumSpike, drive.translationSubsystem)
                         )
                     )
