@@ -303,7 +303,7 @@ public final class Constants {
     public static final class AmpConstants {
         public static final GearRatio motorToMech = new GearRatio()
             .planetary(1/5)
-            .planetary(1/5)
+            // .planetary(1/5)
             .planetary(1/5)
             .sprocket(+24).sprocket(+50)
         ;

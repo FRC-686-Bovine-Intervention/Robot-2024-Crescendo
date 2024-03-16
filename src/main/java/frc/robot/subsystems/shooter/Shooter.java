@@ -25,7 +25,7 @@ public class Shooter extends SubsystemBase {
     private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     private static final LoggedTunableNumber tuningMPS = new LoggedTunableNumber("Shooter/Tuning MPS", 30);
-    private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 20);
+    private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 5);
     private static final LoggedTunableNumber preemtiveMPS = new LoggedTunableNumber("Shooter/Pre-emptive MPS", 30);
     // private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection/MPS", 1);
     // private static final LoggedTunableNumber shotDetCurrent = new LoggedTunableNumber("Shooter/Shot Detection/Current", 2);
@@ -151,10 +151,10 @@ public class Shooter extends SubsystemBase {
     }
 
     private Command surfaceSpeedWithFinish(DoubleSupplier mps, BooleanSupplier shot) {
-        return followUp(shot).deadlineWith(surfaceSpeed(mps)).withName("Set Surface Speed Finish");
+        return surfaceSpeedWithFinish(mps, () -> mps.getAsDouble() - 1, shot);
     }
     private Command surfaceSpeedWithFinish(DoubleSupplier mps, DoubleSupplier acceptableMPS, BooleanSupplier shot) {
-        return surfaceSpeedWithFinish(mps, () -> mps.getAsDouble() - 1, shot);
+        return followUp(shot).deadlineWith(surfaceSpeed(mps, acceptableMPS)).withName("Set Surface Speed Finish");
     }
 
     public Command shootWithTunableNumber() {
@@ -170,6 +170,6 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command amp() {
-        return surfaceSpeed(ampMPS::get).withName("Amp");
+        return surfaceSpeed(ampMPS::get, () -> 500).withName("Amp");
     }
 }

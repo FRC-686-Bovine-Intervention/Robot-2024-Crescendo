@@ -223,7 +223,12 @@ public class RobotContainer {
         driveController.b().and(() -> Math.abs(drive.getChassisSpeeds().vxMetersPerSecond) >= 0.5).whileTrue(intake.outtake(drive::getChassisSpeeds).alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
         
         driveController.x().whileTrue(kicker.kick());
-        driveController.y().toggleOnTrue(pivot.gotoAmp());
+        driveController.y().toggleOnTrue(
+            pivot.gotoAmp().asProxy()
+            .alongWith(
+                shooter.amp().asProxy()
+            )
+        );
 
         driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(drive.rotationalSubsystem, shooter, kicker, pivot));
         driveController.leftBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
@@ -259,7 +264,7 @@ public class RobotContainer {
         new Trigger(() -> 
             SuperCommands.readyToShoot(shooter, pivot) && 
             DriverStation.isTeleopEnabled()
-        ).onTrue(kicker.kick().asProxy());
+        ).onTrue(kicker.kick().asProxy().until(() -> shooter.getCurrentCommand() == null));
         
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
             .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
