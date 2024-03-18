@@ -12,6 +12,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.ShooterConstants;
@@ -35,6 +36,7 @@ public class ShooterIOFalcon implements ShooterIO {
         var config = new TalonFXConfiguration();
         // config.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.5;
         config.Feedback.SensorToMechanismRatio = ShooterConstants.motorToSurface.surfacePerRot();
+        config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         leftMotor.getConfigurator().apply(config);
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;

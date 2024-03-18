@@ -59,8 +59,9 @@ public class Leds extends VirtualSubsystem {
             // m_candle.configAllSettings(configAll, 100);
             // m_candle.setStatusFramePeriod(CANdleStatusFrame.CANdleStatusFrame_Status_1_General, 2000);
             // m_candle.setControlFramePeriod(CANdleControlFrame.CANdle_Control_1_General, 1000);
-
-            offboardLEDs = new AddressableStrip(0, 57);
+            var addressableStrip = new AddressableStrip(0, 57);
+            ledManager.register(addressableStrip);
+            offboardLEDs = addressableStrip;
         } else {
             offboardLEDs = new LEDStrip() {
                 @Override
@@ -181,6 +182,6 @@ public class Leds extends VirtualSubsystem {
             new BasicGradient(InterpolationStyle.Step, Color.kBlack, Color.kGreen),
             TilingFunction.Sawtooth,
             fullSideStrips
-        ).asProxy().withTimeout(1);
+        ).setPeriod(0.0625).asProxy().withTimeout(1);
     }
 }
