@@ -16,7 +16,7 @@ public class EndgameTimerAnimation extends LEDAnimation {
     private static final double darkScalar = 0.8;
 
     @Override
-    protected void runAnimation(LEDManager manager) {
+    public void execute() {
         strip.foreach((index) -> {
             int seg = index * 10 / strip.getLength();
             double timeDec = 30 - animationTimer.get();

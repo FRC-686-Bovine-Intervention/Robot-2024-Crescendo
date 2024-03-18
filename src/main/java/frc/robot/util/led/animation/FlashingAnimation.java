@@ -21,7 +21,7 @@ public class FlashingAnimation extends LEDAnimation {
     }
 
     @Override
-    protected void runAnimation(LEDManager manager) {
+    public void execute() {
         for(LEDStrip ledStrip : strips) {
             ledStrip.foreach((int i) -> {
                 ledStrip.setLED(i, gradient.getColor(tilingFunction.tile(animationTimer.get()/period)));

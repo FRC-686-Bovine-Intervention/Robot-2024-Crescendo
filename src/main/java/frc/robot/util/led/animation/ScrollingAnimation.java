@@ -27,7 +27,7 @@ public class ScrollingAnimation extends LEDAnimation {
     }
 
     @Override
-    protected void runAnimation(LEDManager manager) {
+    public void execute() {
         for(LEDStrip ledStrip : strips) {
             ledStrip.foreach((int i) -> {
                 double pos = (double) i / ledStrip.getLength();
