@@ -12,13 +12,12 @@ import com.ctre.phoenix.led.CANdleStatusFrame;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.CANDevices;
 import frc.robot.RobotType;
 import frc.robot.RobotType.Mode;
-import frc.robot.util.InterpolationFunction;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.led.animation.FlashingAnimation;
-import frc.robot.util.led.animation.LEDAnimation;
 import frc.robot.util.led.animation.LEDManager;
 import frc.robot.util.led.animation.ScrollingAnimation;
 import frc.robot.util.led.functions.Gradient.BasicGradient;
@@ -178,12 +177,12 @@ public class Leds extends VirtualSubsystem {
         ledManager.run();
     }
 
-    public LEDAnimation noteAcquired() {
+    public Command noteAcquired() {
         return new FlashingAnimation(
             5,
             new BasicGradient(InterpolationStyle.Step, Color.kBlack, Color.kGreen),
             TilingFunction.Sawtooth,
             offboardLEDs
-        );
+        ).asProxy().withTimeout(1);
     }
 }

@@ -3,6 +3,8 @@ package frc.robot.util.led.animation;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.littletonrobotics.junction.Logger;
+
 import frc.robot.util.led.strips.hardware.HardwareStrip;
 
 public class LEDManager {
@@ -23,6 +25,7 @@ public class LEDManager {
             anim.execute();
             if(anim.isFinished()) {
                 anim.end(false);
+                Logger.recordOutput("Leds/" + anim.getName(), false);
                 iterator.remove();
             }
         }
@@ -37,6 +40,7 @@ public class LEDManager {
     public void schedule(LEDAnimation animation) {
         if(isScheduled(animation)) return;
         scheduledAnimations.add(animation);
+        Logger.recordOutput("Leds/" + animation.getName(), true);
         animation.initialize();
         animation.animationTimer.start();
     }
@@ -45,6 +49,7 @@ public class LEDManager {
         if(!isScheduled(animation)) return;
         scheduledAnimations.remove(animation);
         animation.end(true);
+        Logger.recordOutput("Leds/" + animation.getName(), false);
         animation.animationTimer.stop();
         animation.animationTimer.reset();
     }

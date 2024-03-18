@@ -1,7 +1,9 @@
 package frc.robot.util.controllers;
 
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.util.controllers.Joystick.Axis;
 
@@ -45,5 +47,11 @@ public class XboxController {
 
     public void rumble(RumbleType rumbleType, double value) {
         hid.setRumble(rumbleType, value);
+    }
+    public Command rumbleCommand(RumbleType rumbleType, double value) {
+        return Commands.startEnd(
+            () -> rumble(rumbleType, value),
+            () -> rumble(rumbleType, 0)
+        );
     }
 }

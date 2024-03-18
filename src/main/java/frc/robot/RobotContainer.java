@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -161,7 +162,7 @@ public class RobotContainer {
         //     // () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
         //     // () -> kicker.hasNote()
         // );
-        ledSystem = null;
+        ledSystem = new Leds();
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
@@ -278,6 +279,15 @@ public class RobotContainer {
             .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
             .onTrue(drive.translationSubsystem.getDefaultCommand())
         ;
+        new Trigger(
+            () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER))
+        ).onTrue(
+            ledSystem.noteAcquired()
+            .alongWith(
+                driveController.rumbleCommand(RumbleType.kBothRumble, 0.2)
+                .withTimeout(0.5)
+            )
+        );
     }
     private Rotation2d autoAimRotation() {
         var FORR = SuperCommands.autoAimFORR(drive);
