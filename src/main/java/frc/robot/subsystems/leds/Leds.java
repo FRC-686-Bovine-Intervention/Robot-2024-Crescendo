@@ -2,18 +2,10 @@ package frc.robot.subsystems.leds;
 
 import java.util.Optional;
 
-import com.ctre.phoenix.led.CANdle;
-import com.ctre.phoenix.led.CANdle.LEDStripType;
-import com.ctre.phoenix.led.CANdle.VBatOutputMode;
-import com.ctre.phoenix.led.CANdleConfiguration;
-import com.ctre.phoenix.led.CANdleControlFrame;
-import com.ctre.phoenix.led.CANdleStatusFrame;
-
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.CANDevices;
 import frc.robot.RobotType;
 import frc.robot.RobotType.Mode;
 import frc.robot.util.VirtualSubsystem;
@@ -24,46 +16,52 @@ import frc.robot.util.led.functions.Gradient.BasicGradient;
 import frc.robot.util.led.functions.Gradient.BasicGradient.InterpolationStyle;
 import frc.robot.util.led.functions.TilingFunction;
 import frc.robot.util.led.strips.LEDStrip;
-import frc.robot.util.led.strips.hardware.CANdleStrip;
+import frc.robot.util.led.strips.hardware.AddressableStrip;
 
 public class Leds extends VirtualSubsystem {
     private final LEDManager ledManager = LEDManager.getInstance();
     @SuppressWarnings("unused")
-    private final LEDStrip onboardLEDs;
+    // private final LEDStrip onboardLEDs;
     private final LEDStrip offboardLEDs;
+    private final LEDStrip rightStrip;
+    private final LEDStrip backStrip;
+    private final LEDStrip leftStrip;
+
+    private final LEDStrip sideStrips;
+
+    private final LEDStrip backRightStrip;
+    private final LEDStrip backLeftStrip;
+
+    private final LEDStrip fullLeftStrip;
+    private final LEDStrip fullRightStrip;
+
+    private final LEDStrip fullSideStrips;
 
     public Leds() {
         System.out.println("[Init Leds] Instantiating Leds");
         if(RobotType.getMode() == Mode.REAL) {
-            var m_candle = new CANdle(CANDevices.candleCanID, "rio");
-            var candleStrip = new CANdleStrip(m_candle, 57);
+            // var m_candle = new CANdle(CANDevices.candleCanID, "rio");
+            // var candleStrip = new CANdleStrip(m_candle, 57);
 
-            ledManager.register(candleStrip);
+            // ledManager.register(candleStrip);
 
-            onboardLEDs = candleStrip.getOnboardLEDs();
-            offboardLEDs = candleStrip.getOffboardLEDs();
+            // onboardLEDs = candleStrip.getOnboardLEDs();
+            // offboardLEDs = candleStrip.getOffboardLEDs();
             
-            CANdleConfiguration configAll = new CANdleConfiguration();
-            configAll.statusLedOffWhenActive = true;
-            configAll.disableWhenLOS = false;
-            configAll.stripType = LEDStripType.GRB;
-            configAll.brightnessScalar = 0.5;
-            configAll.vBatOutputMode = VBatOutputMode.Modulated;
-            m_candle.configFactoryDefault();
-            m_candle.clearAnimation(0);
-            m_candle.configAllSettings(configAll, 100);
-            m_candle.setStatusFramePeriod(CANdleStatusFrame.CANdleStatusFrame_Status_1_General, 2000);
-            m_candle.setControlFramePeriod(CANdleControlFrame.CANdle_Control_1_General, 1000);
+            // CANdleConfiguration configAll = new CANdleConfiguration();
+            // configAll.statusLedOffWhenActive = true;
+            // configAll.disableWhenLOS = false;
+            // configAll.stripType = LEDStripType.GRB;
+            // configAll.brightnessScalar = 0.5;
+            // configAll.vBatOutputMode = VBatOutputMode.Modulated;
+            // m_candle.configFactoryDefault();
+            // m_candle.clearAnimation(0);
+            // m_candle.configAllSettings(configAll, 100);
+            // m_candle.setStatusFramePeriod(CANdleStatusFrame.CANdleStatusFrame_Status_1_General, 2000);
+            // m_candle.setControlFramePeriod(CANdleControlFrame.CANdle_Control_1_General, 1000);
+
+            offboardLEDs = new AddressableStrip(0, 57);
         } else {
-            onboardLEDs = new LEDStrip() {
-                @Override
-                public int getLength() {
-                    return 0;
-                }
-                @Override
-                public void setLED(int ledIndex, Color color) {
-                }
-            };
             offboardLEDs = new LEDStrip() {
                 @Override
                 public int getLength() {
@@ -75,19 +73,19 @@ public class Leds extends VirtualSubsystem {
             };
         }
 
-        var rightStrip = offboardLEDs.substrip(0, 19);
-        var backStrip = offboardLEDs.substrip(19, 38);
-        var leftStrip = offboardLEDs.substrip(38, 57).reverse();
+        rightStrip = offboardLEDs.substrip(0, 19);
+        backStrip = offboardLEDs.substrip(19, 38);
+        leftStrip = offboardLEDs.substrip(38, 57).reverse();
 
-        var sideStrips = leftStrip.parallel(rightStrip);
+        sideStrips = leftStrip.parallel(rightStrip);
 
-        var backRightStrip = backStrip.substrip(0, 10);
-        var backLeftStrip = backStrip.substrip(10, 19).reverse();
+        backRightStrip = backStrip.substrip(0, 10);
+        backLeftStrip = backStrip.substrip(10, 19).reverse();
 
-        var fullLeftStrip = leftStrip.concat(backLeftStrip);
-        var fullRightStrip = rightStrip.concat(backRightStrip);
+        fullLeftStrip = leftStrip.concat(backLeftStrip);
+        fullRightStrip = rightStrip.concat(backRightStrip);
 
-        var fullSideStrips = fullLeftStrip.parallel(fullRightStrip);
+        fullSideStrips = fullLeftStrip.parallel(fullRightStrip);
         
         // this.runners = new AnimationRunner[]{
         //     // new AnimationRunner(
@@ -182,7 +180,7 @@ public class Leds extends VirtualSubsystem {
             5,
             new BasicGradient(InterpolationStyle.Step, Color.kBlack, Color.kGreen),
             TilingFunction.Sawtooth,
-            offboardLEDs
+            fullSideStrips
         ).asProxy().withTimeout(1);
     }
 }
