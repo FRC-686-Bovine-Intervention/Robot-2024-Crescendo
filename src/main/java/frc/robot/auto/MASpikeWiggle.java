@@ -6,6 +6,7 @@ import java.util.Optional;
 import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
@@ -13,6 +14,7 @@ import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.shooter.Shooter;
@@ -32,7 +34,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 PathPlannerPath startToSpike = AutoPaths.loadPath(String.format(AutoPaths.startToSpike, "Amp"));
                 PathPlannerPath ampSpikeToCenterSpike = AutoPaths.loadPath("MASW Amp Spike to Center Spike");
                 PathPlannerPath centerSpikeToPodiumSpike = AutoPaths.loadPath("MASW Center Spike to Podium Spike");
-                PathPlannerPath podiumSpikeToWing = AutoPaths.loadPath("MASW Podium Spike to Amp Wing");
+                // PathPlannerPath podiumSpikeToWing = AutoPaths.loadPath("MASW Podium Spike to Amp Wing");
 
                 var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
                 var ampSpikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
@@ -46,12 +48,34 @@ public class MASpikeWiggle extends AutoRoutine {
                             AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
                         ),
                         AutoCommons.shootWhenReady(ampSpikeShot, drive, shooter, pivot, kicker)
+                        // .raceWith(
+                        //     Commands.waitSeconds(2.5)
+                        //     .andThen(
+                        //         Commands.waitUntil(() -> 
+                        //             !(
+                        //                 intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)) || 
+                        //                 kicker.hasNote()
+                        //             )
+                        //         )
+                        //     )
+                        // )
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
                             AutoCommons.autoAim(ampSpikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         ),
                         AutoCommons.shootWhenReady(centerSpikeShot, drive, shooter, pivot, kicker)
+                        // .raceWith(
+                        //     Commands.waitSeconds(2.5)
+                        //     .andThen(
+                        //         Commands.waitUntil(() -> 
+                        //             !(
+                        //                 intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)) || 
+                        //                 kicker.hasNote()
+                        //             )
+                        //         )
+                        //     )
+                        // )
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
                             AutoCommons.autoAim(centerSpikeShot, shooter, kicker, pivot),
@@ -63,6 +87,17 @@ public class MASpikeWiggle extends AutoRoutine {
                             )
                         ),
                         AutoCommons.shootWhenReady(podiumSpikeShot, drive, shooter, pivot, kicker)
+                        // .raceWith(
+                        //     Commands.waitSeconds(2.5)
+                        //     .andThen(
+                        //         Commands.waitUntil(() -> 
+                        //             !(
+                        //                 intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)) || 
+                        //                 kicker.hasNote()
+                        //             )
+                        //         )
+                        //     )
+                        // )
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
                             AutoCommons.autoAim(podiumSpikeShot, shooter, kicker, pivot),
@@ -72,15 +107,16 @@ public class MASpikeWiggle extends AutoRoutine {
                             .andThen(
                                 AutoCommons.autoAim(podiumSpikeShot, drive.rotationalSubsystem)
                             )
-                        ),
-                        AutoCommons.followPathFlipped(podiumSpikeToWing, drive)
-                        .onlyWhile(() -> !noteVision.hasTarget())
-                        .andThen(
-                            intake.intake(drive::getChassisSpeeds)
-                            .deadlineWith(
-                                noteVision.autoIntake(() -> 1.5, drive, intake)
-                            )
                         )
+                        // ,
+                        // AutoCommons.followPathFlipped(podiumSpikeToWing, drive)
+                        // .onlyWhile(() -> !noteVision.hasTarget())
+                        // .andThen(
+                        //     intake.intake(drive::getChassisSpeeds)
+                        //     .deadlineWith(
+                        //         noteVision.autoIntake(() -> 1.5, drive, intake)
+                        //     )
+                        // )
                     )
                 ;
             }

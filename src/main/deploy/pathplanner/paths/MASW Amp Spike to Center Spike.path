@@ -16,11 +16,11 @@
     },
     {
       "anchor": {
-        "x": 2.5746380807377633,
-        "y": 5.5866016934345994
+        "x": 2.8273213937014168,
+        "y": 5.388552610300926
       },
       "prevControl": {
-        "x": 2.294637652859121,
+        "x": 2.2263448655716465,
         "y": 5.934894908600716
       },
       "nextControl": null,
@@ -28,7 +28,13 @@
       "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.55,
+      "rotationDegrees": 136.7346737356403,
+      "rotateFast": false
+    }
+  ],
   "constraintZones": [],
   "eventMarkers": [],
   "globalConstraints": {
@@ -39,11 +45,14 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0,
+    "rotation": 178.31149774517908,
     "rotateFast": false
   },
   "reversed": false,
   "folder": "MA Spike Wiggle",
-  "previewStartingState": null,
+  "previewStartingState": {
+    "rotation": -153.75865034784223,
+    "velocity": 0
+  },
   "useDefaultConstraints": false
 }

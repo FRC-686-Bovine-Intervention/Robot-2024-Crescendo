@@ -242,7 +242,7 @@ public final class Constants {
     }
 
     public static final class PivotConstants {
-        public static final double pivotMagnetOffset = -0.332763671875;//-0.330322265625;//0.32958984375;
+        public static final double pivotMagnetOffset = -0.3623046875;//-0.3623046875;//-0.3212890625;//-0.35205078125;//-0.353759765625;//-0.332763671875;//-0.330322265625;//0.32958984375;
         public static final GearRatio motorToMechanismRatio = new GearRatio()
             .gear(+8).gear(+72).axle()
             .gear(+10).gear(+100).axle()
@@ -268,21 +268,33 @@ public final class Constants {
             FieldConstants.subwooferToSpeakerDist,
             FieldConstants.podiumToSpeakerDist,
             Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters),
+            Centimeters.of(665).plus(RobotConstants.robotLength.divide(2)).in(Meters),
         };
         public static final double[] surfaceSpeed = new double[] {
             15,
             20,
             30,
+            15,
         };
         public static final double[] acceptableSurfaceSpeed = new double[] {
             12,
             18,
             29.5,
+            10,
         };
         public static final double[] angle = new double[] {
-            Degrees.of(59.39).in(Radians),
-            Degrees.of(39.2).in(Radians),
-            Degrees.of(29.7).in(Radians),
+            // Degrees.of(59.39).in(Radians),
+            // Degrees.of(39.2).in(Radians),
+            // Degrees.of(29.7).in(Radians),
+            // Degrees.of(50).in(Radians),
+            // Degrees.of(59.39).in(Radians),
+            // Degrees.of(37.2).in(Radians),
+            // Degrees.of(27.2).in(Radians),
+            // Degrees.of(50).in(Radians),
+            Degrees.of(59.39+5.09765625-4.5).in(Radians),
+            Degrees.of(37.2+5.09765625-2.5).in(Radians),
+            Degrees.of(27.2+5.09765625-2.5).in(Radians),
+            Degrees.of(50+5.09765625).in(Radians),
         };
         public static double distLerp(double dist, double[] lerpTarget) {
             int lowerBound = 0;

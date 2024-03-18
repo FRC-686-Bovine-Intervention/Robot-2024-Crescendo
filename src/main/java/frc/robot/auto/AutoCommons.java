@@ -113,7 +113,7 @@ public class AutoCommons {
         public static final String toCenterLine = "%s Start";
         public static final String fromCenterLine = "%s Back";
 
-        public static final String startToSpike = "%s Spike";
+        public static final String startToSpike = "%s Start to Spike";
 
         private static final Map<String, PathPlannerPath> loadedPaths = new HashMap<>();
         private static boolean preloading;
