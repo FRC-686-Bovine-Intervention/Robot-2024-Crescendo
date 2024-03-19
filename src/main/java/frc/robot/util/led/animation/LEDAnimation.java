@@ -5,6 +5,7 @@ import java.util.Set;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.util.led.strips.LEDStrip;
 
@@ -42,6 +43,10 @@ public abstract class LEDAnimation extends Command {
     @Override
     public final Set<Subsystem> getRequirements() {
         return Set.of();
+    }
+    @Override
+    public ParallelRaceGroup withTimeout(double seconds) {
+        return asProxy().withTimeout(seconds);
     }
 
     public static class StripCounterAnimation extends LEDAnimation {
