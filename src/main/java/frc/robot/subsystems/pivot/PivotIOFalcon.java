@@ -9,6 +9,9 @@ import static edu.wpi.first.units.Units.Rotations;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.CoastOut;
+import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -61,5 +64,12 @@ public class PivotIOFalcon implements PivotIO {
     @Override
     public void setPivotVoltage(double volts) {
         pivotLeftMotor.setVoltage(volts);
+    }
+
+    private static final ControlRequest COAST_OUT = new CoastOut();
+    private static final ControlRequest NEUTRAL_OUT = new NeutralOut();
+    @Override
+    public void setCoast(boolean coast) {
+        pivotLeftMotor.setControl(coast ? COAST_OUT : NEUTRAL_OUT);
     }
 }

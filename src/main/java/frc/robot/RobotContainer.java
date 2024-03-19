@@ -47,6 +47,7 @@ import frc.robot.subsystems.kicker.KickerIO;
 import frc.robot.subsystems.kicker.KickerIONeo550;
 import frc.robot.subsystems.kicker.KickerIOSim;
 import frc.robot.subsystems.leds.Leds;
+import frc.robot.subsystems.manualOverrides.ManualOverrides;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.pivot.PivotIO;
 import frc.robot.subsystems.pivot.PivotIOFalcon;
@@ -79,7 +80,8 @@ public class RobotContainer {
     public final Amp amp;
     public final NoteVision noteVision;
     public final ApriltagVision apriltagVision;
-    public final Leds ledSystem;
+    public final ManualOverrides manualOverrides;
+    public final Leds leds;
 
     private final AutoSelector autoSelector = new AutoSelector("AutoSelector");
 
@@ -158,7 +160,8 @@ public class RobotContainer {
         //     // () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
         //     // () -> kicker.hasNote()
         // );
-        ledSystem = new Leds();
+        manualOverrides = new ManualOverrides(pivot::setCoast);
+        leds = new Leds();
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
@@ -336,7 +339,7 @@ public class RobotContainer {
         new Trigger(
             () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER))
         ).onTrue(
-            ledSystem.noteAcquired()
+            leds.noteAcquired()
             .alongWith(
                 driveController.rumble(RumbleType.kBothRumble, 0.4)
                 .withTimeout(0.5)

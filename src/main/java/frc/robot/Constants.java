@@ -98,8 +98,9 @@ public final class Constants {
 
     public static final class DIOPorts {
         // HID
-        public static final int brakeSwitchPort = 9;
-        public static final int ledSwitchPort = 8;
+        public static final int whiteButtonPort = 2;
+        public static final int redButtonPort = 3;
+        public static final int yellowButtonPort = 4;
 
         // Intake
         public static final int intakeSensorPort = 0;

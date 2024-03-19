@@ -197,7 +197,7 @@ public class Pivot extends SubsystemBase {
     return MathUtil.isNear(angleRad, inputs.pivotEncoder.positionRad, Units.degreesToRadians(toleranceDeg.get()));
   }
 
-  public boolean ampYayZone() {
-    return inputs.pivotEncoder.positionRad >= Units.degreesToRadians(15);
+  public void setCoast(boolean coast) {
+    pivotIO.setCoast(coast);
   }
 }
