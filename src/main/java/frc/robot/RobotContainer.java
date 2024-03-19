@@ -338,7 +338,7 @@ public class RobotContainer {
         ).onTrue(
             ledSystem.noteAcquired()
             .alongWith(
-                driveController.rumbleCommand(RumbleType.kBothRumble, 0.4)
+                driveController.rumble(RumbleType.kBothRumble, 0.4)
                 .withTimeout(0.5)
             )
         );

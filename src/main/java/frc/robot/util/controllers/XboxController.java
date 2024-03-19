@@ -45,13 +45,13 @@ public class XboxController {
     public Trigger povLeft() {return hid.povLeft(CommandScheduler.getInstance().getDefaultButtonLoop()).castTo(Trigger::new);}
     public Trigger povUpLeft() {return hid.povUpLeft(CommandScheduler.getInstance().getDefaultButtonLoop()).castTo(Trigger::new);}
 
-    public void rumble(RumbleType rumbleType, double value) {
+    public void setRumble(RumbleType rumbleType, double value) {
         hid.setRumble(rumbleType, value);
     }
-    public Command rumbleCommand(RumbleType rumbleType, double value) {
+    public Command rumble(RumbleType rumbleType, double value) {
         return Commands.startEnd(
-            () -> rumble(rumbleType, value),
-            () -> rumble(rumbleType, 0)
+            () -> setRumble(rumbleType, value),
+            () -> setRumble(rumbleType, 0)
         );
     }
 }
