@@ -66,8 +66,9 @@ public class ModuleIOFalcon550 implements ModuleIO {
     public void updateInputs(ModuleIOInputs inputs) {
         inputs.driveMotor.positionRad =       Units.rotationsToRadians(driveMotor.getPosition().getValue()) / DriveConstants.driveWheelGearReduction;
         inputs.driveMotor.velocityRadPerSec = Units.rotationsToRadians(driveMotor.getVelocity().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveMotor.appliedVolts =      driveMotor.getSupplyVoltage().getValue();
+        inputs.driveMotor.appliedVolts =      driveMotor.getMotorVoltage().getValue();
         inputs.driveMotor.currentAmps =       driveMotor.getSupplyCurrent().getValue();
+        inputs.driveMotor.tempCelsius =       driveMotor.getDeviceTemp().getValue();
 
         inputs.turnMotor.positionRad =        MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians;
         inputs.turnMotor.velocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
