@@ -16,40 +16,31 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import frc.robot.Constants;
+import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Module {
     private final ModuleIO io;
     private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
-    private final int index;
+    private final DriveModulePosition position;
 
     private SwerveModulePosition prevModulePosition;
 
-    private static final LoggedTunableNumber wheelRadius = new LoggedTunableNumber("Drive/Module/WheelRadius");
-    private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("Drive/Module/DriveKp");
-    private static final LoggedTunableNumber driveKd = new LoggedTunableNumber("Drive/Module/DriveKd");
-    private static final LoggedTunableNumber driveKs = new LoggedTunableNumber("Drive/Module/DriveKs");
-    private static final LoggedTunableNumber driveKv = new LoggedTunableNumber("Drive/Module/DriveKv");
-    private static final LoggedTunableNumber turnKp = new LoggedTunableNumber("Drive/Module/TurnKp");
-    private static final LoggedTunableNumber turnKd = new LoggedTunableNumber("Drive/Module/TurnKd");
+    private static final LoggedTunableNumber wheelRadius = new LoggedTunableNumber("Drive/Module/WheelRadius", Constants.DriveConstants.wheelRadiusMeters);
+    private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("Drive/Module/Drive/kP", 0.1);
+    private static final LoggedTunableNumber driveKd = new LoggedTunableNumber("Drive/Module/Drive/kD", 0.0);
+    private static final LoggedTunableNumber driveKs = new LoggedTunableNumber("Drive/Module/Drive/kS", 0.18507);
+    private static final LoggedTunableNumber driveKv = new LoggedTunableNumber("Drive/Module/Drive/kV", 0.08005);
+    private static final LoggedTunableNumber turnKp = new LoggedTunableNumber("Drive/Module/Turn/kP", 5.0);
+    private static final LoggedTunableNumber turnKd = new LoggedTunableNumber("Drive/Module/Turn/kD", 0.0);
 
     private SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 0.0);
     private final PIDController driveFeedback = new PIDController(0.0, 0.0, 0.0, Constants.dtSeconds);
     private final PIDController turnFeedback = new PIDController(0.0, 0.0, 0.0, Constants.dtSeconds);
 
-    static {
-        wheelRadius.initDefault(Constants.DriveConstants.wheelRadiusMeters);
-        driveKp.initDefault(0.1);
-        driveKd.initDefault(0.0);
-        driveKs.initDefault(0.18507);
-        driveKv.initDefault(0.08005);
-        turnKp.initDefault(5.0);
-        turnKd.initDefault(0.0);
-    }
-
-    public Module(ModuleIO io, int index) {
+    public Module(ModuleIO io, DriveModulePosition position) {
         this.io = io;
-        this.index = index;
+        this.position = position;
         prevModulePosition = getPosition();
         inputs.driveMotor.positionRad = 0;
         inputs.turnMotor.positionRad = 0;
@@ -62,16 +53,16 @@ public class Module {
         prevModulePosition = getPosition();
 
         io.updateInputs(inputs);
-        Logger.processInputs("Drive/Module" + Integer.toString(index), inputs);
+        Logger.processInputs("Drive/Module " + position.name(), inputs);
 
         // Update controllers if tunable numbers have changed
-        if (driveKp.hasChanged(hashCode()) || driveKd.hasChanged(hashCode())) {
+        if (driveKp.hasChanged(hashCode()) | driveKd.hasChanged(hashCode())) {
             driveFeedback.setPID(driveKp.get(), 0.0, driveKd.get());
         }
-        if (turnKp.hasChanged(hashCode()) || turnKd.hasChanged(hashCode())) {
+        if (turnKp.hasChanged(hashCode()) | turnKd.hasChanged(hashCode())) {
             turnFeedback.setPID(turnKp.get(), 0.0, turnKd.get());
         }
-        if (driveKs.hasChanged(hashCode()) || driveKv.hasChanged(hashCode())) {
+        if (driveKs.hasChanged(hashCode()) | driveKv.hasChanged(hashCode())) {
             driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
         }
     }

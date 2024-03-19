@@ -94,7 +94,7 @@ public class Drive extends VirtualSubsystem {
         ModuleIO[] moduleIOs = new ModuleIO[]{flModuleIO, frModuleIO, blModuleIO, brModuleIO};
         for(DriveModulePosition position : DriveModulePosition.values()) {
             System.out.println("[Init Drive] Instantiating Module " + position.name() + " with Module IO: " + moduleIOs[position.ordinal()].getClass().getSimpleName());
-            modules[position.ordinal()] = new Module(moduleIOs[position.ordinal()], position.ordinal());
+            modules[position.ordinal()] = new Module(moduleIOs[position.ordinal()], position);
         }
         lastMovementTimer.start();
         for (var module : modules) {
@@ -156,8 +156,8 @@ public class Drive extends VirtualSubsystem {
             }
 
             // Clear setpoint logs
-            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+            Logger.recordOutput("Drive/SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("Drive/SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
 
         } else if (isCharacterizing) {
             // Run in characterization mode
@@ -166,8 +166,8 @@ public class Drive extends VirtualSubsystem {
             }
 
             // Clear setpoint logs
-            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+            Logger.recordOutput("Drive/SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("Drive/SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
 
         } else {
             /**
@@ -197,8 +197,8 @@ public class Drive extends VirtualSubsystem {
             }
 
             // Log setpoint states
-            Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedStates);
+            Logger.recordOutput("Drive/SwerveStates/Setpoints", setpointStates);
+            Logger.recordOutput("Drive/SwerveStates/SetpointsOptimized", optimizedStates);
         }
 
         // Log measured states
@@ -206,7 +206,7 @@ public class Drive extends VirtualSubsystem {
         for (int i = 0; i < DriveConstants.numDriveModules; i++) {
             measuredStates[i] = modules[i].getState();
         }
-        Logger.recordOutput("SwerveStates/Measured", measuredStates);
+        Logger.recordOutput("Drive/SwerveStates/Measured", measuredStates);
         lastMeasuredStates = measuredStates;
 
         // Update odometry
