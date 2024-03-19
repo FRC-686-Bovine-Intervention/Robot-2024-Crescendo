@@ -172,13 +172,7 @@ public class Drive extends VirtualSubsystem {
             Logger.recordOutput("Drive/SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
 
         } else {
-            /**
-             * Correction for swerve discrete time control issue. Borrowed from 254:
-             * https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964/5
-             */
-
-            // TODO: replace with ChassisSpeeds.discretize when available in 2024
-            ChassisSpeeds correctedSpeeds = ChassisSpeedsdiscretize(setpoint, rotationCorrection.get());
+            ChassisSpeeds correctedSpeeds = ChassisSpeeds.discretize(setpoint, rotationCorrection.get());
             SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(correctedSpeeds);
             SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeedMetersPerSec);
 
@@ -398,63 +392,6 @@ public class Drive extends VirtualSubsystem {
             );
         }
     }
-
-    // TODO: remove this when 2024 WPILib comes out
-    /**
-     * Discretizes a continuous-time chassis speed.
-     *
-     * <p>This function converts a continous-time chassis speed into a discrete-time one such that
-     * when the discrete-time chassis speed is applied for one timestep, the robot moves as if the
-     * velocity components are independent (i.e., the robot moves v_x * dt along the x-axis, v_y * dt
-     * along the y-axis, and omega * dt around the z-axis).
-     *
-     * <p>This is useful for compensating for translational skew when translating and rotating a
-     * swerve drivetrain.
-     *
-     * @param vxMetersPerSecond Forward velocity.
-     * @param vyMetersPerSecond Sideways velocity.
-     * @param omegaRadiansPerSecond Angular velocity.
-     * @param dtSeconds The duration of the timestep the speeds should be applied for.
-     * @return Discretized ChassisSpeeds.
-     */
-    public static ChassisSpeeds ChassisSpeedsdiscretize(
-        double vxMetersPerSecond,
-        double vyMetersPerSecond,
-        double omegaRadiansPerSecond,
-        double dtSeconds) {
-        var desiredDeltaPose =
-            new Pose2d(
-                vxMetersPerSecond * dtSeconds,
-                vyMetersPerSecond * dtSeconds,
-                new Rotation2d(omegaRadiansPerSecond * dtSeconds));
-        var twist = new Pose2d().log(desiredDeltaPose);
-        return new ChassisSpeeds(twist.dx / dtSeconds, twist.dy / dtSeconds, twist.dtheta / dtSeconds);
-    }
-
-    /**
-     * Discretizes a continuous-time chassis speed.
-     *
-     * <p>This function converts a continous-time chassis speed into a discrete-time one such that
-     * when the discrete-time chassis speed is applied for one timestep, the robot moves as if the
-     * velocity components are independent (i.e., the robot moves v_x * dt along the x-axis, v_y * dt
-     * along the y-axis, and omega * dt around the z-axis).
-     *
-     * <p>This is useful for compensating for translational skew when translating and rotating a
-     * swerve drivetrain.
-     *
-     * @param continuousSpeeds The continuous speeds.
-     * @param dtSeconds The duration of the timestep the speeds should be applied for.
-     * @return Discretized ChassisSpeeds.
-     */
-    public static ChassisSpeeds ChassisSpeedsdiscretize(ChassisSpeeds continuousSpeeds, double dtSeconds) {
-        return ChassisSpeedsdiscretize(
-            continuousSpeeds.vxMetersPerSecond,
-            continuousSpeeds.vyMetersPerSecond,
-            continuousSpeeds.omegaRadiansPerSecond,
-            dtSeconds);
-    }
-
-
 
     /**
      * Runs the drive at the desired velocity.
