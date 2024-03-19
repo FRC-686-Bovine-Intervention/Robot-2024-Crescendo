@@ -354,7 +354,7 @@ public class Drive extends VirtualSubsystem {
             return new LazyOptional<Rotation2d>() {
                 private final Timer preciseTurnTimer = new Timer();
                 private final double preciseTurnTimeThreshold = 0.5;
-                private Optional<Rotation2d> outputFilter(Rotation2d i) {
+                private Optional<Rotation2d> outputMap(Rotation2d i) {
                     return Optional.of(i.minus(forwardDirectionSupplier.get()));
                 }
                 @Override
@@ -365,9 +365,9 @@ public class Drive extends VirtualSubsystem {
                     }
                     var joyVec = new Translation2d(joystick.x().getAsDouble(), joystick.y().getAsDouble());
                     joyVec = SpectatorType.getCurrentType().toField(joyVec);
-                    Rotation2d joyHeading = AllianceFlipUtil.apply(Rotation2d.fromRadians(Math.atan2(joyVec.getY(), joyVec.getX())), FieldFlipType.CenterPointFlip);
+                    Rotation2d joyHeading = AllianceFlipUtil.apply(new Rotation2d(joyVec.getX(), joyVec.getY()), FieldFlipType.CenterPointFlip);
                     if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
-                        return outputFilter(joyHeading);
+                        return outputMap(joyHeading);
                     }
                     var snapPoints = snapPointsSupplier.get();
                     int smallestDistanceIndex = 0;
@@ -379,16 +379,16 @@ public class Drive extends VirtualSubsystem {
                             smallestDistanceIndex = i;
                         }
                     }
-                    return outputFilter(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
+                    return outputMap(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
                 }
             };
         }
 
         public static LazyOptional<Rotation2d> pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
-            return () -> posToPointTo.get().map((pointTo) -> Rotation2d.fromRadians(Math.atan2(
-                pointTo.getY() - RobotState.getInstance().getPose().getY(),
-                pointTo.getX() - RobotState.getInstance().getPose().getX()
-            )).minus(forward.get()));
+            return () -> posToPointTo.get().map((pointTo) -> {
+                var FORR = pointTo.minus(RobotState.getInstance().getPose().getTranslation());
+                return new Rotation2d(FORR.getX(), FORR.getY()).minus(forward.get());
+            });
         }
     }
 

@@ -299,7 +299,7 @@ public class RobotContainer {
             drive.translationSubsystem.fieldRelative(joystickTranslational)
         );
         drive.rotationalSubsystem.setDefaultCommand(
-            drive.rotationalSubsystem.pidControlledHeading(driveCustomFlick)
+            drive.rotationalSubsystem.pidControlledHeading(driveCustomFlick).withName("DriveCustomFlick")
         );
 
         intake.setDefaultCommand(intake.antiDeadzone());
