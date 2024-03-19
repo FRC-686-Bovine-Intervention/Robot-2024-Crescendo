@@ -8,10 +8,8 @@ public interface ModuleIO {
 
     @AutoLog
     public static class ModuleIOInputs {
-        public double driveSetpointRadPerSec = 0.0;
         public LoggedMotor driveMotor = new LoggedMotor();
 
-        public double turnAbsolutePositionRad = 0.0;
         public LoggedMotor turnMotor = new LoggedMotor();
     }
 

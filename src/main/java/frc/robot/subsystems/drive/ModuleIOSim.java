@@ -37,7 +37,6 @@ public class ModuleIOSim implements ModuleIO {
         inputs.driveMotor.updateFrom(driveSim, turnAppliedVolts);
     
         inputs.turnMotor.updateFrom(turnSim, turnAppliedVolts);
-        inputs.turnAbsolutePositionRad = turnAbsolutePositionRad;
         inputs.turnMotor.positionRad = turnRelativePositionRad;
       }
     
