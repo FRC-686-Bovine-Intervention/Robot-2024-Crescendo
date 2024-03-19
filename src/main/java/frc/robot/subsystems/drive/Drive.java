@@ -48,6 +48,7 @@ import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.MathExtraUtil;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.pathplanner.AutoBuilder;
@@ -182,9 +183,7 @@ public class Drive extends VirtualSubsystem {
             SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeedMetersPerSec);
 
             // Set to last angles if zero
-            if (correctedSpeeds.vxMetersPerSecond == 0.0
-                    && correctedSpeeds.vyMetersPerSecond == 0.0
-                    && correctedSpeeds.omegaRadiansPerSecond == 0) {
+            if (MathExtraUtil.isNear(new ChassisSpeeds(), correctedSpeeds, 0.05, 0.05)) {
                 for (int i = 0; i < DriveConstants.numDriveModules; i++) {
                     setpointStates[i] = new SwerveModuleState(0.0, lastSetpointStates[i].angle);
                 }
