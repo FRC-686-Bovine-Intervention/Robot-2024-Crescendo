@@ -25,7 +25,7 @@ public class NoteVisionIOPhotonVision implements NoteVisionIO {
         this.cam = new PhotonCamera(camera.hardwareName);
         this.camMeta = camera;
 
-        notConnectedAlert = new Alert(camMeta.name() + " is not connected", AlertType.ERROR);
+        notConnectedAlert = new Alert(camMeta.hardwareName + " is not connected", AlertType.ERROR);
     }
 
     private final Alert notConnectedAlert;

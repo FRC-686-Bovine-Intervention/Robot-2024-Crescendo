@@ -26,7 +26,7 @@ public class ApriltagCameraIOPhotonVision implements ApriltagCameraIO {
         photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, photonCam, cam.getRobotToCam());
         photonPoseEstimator.setMultiTagFallbackStrategy(PhotonPoseEstimator.PoseStrategy.CLOSEST_TO_REFERENCE_POSE);
 
-        notConnectedAlert = new Alert(cam.name() + " is not connected", AlertType.ERROR);
+        notConnectedAlert = new Alert(cam.hardwareName + " is not connected", AlertType.ERROR);
     }
 
     private final Alert notConnectedAlert;
