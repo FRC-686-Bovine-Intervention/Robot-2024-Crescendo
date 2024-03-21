@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
@@ -272,7 +273,13 @@ public class RobotContainer {
         driveController.y().toggleOnTrue(
             pivot.gotoAmp().asProxy()
             .alongWith(
-                shooter.amp().asProxy()
+                shooter.amp().asProxy(),
+                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(FieldConstants.amp.getRotation()))
+                .withName("Rotate To Amp")
+                .asProxy()
+                .onlyIf(
+                    () -> DriverStation.getMatchType() != MatchType.None
+                )
             )
         );
 

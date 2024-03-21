@@ -70,14 +70,14 @@ public class Drive extends VirtualSubsystem {
 
     private boolean isCharacterizing = false;
     private double characterizationVolts = 0.0;
-    private final LoggedTunableNumber rotationCorrection = new LoggedTunableNumber("Drive/Rotation Correction", 0.25);
+    private final LoggedTunableNumber rotationCorrection = new LoggedTunableNumber("Drive/Rotation Correction", 0.125);
 
     private ChassisSpeeds setpoint = new ChassisSpeeds();
     private SwerveModuleState[] lastSetpointStates = new SwerveModuleState[] {
-            new SwerveModuleState(),
-            new SwerveModuleState(),
-            new SwerveModuleState(),
-            new SwerveModuleState()
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState()
     };
     private Timer lastMovementTimer = new Timer(); // used for brake mode
 
@@ -177,7 +177,7 @@ public class Drive extends VirtualSubsystem {
             SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeedMetersPerSec);
 
             // Set to last angles if zero
-            if (MathExtraUtil.isNear(new ChassisSpeeds(), correctedSpeeds, 0.05, 0.05)) {
+            if (MathExtraUtil.isNear(new ChassisSpeeds(), correctedSpeeds, 0.05, 0.15)) {
                 for (int i = 0; i < DriveConstants.numDriveModules; i++) {
                     setpointStates[i] = new SwerveModuleState(0.0, lastSetpointStates[i].angle);
                 }
