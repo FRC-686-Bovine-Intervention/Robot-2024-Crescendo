@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -221,36 +222,6 @@ public class RobotContainer {
         drive.translationSubsystem.setDefaultCommand(
             drive.translationSubsystem.fieldRelative(joystickTranslational).withName("Driver Control Field Relative")
         );
-        drive.rotationalSubsystem.setDefaultCommand(
-            drive.rotationalSubsystem.headingFromJoystick(
-                driveController.rightStick.smoothRadialDeadband(0.85),
-                new Rotation2d[]{
-                    // Cardinals
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
-                    // Subwoofer
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
-                    // Source
-                    Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-                    // var climbingMode = driveController.rightBumper().getAsBoolean();
-                    // if(climbingMode) {
-                    //     return new Rotation2d[]{
-                    //         // Center Stage
-                    //         Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-                    //         // Up Stage
-                    //         Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-                    //         // Down Stage
-                    //         Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
-                    //     };
-                    // }
-                },
-                () -> (kicker.hasNote() ? RobotConstants.shooterForward : RobotConstants.intakeForward)
-            )
-            .withName("DriveCustomFlick")
-        );
 
         intake.setDefaultCommand(intake.antiDeadzone());
         kicker.setDefaultCommand(kicker.antiDeadzone());
@@ -262,6 +233,46 @@ public class RobotContainer {
     }
 
     private void configureControls() {
+        // Rotation
+        new Trigger(() -> driveController.rightStick.magnitude() > 0.85 && drive.rotationalSubsystem.getCurrentCommand() == null).onTrue(
+            Commands.either(
+                drive.rotationalSubsystem.headingFromJoystick(
+                    driveController.rightStick.smoothRadialDeadband(0.85),
+                    new Rotation2d[]{
+                        // Center Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+                        // Up Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+                        // Down Stage
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
+                    },
+                    () -> RobotConstants.shooterForward
+                )
+                .withName("Climbing")
+                .asProxy(),
+                drive.rotationalSubsystem.headingFromJoystick(
+                    driveController.rightStick.smoothRadialDeadband(0.85),
+                    new Rotation2d[]{
+                        // Cardinals
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
+                        // Subwoofer
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
+                        // Source
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+                    },
+                    () -> (kicker.hasNote() ? RobotConstants.shooterForward : RobotConstants.intakeForward)
+                )
+                .withName("DriveCustomFlick")
+                .asProxy(),
+                () -> false // Climbing mode
+            )
+        );
+        driveController.rightStickButton().toggleOnTrue(drive.rotationalSubsystem.spin(driveController.rightStick.radialSensitivity(0.75).x().multiply(DriveConstants.maxTurnRateRadiansPerSec * 0.5)).withName("Defense Spin"));
+
         // Intake
         driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
         driveController.b().and(() -> Math.abs(drive.getChassisSpeeds().vxMetersPerSecond) >= 0.5).whileTrue(intake.outtake(drive::getChassisSpeeds).alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
@@ -298,9 +309,6 @@ public class RobotContainer {
         driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
         driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
         // driveController.rightStickButton().onTrue(Commands.runOnce(() -> drive.setPose(FieldConstants.subwooferFront)));
-
-        // Defense Spin
-        driveController.rightStickButton().toggleOnTrue(drive.rotationalSubsystem.spin(driveController.rightStick.x().multiply(DriveConstants.maxTurnRateRadiansPerSec)));
 
         // new Trigger(() -> 
         //     drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
