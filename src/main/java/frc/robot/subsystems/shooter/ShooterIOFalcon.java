@@ -34,8 +34,7 @@ public class ShooterIOFalcon implements ShooterIO {
 
     public ShooterIOFalcon() {
         var config = new TalonFXConfiguration();
-        // config.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.5;
-        config.Feedback.SensorToMechanismRatio = ShooterConstants.motorToSurface.surfacePerRot();
+        config.Feedback.SensorToMechanismRatio = ShooterConstants.motorToSurface.rotPerSurface();
         config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         leftMotor.getConfigurator().apply(config);
