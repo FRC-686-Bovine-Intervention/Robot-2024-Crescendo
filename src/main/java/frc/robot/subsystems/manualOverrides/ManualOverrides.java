@@ -1,5 +1,9 @@
 package frc.robot.subsystems.manualOverrides;
 
+import java.util.Arrays;
+
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.util.function.BooleanConsumer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;

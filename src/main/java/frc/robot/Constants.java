@@ -98,8 +98,8 @@ public final class Constants {
 
     public static final class DIOPorts {
         // HID
-        public static final int whiteButtonPort = 2;
-        public static final int redButtonPort = 3;
+        public static final int redButtonPort = 2;
+        public static final int whiteButtonPort = 3;
         public static final int yellowButtonPort = 4;
 
         // Intake
