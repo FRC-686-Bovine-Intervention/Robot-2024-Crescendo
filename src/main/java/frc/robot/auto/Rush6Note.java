@@ -66,7 +66,7 @@ public class Rush6Note extends AutoRoutine {
                                     .deadlineWith(
                                         noteVision.autoIntake(() -> 1.5, drive, intake)
                                     ),
-                                    AutoCommons.autoAim(centerShot2, drive.rotationalSubsystem)
+                                    AutoCommons.autoAim(centerShot1, drive.rotationalSubsystem)
                                     .alongWith(
                                         AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
                                     )

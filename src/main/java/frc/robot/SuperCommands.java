@@ -24,7 +24,7 @@ public class SuperCommands {
     public static Command feedToKicker(Intake intake, Kicker kicker) {
         return 
             intake.feedToKicker(kicker::hasNote).asProxy()
-            .alongWith(kicker.feedIn())
+            .alongWith(kicker.feedIn().asProxy())
             .withName("Feed Into Kicker")
         ;
     }

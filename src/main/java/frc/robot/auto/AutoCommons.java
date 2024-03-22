@@ -3,6 +3,7 @@ package frc.robot.auto;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -12,6 +13,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -75,13 +77,14 @@ public class AutoCommons {
         var FORR = getFORR(pos);
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
-        return kicker.kick().asProxy().onlyIf(() -> 
+        BooleanSupplier condition = () -> 
             // kicker.hasNote() && 
             shooter.readyToShoot() && 
             pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
             MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
             MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
-        ).repeatedly().until(kicker::sensorFallingEdge);
+        ;
+        return kicker.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(kicker::sensorFallingEdge);
         // return Commands.waitUntil(() -> 
         //     // kicker.hasNote() && 
         //     shooter.readyToShoot() && 

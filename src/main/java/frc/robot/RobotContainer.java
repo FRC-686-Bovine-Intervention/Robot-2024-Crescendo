@@ -344,10 +344,9 @@ public class RobotContainer {
             () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER))
         ).onTrue(
             ledSystem.noteAcquired()
-            .alongWith(
-                driveController.rumble(RumbleType.kBothRumble, 0.4)
-                .withTimeout(0.5)
-            )
+        );
+        new Trigger(intake::hasNote).and(DriverStation::isTeleopEnabled).whileTrue(
+            driveController.rumble(RumbleType.kBothRumble, 0.4)
         );
     }
 

@@ -146,6 +146,7 @@ public class NoteVision extends VirtualSubsystem {
 
     public void clearMemory() {
         noteMemories.clear();
+        optIntakeTarget = Optional.empty();
     }
 
     public Command autoIntake(DoubleSupplier throttle, Drive drive, Intake intake) {

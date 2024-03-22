@@ -22,7 +22,7 @@ public class ShooterIOFalcon implements ShooterIO {
     private final TalonFX leftMotor = new TalonFX(CANDevices.shooterLeftID);
     private final TalonFX rightMotor = new TalonFX(CANDevices.shooterRightID);
 
-    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 0.005);
+    private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 1);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Shooter/PID/kI", 0);
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Shooter/PID/kD", 0);
     private final LoggedTunableNumber kA = new LoggedTunableNumber("Shooter/PID/Profile/kA", 120);

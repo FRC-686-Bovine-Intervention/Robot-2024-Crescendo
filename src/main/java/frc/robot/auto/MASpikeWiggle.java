@@ -6,6 +6,7 @@ import java.util.Optional;
 import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
@@ -32,12 +33,14 @@ public class MASpikeWiggle extends AutoRoutine {
                 PathPlannerPath startToSpike = AutoPaths.loadPath("MASW Amp Start to Spike");
                 PathPlannerPath ampSpikeToCenterSpike = AutoPaths.loadPath("MASW Amp Spike to Center Spike");
                 PathPlannerPath centerSpikeToPodiumSpike = AutoPaths.loadPath("MASW Center Spike to Podium Spike");
-                // PathPlannerPath podiumSpikeToWing = AutoPaths.loadPath("MASW Podium Spike to Amp Wing");
+                PathPlannerPath podiumSpikeToCenter = AutoPaths.loadPath("MASW Podium Spike to Center");
+                PathPlannerPath centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
 
                 var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
                 var ampSpikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
-                var centerSpikeShot = AllianceFlipUtil.apply(ampSpikeToCenterSpike.getPoint(startToSpike.numPoints() - 1).position);
-                var podiumSpikeShot = AllianceFlipUtil.apply(centerSpikeToPodiumSpike.getPoint(startToSpike.numPoints() - 1).position);
+                var centerSpikeShot = AllianceFlipUtil.apply(ampSpikeToCenterSpike.getPoint(ampSpikeToCenterSpike.numPoints() - 1).position);
+                var podiumSpikeShot = AllianceFlipUtil.apply(centerSpikeToPodiumSpike.getPoint(centerSpikeToPodiumSpike.numPoints() - 1).position);
+                var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
 
                 return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
                     .andThen(
@@ -105,11 +108,30 @@ public class MASpikeWiggle extends AutoRoutine {
                             .andThen(
                                 AutoCommons.autoAim(podiumSpikeShot, drive.rotationalSubsystem)
                             )
+                        ),
+                        AutoCommons.shootWhenReady(centerShot, drive, shooter, pivot, kicker)
+                        .deadlineWith(
+                            AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
+                            Commands.runOnce(noteVision::clearMemory)
+                            .andThen(
+                                AutoCommons.followPathFlipped(podiumSpikeToCenter, drive)
+                                .onlyWhile(() -> !noteVision.hasTarget())
+                                .andThen(
+                                    intake.intake(drive::getChassisSpeeds)
+                                    .deadlineWith(
+                                        noteVision.autoIntake(() -> 1.5, drive, intake)
+                                    ),
+                                    AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
+                                    .alongWith(
+                                        AutoCommons.followPathFlipped(centerToWing, drive.translationSubsystem)
+                                    )
+                                )
+                            )
                         )
-                        // ,
-                        // AutoCommons.followPathFlipped(podiumSpikeToWing, drive)
-                        // .onlyWhile(() -> !noteVision.hasTarget())
+                        // Commands.runOnce(noteVision::clearMemory)
                         // .andThen(
+                        //     AutoCommons.followPathFlipped(podiumSpikeToWing, drive)
+                        //     .onlyWhile(() -> !noteVision.hasTarget()),
                         //     intake.intake(drive::getChassisSpeeds)
                         //     .deadlineWith(
                         //         noteVision.autoIntake(() -> 1.5, drive, intake)
