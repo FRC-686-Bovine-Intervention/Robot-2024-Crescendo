@@ -22,8 +22,10 @@ import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.util.Alert;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.MathExtraUtil;
+import frc.robot.util.Alert.AlertType;
 
 public class AutoCommons {
     public static enum StartPosition {
@@ -73,21 +75,21 @@ public class AutoCommons {
         var FORR = getFORR(pos);
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
-        // return kicker.kick().asProxy().onlyIf(() -> 
-        //     // kicker.hasNote() && 
-        //     shooter.readyToShoot() && 
-        //     pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
-        //     MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
-        //     MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
-        // ).repeatedly().until(shooter::endingCommand);
-        return Commands.waitUntil(() -> 
+        return kicker.kick().asProxy().onlyIf(() -> 
             // kicker.hasNote() && 
             shooter.readyToShoot() && 
             pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
             MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
             MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
-        )
-        .andThen(kicker.kick().asProxy());
+        ).repeatedly().until(kicker::sensorFallingEdge);
+        // return Commands.waitUntil(() -> 
+        //     // kicker.hasNote() && 
+        //     shooter.readyToShoot() && 
+        //     pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
+        //     MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
+        //     MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
+        // )
+        // .andThen(kicker.kick().asProxy());
     }
 
     private static Translation2d getFORR(Translation2d pos) {
@@ -110,8 +112,8 @@ public class AutoCommons {
     }
 
     public static class AutoPaths {
-        public static final String toCenterLine = "%s Start";
-        public static final String fromCenterLine = "%s Back";
+        // public static final String toCenterLine = "%s Start";
+        // public static final String fromCenterLine = "%s Back";
 
         public static final String startToSpike = "%s Start to Spike";
 
@@ -119,10 +121,15 @@ public class AutoCommons {
         private static boolean preloading;
         public static void preload() {
             preloading = true;
-            loadPath(String.format(AutoPaths.startToSpike, "Amp"));
+            // loadPath(String.format(AutoPaths.startToSpike, "Amp"));
+            loadPath("MASW Amp Start to Spike");
             loadPath("MASW Amp Spike to Center Spike");
             loadPath("MASW Center Spike to Podium Spike");
             loadPath("MASW Podium Spike to Amp Wing");
+            loadPath("R6N Amp Start to Spike");
+            loadPath("R6N Amp Spike to Center");
+            loadPath("R6N Center to Amp Wing");
+            loadPath("R6N Amp Wing to Center");
             preloading = false;
             System.out.println("[Init AutoPaths] Loaded paths");
         }
@@ -131,7 +138,7 @@ public class AutoCommons {
             if(loadedPaths.containsKey(name)) {
                 return loadedPaths.get(name);
             } else {
-                if(!preloading) DriverStation.reportWarning("[AutoPaths] Loading \"" + name + "\" which wasn't preloaded. Please add path to AutoPaths.preload()", false);
+                if(!preloading) new Alert("[AutoPaths] Loading \"" + name + "\" which wasn't preloaded. Please add path to AutoPaths.preload()", AlertType.WARNING).set(true);
                 var path = PathPlannerPath.fromPathFile(name);
                 loadedPaths.put(name, path);
                 return path;

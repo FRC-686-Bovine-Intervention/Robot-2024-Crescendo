@@ -26,15 +26,16 @@ public class Rush6Note extends AutoRoutine {
         super("Rush 6 Note",
             List.of(startPosition),
             () -> {
-                var startToSpike = AutoPaths.loadPath(String.format(AutoPaths.startToSpike, "Amp"));
-                var ampSpikeToCenter = AutoPaths.loadPath("Amp Spike To Center");
-                var centerToAmpWingStop = AutoPaths.loadPath("Center to Amp Wing With Stop");
+                var startToSpike = AutoPaths.loadPath("R6N Amp Start to Spike");
+                var ampSpikeToCenter = AutoPaths.loadPath("R6N Amp Spike to Center");
+                var centerToAmpWing = AutoPaths.loadPath("R6N Center to Amp Wing");
+                var ampWingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center");
                 // var ampWingToCenterSpike = AutoPaths.loadPath("Amp Wing to Center Spike");
                 // var centerSpikeToPodiumSpike = AutoPaths.loadPath("Center Spike to Podium Spike");
 
                 var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
                 var ampSpikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
-                var centerShot1 = AllianceFlipUtil.apply(centerToAmpWingStop.getPoint(centerToAmpWingStop.numPoints() - 1).position);
+                var centerShot1 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
                 var centerShot2 = centerShot1;
                 // var centerSpikeShot = AllianceFlipUtil.apply(ampWingToCenterSpike.getPoint(centerSpikeToPodiumSpike.numPoints() - 1).position);
                 // var podiumSpikeShot = AllianceFlipUtil.apply(centerSpikeToPodiumSpike.getPoint(centerSpikeToPodiumSpike.numPoints() - 1).position);
@@ -67,7 +68,7 @@ public class Rush6Note extends AutoRoutine {
                                     ),
                                     AutoCommons.autoAim(centerShot2, drive.rotationalSubsystem)
                                     .alongWith(
-                                        AutoCommons.followPathFlipped(centerToAmpWingStop, drive.translationSubsystem)
+                                        AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
                                     )
                                 )
                             )
@@ -78,7 +79,7 @@ public class Rush6Note extends AutoRoutine {
                             AutoCommons.autoAim(centerShot2, shooter, kicker, pivot),
                             Commands.runOnce(noteVision::clearMemory)
                             .andThen(
-                                AutoCommons.followPathFlipped(ampSpikeToCenter, drive)
+                                AutoCommons.followPathFlipped(ampWingToCenter, drive)
                                 .onlyWhile(() -> !noteVision.hasTarget())
                                 .andThen(
                                     intake.intake(drive::getChassisSpeeds)
@@ -87,7 +88,7 @@ public class Rush6Note extends AutoRoutine {
                                     ),
                                     AutoCommons.autoAim(centerShot2, drive.rotationalSubsystem)
                                     .alongWith(
-                                        AutoCommons.followPathFlipped(centerToAmpWingStop, drive.translationSubsystem)
+                                        AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
                                     )
                                 )
                             )

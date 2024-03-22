@@ -43,7 +43,8 @@ public class PivotIOFalcon implements PivotIO {
         pivotRightMotor.getConfigurator().apply(motorConfig);
         
         var encoderConfig = new CANcoderConfiguration();
-        encoderConfig.MagnetSensor.MagnetOffset = PivotConstants.pivotMagnetOffset;
+        pivotEncoder.getConfigurator().refresh(encoderConfig);
+        // encoderConfig.MagnetSensor.MagnetOffset = PivotConstants.pivotMagnetOffset;
         encoderConfig.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         pivotEncoder.getConfigurator().apply(encoderConfig);

@@ -14,25 +14,25 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Amp Start to Spike"
+            "pathName": "R6N Amp Start to Spike"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Amp Spike To Center"
+            "pathName": "R6N Amp Spike to Center"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Center to Amp Wing With Stop"
+            "pathName": "R6N Center to Amp Wing With Stop"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Amp Spike To Center"
+            "pathName": "R6N Amp Spike to Center"
           }
         },
         {

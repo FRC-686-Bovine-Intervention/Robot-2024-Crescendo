@@ -23,7 +23,7 @@ public class CleanSpikes extends AutoRoutine {
         super("Clean Spikes",
             List.of(),
             () -> {
-                PathPlannerPath startToSpike = AutoPaths.loadPath(String.format(AutoPaths.startToSpike, "Amp"));
+                PathPlannerPath startToSpike = AutoPaths.loadPath("MASW Amp Start to Spike");
                 PathPlannerPath ampSpikeToCenterSpike = AutoPaths.loadPath("Amp Spike to Center Spike");
                 PathPlannerPath centerSpikeToPodiumSpike = AutoPaths.loadPath("Center Spike to Podium Spike");
 
