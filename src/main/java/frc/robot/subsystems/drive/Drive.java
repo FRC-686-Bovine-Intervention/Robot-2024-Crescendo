@@ -37,6 +37,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
@@ -47,6 +48,7 @@ import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.MathExtraUtil;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.pathplanner.AutoBuilder;
@@ -68,14 +70,14 @@ public class Drive extends VirtualSubsystem {
 
     private boolean isCharacterizing = false;
     private double characterizationVolts = 0.0;
-    private final LoggedTunableNumber rotationCorrection = new LoggedTunableNumber("Drive/Rotation Correction", 0.25);
+    private final LoggedTunableNumber rotationCorrection = new LoggedTunableNumber("Drive/Rotation Correction", 0.125);
 
     private ChassisSpeeds setpoint = new ChassisSpeeds();
     private SwerveModuleState[] lastSetpointStates = new SwerveModuleState[] {
-            new SwerveModuleState(),
-            new SwerveModuleState(),
-            new SwerveModuleState(),
-            new SwerveModuleState()
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState()
     };
     private Timer lastMovementTimer = new Timer(); // used for brake mode
 
@@ -94,7 +96,7 @@ public class Drive extends VirtualSubsystem {
         ModuleIO[] moduleIOs = new ModuleIO[]{flModuleIO, frModuleIO, blModuleIO, brModuleIO};
         for(DriveModulePosition position : DriveModulePosition.values()) {
             System.out.println("[Init Drive] Instantiating Module " + position.name() + " with Module IO: " + moduleIOs[position.ordinal()].getClass().getSimpleName());
-            modules[position.ordinal()] = new Module(moduleIOs[position.ordinal()], position.ordinal());
+            modules[position.ordinal()] = new Module(moduleIOs[position.ordinal()], position);
         }
         lastMovementTimer.start();
         for (var module : modules) {
@@ -156,8 +158,8 @@ public class Drive extends VirtualSubsystem {
             }
 
             // Clear setpoint logs
-            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+            Logger.recordOutput("Drive/SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("Drive/SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
 
         } else if (isCharacterizing) {
             // Run in characterization mode
@@ -166,24 +168,16 @@ public class Drive extends VirtualSubsystem {
             }
 
             // Clear setpoint logs
-            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+            Logger.recordOutput("Drive/SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("Drive/SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
 
         } else {
-            /**
-             * Correction for swerve discrete time control issue. Borrowed from 254:
-             * https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964/5
-             */
-
-            // TODO: replace with ChassisSpeeds.discretize when available in 2024
-            ChassisSpeeds correctedSpeeds = ChassisSpeedsdiscretize(setpoint, rotationCorrection.get());
+            ChassisSpeeds correctedSpeeds = ChassisSpeeds.discretize(setpoint, rotationCorrection.get());
             SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(correctedSpeeds);
             SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeedMetersPerSec);
 
             // Set to last angles if zero
-            if (correctedSpeeds.vxMetersPerSecond == 0.0
-                    && correctedSpeeds.vyMetersPerSecond == 0.0
-                    && correctedSpeeds.omegaRadiansPerSecond == 0) {
+            if (MathExtraUtil.isNear(new ChassisSpeeds(), correctedSpeeds, 0.05, DriveConstants.headingTolerance)) {
                 for (int i = 0; i < DriveConstants.numDriveModules; i++) {
                     setpointStates[i] = new SwerveModuleState(0.0, lastSetpointStates[i].angle);
                 }
@@ -197,8 +191,8 @@ public class Drive extends VirtualSubsystem {
             }
 
             // Log setpoint states
-            Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedStates);
+            Logger.recordOutput("Drive/SwerveStates/Setpoints", setpointStates);
+            Logger.recordOutput("Drive/SwerveStates/SetpointsOptimized", optimizedStates);
         }
 
         // Log measured states
@@ -206,7 +200,7 @@ public class Drive extends VirtualSubsystem {
         for (int i = 0; i < DriveConstants.numDriveModules; i++) {
             measuredStates[i] = modules[i].getState();
         }
-        Logger.recordOutput("SwerveStates/Measured", measuredStates);
+        Logger.recordOutput("Drive/SwerveStates/Measured", measuredStates);
         lastMeasuredStates = measuredStates;
 
         // Update odometry
@@ -320,6 +314,10 @@ public class Drive extends VirtualSubsystem {
             driveVelocity(0);
         }
 
+        public Command spin(DoubleSupplier omega) {
+            return Commands.runEnd(() -> driveVelocity(omega.getAsDouble()), this::stop, this);
+        }
+
         public Command pidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier) {
             var subsystem = this;
             return new Command() {
@@ -331,13 +329,16 @@ public class Drive extends VirtualSubsystem {
                     headingPID.setTolerance(DriveConstants.headingTolerance);
                 }
                 private Rotation2d desiredHeading;
+                private boolean headingSet;
                 @Override
                 public void initialize() {
                     desiredHeading = drive.getPose().getRotation();
                 }
                 @Override
                 public void execute() {
-                    headingSupplier.get().ifPresent((r) -> desiredHeading = r);
+                    var heading = headingSupplier.get();
+                    headingSet = heading.isPresent();
+                    heading.ifPresent((r) -> desiredHeading = r);
                     double turnInput = headingPID.calculate(drive.getRotation().getRadians(), desiredHeading.getRadians());
                     turnInput = headingPID.atSetpoint() ? 0 : turnInput;
                     turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
@@ -345,109 +346,59 @@ public class Drive extends VirtualSubsystem {
                 }
                 @Override
                 public void end(boolean interrupted) {
-                    driveVelocity(0);
-                }
-            };
-        }
-
-        public static LazyOptional<Rotation2d> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
-            return new LazyOptional<Rotation2d>() {
-                private final Timer preciseTurnTimer = new Timer();
-                private final double preciseTurnTimeThreshold = 0.5;
-                private Optional<Rotation2d> outputFilter(Rotation2d i) {
-                    return Optional.of(i.minus(forwardDirectionSupplier.get()));
+                    stop();
                 }
                 @Override
-                public Optional<Rotation2d> get() {
-                    if(joystick.magnitude() == 0) {
-                        preciseTurnTimer.restart();
-                        return Optional.empty();
-                    }
-                    var joyVec = new Translation2d(joystick.x().getAsDouble(), joystick.y().getAsDouble());
-                    joyVec = SpectatorType.getCurrentType().toField(joyVec);
-                    Rotation2d joyHeading = AllianceFlipUtil.apply(Rotation2d.fromRadians(Math.atan2(joyVec.getY(), joyVec.getX())), FieldFlipType.CenterPointFlip);
-                    if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
-                        return outputFilter(joyHeading);
-                    }
-                    var snapPoints = snapPointsSupplier.get();
-                    int smallestDistanceIndex = 0;
-                    double smallestDistance = Double.MAX_VALUE;
-                    for(int i = 0; i < snapPoints.length; i++) {
-                        var dist = Math.abs(joyHeading.minus(AllianceFlipUtil.apply(snapPoints[i])).getRadians());
-                        if(dist < smallestDistance) {
-                            smallestDistance = dist;
-                            smallestDistanceIndex = i;
-                        }
-                    }
-                    return outputFilter(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
+                public boolean isFinished() {
+                    return !headingSet && headingPID.atSetpoint();
                 }
             };
         }
 
-        public static LazyOptional<Rotation2d> pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
-            return () -> posToPointTo.get().map((pointTo) -> Rotation2d.fromRadians(Math.atan2(
-                pointTo.getY() - RobotState.getInstance().getPose().getY(),
-                pointTo.getX() - RobotState.getInstance().getPose().getX()
-            )).minus(forward.get()));
+        public Command headingFromJoystick(Joystick joystick, Rotation2d[] snapPoints, Supplier<Rotation2d> forwardDirectionSupplier) {
+            return pidControlledHeading(
+                new LazyOptional<Rotation2d>() {
+                    private final Timer preciseTurnTimer = new Timer();
+                    private final double preciseTurnTimeThreshold = 0.5;
+                    private Optional<Rotation2d> outputMap(Rotation2d i) {
+                        return Optional.of(i.minus(forwardDirectionSupplier.get()));
+                    }
+                    @Override
+                    public Optional<Rotation2d> get() {
+                        if(joystick.magnitude() == 0) {
+                            preciseTurnTimer.restart();
+                            return Optional.empty();
+                        }
+                        var joyVec = new Translation2d(joystick.x().getAsDouble(), joystick.y().getAsDouble());
+                        joyVec = SpectatorType.getCurrentType().toField(joyVec);
+                        Rotation2d joyHeading = AllianceFlipUtil.apply(new Rotation2d(joyVec.getX(), joyVec.getY()), FieldFlipType.CenterPointFlip);
+                        if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
+                            return outputMap(joyHeading);
+                        }
+                        int smallestDistanceIndex = 0;
+                        double smallestDistance = Double.MAX_VALUE;
+                        for(int i = 0; i < snapPoints.length; i++) {
+                            var dist = Math.abs(joyHeading.minus(AllianceFlipUtil.apply(snapPoints[i])).getRadians());
+                            if(dist < smallestDistance) {
+                                smallestDistance = dist;
+                                smallestDistanceIndex = i;
+                            }
+                        }
+                        return outputMap(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
+                    }
+                }
+            );
+        }
+
+        public Command pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
+            return pidControlledHeading(
+                () -> posToPointTo.get().map((pointTo) -> {
+                    var FORR = pointTo.minus(RobotState.getInstance().getPose().getTranslation());
+                    return new Rotation2d(FORR.getX(), FORR.getY()).minus(forward.get());
+                })
+            );
         }
     }
-
-    // TODO: remove this when 2024 WPILib comes out
-    /**
-     * Discretizes a continuous-time chassis speed.
-     *
-     * <p>This function converts a continous-time chassis speed into a discrete-time one such that
-     * when the discrete-time chassis speed is applied for one timestep, the robot moves as if the
-     * velocity components are independent (i.e., the robot moves v_x * dt along the x-axis, v_y * dt
-     * along the y-axis, and omega * dt around the z-axis).
-     *
-     * <p>This is useful for compensating for translational skew when translating and rotating a
-     * swerve drivetrain.
-     *
-     * @param vxMetersPerSecond Forward velocity.
-     * @param vyMetersPerSecond Sideways velocity.
-     * @param omegaRadiansPerSecond Angular velocity.
-     * @param dtSeconds The duration of the timestep the speeds should be applied for.
-     * @return Discretized ChassisSpeeds.
-     */
-    public static ChassisSpeeds ChassisSpeedsdiscretize(
-        double vxMetersPerSecond,
-        double vyMetersPerSecond,
-        double omegaRadiansPerSecond,
-        double dtSeconds) {
-        var desiredDeltaPose =
-            new Pose2d(
-                vxMetersPerSecond * dtSeconds,
-                vyMetersPerSecond * dtSeconds,
-                new Rotation2d(omegaRadiansPerSecond * dtSeconds));
-        var twist = new Pose2d().log(desiredDeltaPose);
-        return new ChassisSpeeds(twist.dx / dtSeconds, twist.dy / dtSeconds, twist.dtheta / dtSeconds);
-    }
-
-    /**
-     * Discretizes a continuous-time chassis speed.
-     *
-     * <p>This function converts a continous-time chassis speed into a discrete-time one such that
-     * when the discrete-time chassis speed is applied for one timestep, the robot moves as if the
-     * velocity components are independent (i.e., the robot moves v_x * dt along the x-axis, v_y * dt
-     * along the y-axis, and omega * dt around the z-axis).
-     *
-     * <p>This is useful for compensating for translational skew when translating and rotating a
-     * swerve drivetrain.
-     *
-     * @param continuousSpeeds The continuous speeds.
-     * @param dtSeconds The duration of the timestep the speeds should be applied for.
-     * @return Discretized ChassisSpeeds.
-     */
-    public static ChassisSpeeds ChassisSpeedsdiscretize(ChassisSpeeds continuousSpeeds, double dtSeconds) {
-        return ChassisSpeedsdiscretize(
-            continuousSpeeds.vxMetersPerSecond,
-            continuousSpeeds.vyMetersPerSecond,
-            continuousSpeeds.omegaRadiansPerSecond,
-            dtSeconds);
-    }
-
-
 
     /**
      * Runs the drive at the desired velocity.

@@ -26,39 +26,39 @@ public class FieldOrientedDrive extends Command {
 	// private final ToDoubleBiFunction<Rotation2d, Optional<Rotation2d>> headingToTurnRate;
 	// private Optional<Rotation2d> override;
 
-	public static LazyOptional<Rotation2d> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
-		return new LazyOptional<Rotation2d>() {
-			private final Timer preciseTurnTimer = new Timer();
-			private final double preciseTurnTimeThreshold = 0.5;
-			private Optional<Rotation2d> outputFilter(Rotation2d i) {
-				return Optional.of(i.minus(forwardDirectionSupplier.get()));
-			}
-			@Override
-			public Optional<Rotation2d> get() {
-				if(joystick.magnitude() == 0) {
-					preciseTurnTimer.restart();
-					return Optional.empty();
-				}
-				var joyVec = new Translation2d(joystick.x().getAsDouble(), joystick.y().getAsDouble());
-				joyVec = SpectatorType.getCurrentType().toField(joyVec);
-				Rotation2d joyHeading = AllianceFlipUtil.apply(Rotation2d.fromRadians(Math.atan2(joyVec.getY(), joyVec.getX())), FieldFlipType.CenterPointFlip);
-				if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
-					return outputFilter(joyHeading);
-				}
-				var snapPoints = snapPointsSupplier.get();
-				int smallestDistanceIndex = 0;
-				double smallestDistance = Double.MAX_VALUE;
-				for(int i = 0; i < snapPoints.length; i++) {
-					var dist = Math.abs(joyHeading.minus(AllianceFlipUtil.apply(snapPoints[i])).getRadians());
-					if(dist < smallestDistance) {
-						smallestDistance = dist;
-						smallestDistanceIndex = i;
-					}
-				}
-				return outputFilter(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
-			}
-		};
-	}
+	// public static LazyOptional<Rotation2d> headingFromJoystick(Joystick joystick, Supplier<Rotation2d[]> snapPointsSupplier, Supplier<Rotation2d> forwardDirectionSupplier) {
+	// 	return new LazyOptional<Rotation2d>() {
+	// 		private final Timer preciseTurnTimer = new Timer();
+	// 		private final double preciseTurnTimeThreshold = 0.5;
+	// 		private Optional<Rotation2d> outputFilter(Rotation2d i) {
+	// 			return Optional.of(i.minus(forwardDirectionSupplier.get()));
+	// 		}
+	// 		@Override
+	// 		public Optional<Rotation2d> get() {
+	// 			if(joystick.magnitude() == 0) {
+	// 				preciseTurnTimer.restart();
+	// 				return Optional.empty();
+	// 			}
+	// 			var joyVec = new Translation2d(joystick.x().getAsDouble(), joystick.y().getAsDouble());
+	// 			joyVec = SpectatorType.getCurrentType().toField(joyVec);
+	// 			Rotation2d joyHeading = AllianceFlipUtil.apply(Rotation2d.fromRadians(Math.atan2(joyVec.getY(), joyVec.getX())), FieldFlipType.CenterPointFlip);
+	// 			if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
+	// 				return outputFilter(joyHeading);
+	// 			}
+	// 			var snapPoints = snapPointsSupplier.get();
+	// 			int smallestDistanceIndex = 0;
+	// 			double smallestDistance = Double.MAX_VALUE;
+	// 			for(int i = 0; i < snapPoints.length; i++) {
+	// 				var dist = Math.abs(joyHeading.minus(AllianceFlipUtil.apply(snapPoints[i])).getRadians());
+	// 				if(dist < smallestDistance) {
+	// 					smallestDistance = dist;
+	// 					smallestDistanceIndex = i;
+	// 				}
+	// 			}
+	// 			return outputFilter(AllianceFlipUtil.apply(snapPoints[smallestDistanceIndex]));
+	// 		}
+	// 	};
+	// }
 
 	// public static LazyOptional<Rotation2d> pointTo(Supplier<Optional<Translation2d>> posToPointTo, Supplier<Rotation2d> forward) {
     //     return () -> posToPointTo.get().map((pointTo) -> Rotation2d.fromRadians(Math.atan2(

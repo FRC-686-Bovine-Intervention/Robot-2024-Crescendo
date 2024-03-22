@@ -28,7 +28,7 @@ public class BarAnimation extends LEDAnimation {
     }
 
     @Override
-    protected void runAnimation(LEDManager manager) {
+    public void execute() {
         var bars = barSupplier.get().stream().sorted((BarData a, BarData b) -> (int)Math.signum(a.percentage - b.percentage)).toList();
         for(LEDStrip ledStrip : strips) {
             int barIndex = 0;

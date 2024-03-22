@@ -28,7 +28,6 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
-import frc.robot.util.MathExtraUtil;
 import frc.robot.util.VirtualSubsystem;
 
 public class NoteVision extends VirtualSubsystem {
@@ -147,13 +146,14 @@ public class NoteVision extends VirtualSubsystem {
 
     public void clearMemory() {
         noteMemories.clear();
+        optIntakeTarget = Optional.empty();
     }
 
     public Command autoIntake(DoubleSupplier throttle, Drive drive, Intake intake) {
         return 
             drive.translationSubsystem.fieldRelative(getAutoIntakeTransSpeed(throttle).orElseGet(ChassisSpeeds::new))
             .alongWith(
-                drive.rotationalSubsystem.pidControlledHeading(Drive.Rotational.pointTo(autoIntakeTargetLocation(), () -> RobotConstants.intakeForward))
+                drive.rotationalSubsystem.pointTo(autoIntakeTargetLocation(), () -> RobotConstants.intakeForward)
             )
             .onlyWhile(() -> !intake.hasNote())
             .withName("Auto Intake")

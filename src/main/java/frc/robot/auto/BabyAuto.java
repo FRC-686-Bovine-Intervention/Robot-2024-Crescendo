@@ -32,7 +32,7 @@ public class BabyAuto extends AutoRoutine {
             default:
             case Amp:
             case SubwooferAmp:
-                return (AutoPaths.loadPath(String.format(AutoPaths.startToSpike, "Amp")));
+                return (AutoPaths.loadPath("MASW Amp Start to Spike"));
             case SubwooferFront:
                 return (AutoPaths.loadPath(String.format(AutoPaths.startToSpike, "SubwooferFront")));
             case Source:

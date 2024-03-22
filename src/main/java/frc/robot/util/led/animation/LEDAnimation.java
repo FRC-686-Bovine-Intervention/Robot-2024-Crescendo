@@ -1,11 +1,15 @@
 package frc.robot.util.led.animation;
 
+import java.util.Set;
+
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.util.led.strips.LEDStrip;
 
-public abstract class LEDAnimation {
-
+public abstract class LEDAnimation extends Command {
     public LEDAnimation(int priority) {
         this.priority = priority;
     }
@@ -16,25 +20,34 @@ public abstract class LEDAnimation {
 
     public final Timer animationTimer = new Timer();
 
-    public final boolean isRunning() {return isRunning(LEDManager.getInstance());}
-    public final boolean isRunning(LEDManager manager) {return manager.isAnimationRunning(this);}
-
-    public final boolean start() {return start(LEDManager.getInstance());}
-    public final boolean start(LEDManager manager) {
-        return manager.play(this);
+    @Override
+    public void schedule() {
+        LEDManager.getInstance().schedule(this);
     }
-
-    public final boolean pause() {return pause(LEDManager.getInstance());}
-    public final boolean pause(LEDManager manager) {
-        return manager.pause(this);
+    @Override
+    public void cancel() {
+        LEDManager.getInstance().cancel(this);
     }
-
-    public final boolean stop() {return stop(LEDManager.getInstance());}
-    public final boolean stop(LEDManager manager) {
-        return manager.stop(this);
+    @Override
+    public boolean isScheduled() {
+        return LEDManager.getInstance().isScheduled(this);
     }
-
-    protected abstract void runAnimation(LEDManager manager);
+    @Override
+    public final boolean hasRequirement(Subsystem requirement) {
+        return false;
+    }
+    @Override
+    public final boolean runsWhenDisabled() {
+        return true;
+    }
+    @Override
+    public final Set<Subsystem> getRequirements() {
+        return Set.of();
+    }
+    @Override
+    public ParallelRaceGroup withTimeout(double seconds) {
+        return asProxy().withTimeout(seconds);
+    }
 
     public static class StripCounterAnimation extends LEDAnimation {
         private final LEDStrip[] strips;
@@ -45,7 +58,7 @@ public abstract class LEDAnimation {
         }
 
         @Override
-        protected void runAnimation(LEDManager manager) {
+        public void execute() {
             for(LEDStrip ledStrip : strips) {
                 for(int i = 0; i < ledStrip.getLength(); i++) {
                     int ind = i + 1;

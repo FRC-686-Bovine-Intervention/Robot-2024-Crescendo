@@ -98,8 +98,9 @@ public final class Constants {
 
     public static final class DIOPorts {
         // HID
-        public static final int brakeSwitchPort = 9;
-        public static final int ledSwitchPort = 8;
+        public static final int redButtonPort = 2;
+        public static final int whiteButtonPort = 3;
+        public static final int yellowButtonPort = 4;
 
         // Intake
         public static final int intakeSensorPort = 0;
@@ -242,7 +243,7 @@ public final class Constants {
     }
 
     public static final class PivotConstants {
-        public static final double pivotMagnetOffset = -0.3623046875;//-0.3623046875;//-0.3212890625;//-0.35205078125;//-0.353759765625;//-0.332763671875;//-0.330322265625;//0.32958984375;
+        public static final double pivotMagnetOffset = -0.35400390625;//-0.3623046875;//-0.3623046875;//-0.3212890625;//-0.35205078125;//-0.353759765625;//-0.332763671875;//-0.330322265625;//0.32958984375;
         public static final GearRatio motorToMechanismRatio = new GearRatio()
             .gear(+8).gear(+72).axle()
             .gear(+10).gear(+100).axle()

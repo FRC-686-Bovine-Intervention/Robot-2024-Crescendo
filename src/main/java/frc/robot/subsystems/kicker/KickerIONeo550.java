@@ -8,7 +8,10 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.Constants;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DIOPorts;
 
@@ -17,6 +20,7 @@ public class KickerIONeo550 implements KickerIO {
     private final CANSparkMax rightMotor = new CANSparkMax(CANDevices.kickerRightID, MotorType.kBrushless);
 
     private final DigitalInput sensor = new DigitalInput(DIOPorts.kickerSensorPort);
+    private final Debouncer sensorDebouncer = new Debouncer(Constants.dtSeconds * 3, DebounceType.kBoth);
 
     public KickerIONeo550() {
         leftMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
@@ -26,7 +30,7 @@ public class KickerIONeo550 implements KickerIO {
 
     @Override
     public void updateInputs(KickerIOInputs inputs) {
-        inputs.notePresent = !sensor.get();
+        inputs.notePresent = sensorDebouncer.calculate(!sensor.get());
 
         inputs.leftMotor.updateFrom(leftMotor);
         inputs.rightMotor.updateFrom(rightMotor);
