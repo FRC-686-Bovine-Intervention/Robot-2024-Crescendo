@@ -177,7 +177,7 @@ public class Drive extends VirtualSubsystem {
             SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeedMetersPerSec);
 
             // Set to last angles if zero
-            if (MathExtraUtil.isNear(new ChassisSpeeds(), correctedSpeeds, 0.05, 0.15)) {
+            if (MathExtraUtil.isNear(new ChassisSpeeds(), correctedSpeeds, 0.05, DriveConstants.headingTolerance)) {
                 for (int i = 0; i < DriveConstants.numDriveModules; i++) {
                     setpointStates[i] = new SwerveModuleState(0.0, lastSetpointStates[i].angle);
                 }
@@ -329,13 +329,16 @@ public class Drive extends VirtualSubsystem {
                     headingPID.setTolerance(DriveConstants.headingTolerance);
                 }
                 private Rotation2d desiredHeading;
+                private boolean headingSet;
                 @Override
                 public void initialize() {
                     desiredHeading = drive.getPose().getRotation();
                 }
                 @Override
                 public void execute() {
-                    headingSupplier.get().ifPresent((r) -> desiredHeading = r);
+                    var heading = headingSupplier.get();
+                    headingSet = heading.isPresent();
+                    heading.ifPresent((r) -> desiredHeading = r);
                     double turnInput = headingPID.calculate(drive.getRotation().getRadians(), desiredHeading.getRadians());
                     turnInput = headingPID.atSetpoint() ? 0 : turnInput;
                     turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
@@ -344,6 +347,10 @@ public class Drive extends VirtualSubsystem {
                 @Override
                 public void end(boolean interrupted) {
                     stop();
+                }
+                @Override
+                public boolean isFinished() {
+                    return !headingSet && headingPID.atSetpoint();
                 }
             };
         }
