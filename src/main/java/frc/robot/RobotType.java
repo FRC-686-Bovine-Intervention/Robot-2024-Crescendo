@@ -13,9 +13,9 @@ public enum RobotType {
     }
 
     public static enum Mode {
-        REAL    (RobotType.ROBOT_2024_PRAC),
+        REAL    (RobotType.ROBOT_2024_COMP),
         SIM     (RobotType.ROBOT_2024_COMP),
-        REPLAY  (RobotType.ROBOT_2024_PRAC),
+        REPLAY  (RobotType.ROBOT_2024_COMP),
         ;
         private final RobotType defaultRobotType;
         Mode(RobotType defaultType) {
