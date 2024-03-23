@@ -357,7 +357,7 @@ public class RobotContainer {
             leds.noteAcquired()
         );
         new Trigger(intake::hasNote).and(DriverStation::isTeleopEnabled).whileTrue(
-            driveController.rumble(RumbleType.kBothRumble, 0.4)
+            driveController.rumble(RumbleType.kBothRumble, 0.2)
         );
     }
 
