@@ -38,4 +38,8 @@ public class EndgameTimerAnimation extends LEDAnimation {
             strip.setLED(index, color);
         });
     }
+    // @Override
+    // public boolean isFinished() {
+    //     return animationTimer.hasElapsed(31);
+    // }
 }

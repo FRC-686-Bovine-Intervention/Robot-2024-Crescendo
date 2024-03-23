@@ -275,13 +275,13 @@ public final class Constants {
             15,
             20,
             30,
-            15,
+            12,
         };
         public static final double[] acceptableSurfaceSpeed = new double[] {
             12,
             18,
             29.5,
-            10,
+            8,
         };
         public static final double[] angle = new double[] {
             // Degrees.of(59.39).in(Radians),

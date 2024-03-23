@@ -4,11 +4,15 @@ import java.util.Optional;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.RobotType;
 import frc.robot.RobotType.Mode;
 import frc.robot.util.VirtualSubsystem;
+import frc.robot.util.led.animation.EndgameTimerAnimation;
+import frc.robot.util.led.animation.FillAnimation;
 import frc.robot.util.led.animation.FlashingAnimation;
 import frc.robot.util.led.animation.LEDManager;
 import frc.robot.util.led.animation.ScrollingAnimation;
@@ -36,6 +40,8 @@ public class Leds extends VirtualSubsystem {
     private final LEDStrip fullRightStrip;
 
     private final LEDStrip fullSideStrips;
+
+    private final LEDStrip backMirroredStrip;
 
     public Leds() {
         System.out.println("[Init Leds] Instantiating Leds");
@@ -87,6 +93,8 @@ public class Leds extends VirtualSubsystem {
         fullRightStrip = rightStrip.concat(backRightStrip);
 
         fullSideStrips = fullLeftStrip.parallel(fullRightStrip);
+
+        backMirroredStrip = backRightStrip.reverse().parallel(backLeftStrip.reverse());
         
         // this.runners = new AnimationRunner[]{
         //     // new AnimationRunner(
@@ -169,6 +177,28 @@ public class Leds extends VirtualSubsystem {
             4,
             fullSideStrips
         ).schedule();
+
+        new Trigger(() -> DriverStation.getMatchType() != MatchType.None && DriverStation.isTeleopEnabled() && DriverStation.getMatchTime() <= 30)
+        .whileTrue(
+            new EndgameTimerAnimation(
+                4,
+                sideStrips
+            )
+        ).whileTrue(
+            new EndgameTimerAnimation(
+                4,
+                backMirroredStrip
+            )
+        );
+
+        new Trigger(DriverStation::isDisabled)
+        .whileTrue(
+            new FillAnimation(
+                1,
+                () -> (DriverStation.isDSAttached() ? Color.kGreen : Color.kOrange),
+                sideStrips.substrip(0, 2)
+            )
+        );
     }
 
     @Override
