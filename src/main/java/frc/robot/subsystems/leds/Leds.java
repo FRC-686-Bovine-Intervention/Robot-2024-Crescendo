@@ -208,10 +208,18 @@ public class Leds extends VirtualSubsystem {
 
     public Command noteAcquired() {
         return new FlashingAnimation(
-            5,
+            6,
             new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kGreen),
             TilingFunction.Sawtooth,
             fullSideStrips
         ).setPeriod(0.125).withTimeout(1);
+    }
+
+    public Command noteSecured() {
+        return new FillAnimation(
+            5,
+            Color.kLime,
+            sideStrips.substrip(15)
+        );
     }
 }

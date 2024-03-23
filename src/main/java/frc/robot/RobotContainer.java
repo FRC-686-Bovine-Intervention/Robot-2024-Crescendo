@@ -359,6 +359,11 @@ public class RobotContainer {
         new Trigger(intake::hasNote).and(DriverStation::isTeleopEnabled).whileTrue(
             driveController.rumble(RumbleType.kBothRumble, 0.2)
         );
+        
+        new Trigger(kicker::hasNote)
+        .whileTrue(
+            leds.noteSecured()
+        );
     }
 
     private void configureAutos() {
