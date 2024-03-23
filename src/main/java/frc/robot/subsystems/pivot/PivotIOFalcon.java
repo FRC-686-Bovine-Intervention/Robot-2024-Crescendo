@@ -52,7 +52,7 @@ public class PivotIOFalcon implements PivotIO {
         encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         pivotEncoder.getConfigurator().apply(encoderConfig);
 
-        pivotRightMotor.setControl(new StrictFollower(CANDevices.pivotLeftMotorID));
+        pivotRightMotor.setControl(new StrictFollower(pivotLeftMotor.getDeviceID()));
     }
 
     @Override
@@ -64,6 +64,9 @@ public class PivotIOFalcon implements PivotIO {
 
     @Override
     public void setPivotVoltage(double volts) {
+        if(!(pivotRightMotor.getAppliedControl() instanceof StrictFollower)) {
+            pivotRightMotor.setControl(new StrictFollower(pivotLeftMotor.getDeviceID()));
+        }
         pivotLeftMotor.setVoltage(volts);
     }
 
@@ -72,5 +75,6 @@ public class PivotIOFalcon implements PivotIO {
     @Override
     public void setCoast(boolean coast) {
         pivotLeftMotor.setControl(coast ? COAST_OUT : NEUTRAL_OUT);
+        pivotRightMotor.setControl(coast ? COAST_OUT : NEUTRAL_OUT);
     }
 }
