@@ -10,7 +10,9 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -66,6 +68,7 @@ import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
+import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.MathExtraUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
@@ -311,8 +314,14 @@ public class RobotContainer {
         driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
         driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
         driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
-        // driveController.rightStickButton().onTrue(Commands.runOnce(() -> drive.setPose(FieldConstants.subwooferFront)));
 
+
+        driveController.start().or(driveController.back()).onTrue(Commands.runOnce(() -> {
+            var offset = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
+            var rotation = drive.getRotation();
+            var pos = new Translation2d(rotation.getCos(), rotation.getSin()).times(-FieldConstants.subwooferToSpeakerDist);
+            drive.setPose(new Pose2d(pos.plus(offset), rotation));
+        }));
         // new Trigger(() -> 
         //     drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
         //     MathUtil.isNear(
