@@ -382,10 +382,10 @@ public class RobotContainer {
         // autoSelector.addRoutine(new SpikeMarkShots(this));
         // autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
         // autoSelector.addRoutine(new CleanSpikes(this));
-        autoSelector.addRoutine(new Rush6Note(this));
-        autoSelector.addRoutine(new BabyAuto(this));
-        autoSelector.addRoutine(new Source4Note(this));
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
+        autoSelector.addRoutine(new Rush6Note(this));
+        autoSelector.addRoutine(new Source4Note(this));
+        autoSelector.addRoutine(new BabyAuto(this));
     }
 
     /**
