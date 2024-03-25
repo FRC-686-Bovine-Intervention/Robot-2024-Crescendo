@@ -64,7 +64,7 @@ public class Rush6Note extends AutoRoutine {
                                 .andThen(
                                     intake.intake(drive::getChassisSpeeds)
                                     .deadlineWith(
-                                        noteVision.autoIntake(() -> 1.5, drive, intake)
+                                        noteVision.autoIntake(() -> 2, drive, intake)
                                     ),
                                     AutoCommons.autoAim(centerShot1, drive.rotationalSubsystem)
                                     .alongWith(
@@ -84,7 +84,7 @@ public class Rush6Note extends AutoRoutine {
                                 .andThen(
                                     intake.intake(drive::getChassisSpeeds)
                                     .deadlineWith(
-                                        noteVision.autoIntake(() -> 1.5, drive, intake)
+                                        noteVision.autoIntake(() -> 2, drive, intake)
                                     ),
                                     AutoCommons.autoAim(centerShot2, drive.rotationalSubsystem)
                                     .alongWith(

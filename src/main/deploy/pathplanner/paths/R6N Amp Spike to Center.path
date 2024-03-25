@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 6.638058924342457,
-        "y": 7.095872292487772
+        "x": 6.672205317986194,
+        "y": 6.55635927291673
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.355133190860931,
-        "y": 7.164165079775246
+        "x": 7.389279584504668,
+        "y": 6.624652060204204
       },
       "isLocked": false,
       "linkedName": null
@@ -31,7 +31,7 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.0,
-      "rotationDegrees": -166.5347919051883,
+      "rotationDegrees": 149.64188454123354,
       "rotateFast": false
     },
     {
@@ -68,7 +68,7 @@
   "reversed": false,
   "folder": "Rush 6 Note",
   "previewStartingState": {
-    "rotation": -165.17352002964444,
+    "rotation": 149.96671956400502,
     "velocity": 0
   },
   "useDefaultConstraints": false

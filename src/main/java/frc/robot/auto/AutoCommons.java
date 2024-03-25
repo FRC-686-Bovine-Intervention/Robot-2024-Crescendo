@@ -128,7 +128,7 @@ public class AutoCommons {
             loadPath("MASW Amp Start to Spike");
             loadPath("MASW Amp Spike to Center Spike");
             loadPath("MASW Center Spike to Podium Spike");
-            loadPath("MASW Podium Spike to Amp Wing");
+            loadPath("MASW Podium Spike to Center");
             loadPath("R6N Amp Start to Spike");
             loadPath("R6N Amp Spike to Center");
             loadPath("R6N Center to Amp Wing");
