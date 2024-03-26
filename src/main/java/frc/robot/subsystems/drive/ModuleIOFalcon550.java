@@ -21,6 +21,8 @@ import frc.robot.Constants;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
+import frc.robot.util.Alert;
+import frc.robot.util.Alert.AlertType;
 
 public class ModuleIOFalcon550 implements ModuleIO {
     private final TalonFX  driveMotor;
@@ -61,7 +63,13 @@ public class ModuleIOFalcon550 implements ModuleIO {
         setFramePeriods(driveMotor, true);
 
         zeroEncoders();
+
+        tempWarning = new Alert("Drive Temp", position.name() + " Module has exceeded 70C", AlertType.WARNING);
+        tempAlert = new Alert("Drive Temp", position.name() + " Module has exceeded 100C", AlertType.ERROR);
     }
+
+    private final Alert tempWarning;
+    private final Alert tempAlert;
 
     public void updateInputs(ModuleIOInputs inputs) {
         inputs.driveMotor.positionRad =       Units.rotationsToRadians(driveMotor.getPosition().getValue()) / DriveConstants.driveWheelGearReduction;
@@ -74,6 +82,9 @@ public class ModuleIOFalcon550 implements ModuleIO {
         inputs.turnMotor.velocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
         inputs.turnMotor.appliedVolts =       turnMotor.getAppliedOutput();
         inputs.turnMotor.currentAmps =        turnMotor.getOutputCurrent();
+
+        tempWarning.set(inputs.driveMotor.tempCelsius > 70);
+        tempAlert.set(driveMotor.getFault_DeviceTemp().getValue());
     }
 
     public void zeroEncoders() {

@@ -45,6 +45,10 @@ public class XboxController {
     public Trigger povLeft() {return hid.povLeft(CommandScheduler.getInstance().getDefaultButtonLoop()).castTo(Trigger::new);}
     public Trigger povUpLeft() {return hid.povUpLeft(CommandScheduler.getInstance().getDefaultButtonLoop()).castTo(Trigger::new);}
 
+    public boolean isConnected() {
+        return hid.isConnected();
+    }
+
     public void setRumble(RumbleType rumbleType, double value) {
         hid.setRumble(rumbleType, value);
     }
