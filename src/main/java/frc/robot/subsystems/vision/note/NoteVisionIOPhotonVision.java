@@ -65,7 +65,7 @@ public class NoteVisionIOPhotonVision implements NoteVisionIO {
             .toPose2d()
             .getTranslation();
 
-        var confidence = target.getArea() * NoteVision.confidencePerAreaPercent.get();
+        var confidence = Math.sqrt(target.getArea()) * NoteVision.confidencePerAreaPercent.get();
 
         return new TrackedNote(fieldPos, confidence);
     }

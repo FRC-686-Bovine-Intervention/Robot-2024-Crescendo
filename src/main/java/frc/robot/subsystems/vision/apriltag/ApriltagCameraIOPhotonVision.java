@@ -1,6 +1,5 @@
 package frc.robot.subsystems.vision.apriltag;
 
-import org.littletonrobotics.junction.Logger;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
@@ -42,7 +41,6 @@ public class ApriltagCameraIOPhotonVision implements ApriltagCameraIO {
         photonPoseEstimator.setReferencePose(RobotState.getInstance().getPose());
 
         var result = photonCam.getLatestResult();
-        Logger.recordOutput("Vision/Apriltags/Result", result);
         var optRobotPose = photonPoseEstimator.update(result);
         
         optRobotPose.ifPresent((e) -> {

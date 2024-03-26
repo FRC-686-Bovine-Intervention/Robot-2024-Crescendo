@@ -8,7 +8,7 @@ public interface NoteVisionIO {
     @AutoLog
     public static class NoteVisionIOInputs {
         public boolean connected;
-        public TrackedNote[] trackedNotes;
+        public TrackedNote[] trackedNotes = new TrackedNote[0];
     }
 
     public default void updateInputs(NoteVisionIOInputs inputs) {}

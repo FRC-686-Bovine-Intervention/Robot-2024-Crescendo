@@ -65,6 +65,7 @@ import frc.robot.subsystems.shooter.amp.AmpIO;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIOPhotonVision;
 import frc.robot.subsystems.vision.apriltag.ApriltagVision;
 import frc.robot.subsystems.vision.note.NoteVision;
+import frc.robot.subsystems.vision.note.NoteVisionIO;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
@@ -149,7 +150,7 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
                 amp = new Amp(new AmpIO() {});
-                noteVision = null;
+                noteVision = new NoteVision(new NoteVisionIO() {});
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
         }
