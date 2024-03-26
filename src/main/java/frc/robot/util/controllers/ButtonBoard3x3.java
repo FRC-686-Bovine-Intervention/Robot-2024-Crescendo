@@ -42,6 +42,10 @@ public class ButtonBoard3x3 {
     public Trigger povLeft() {return new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), () -> atAngle(0, true));}
     public Trigger povUpLeft() {return new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), () -> atAngle(135));}
 
+    public boolean isConnected() {
+        return hid.isConnected();
+    }
+
     private static final double tolerance = 0.2;
     private boolean atAngle(double angle) {
         return atAngle(angle, false);

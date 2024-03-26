@@ -401,9 +401,14 @@ public class RobotContainer {
         return autoSelector.getSelectedAutoCommand();
     }
 
+    private final Alert xboxConnect = new Alert("Controller Connection", "Xbox Controller (Port 0) not connected", AlertType.ERROR);
+    private final Alert buttonBoardConnect = new Alert("Controller Connection", "Button Board (Port 1) not connected", AlertType.WARNING);
+
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();
         Camera.logCameraOverrides();
+        xboxConnect.set(!driveController.isConnected());
+        buttonBoardConnect.set(!buttonBoard.isConnected());
         Logger.recordOutput("Ready to shoot", pivot.atPos() && shooter.readyToShoot());
     }
 
