@@ -1,5 +1,9 @@
 package frc.robot.subsystems.drive;
 
+import java.util.Queue;
+
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.NeutralOut;
@@ -16,6 +20,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkAbsoluteEncoder;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Constants;
 import frc.robot.Constants.CANDevices;
@@ -25,25 +30,30 @@ import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 
 public class ModuleIOFalcon550 implements ModuleIO {
-    private final TalonFX  driveMotor;
+    private final TalonFX driveMotor;
     private final CANSparkMax turnMotor;
     private final AbsoluteEncoder turnAbsoluteEncoder;
-    // private final RelativeEncoder turnRelativeEncoder;
     private final double initialOffsetRadians;
-    private final InvertedValue driveInverted;
+
+    private final StatusSignal<Double> drivePosition;
+    private final StatusSignal<Double> driveVelocity;
+    private final StatusSignal<Double> driveAppliedVolts;
+    private final StatusSignal<Double> driveSupplyCurrent;
+    private final StatusSignal<Double> driveTemperature;
+
+    private final Queue<Double> drivePositionQueue;
+    private final Queue<Double> turnPositionQueue;
 
     public ModuleIOFalcon550(DriveModulePosition position) {
         driveMotor = new TalonFX(position.driveMotorID, CANDevices.driveCanBusName);
         turnMotor = new CANSparkMax(position.turnMotorID, MotorType.kBrushless);
         turnAbsoluteEncoder = turnMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
-        // turnRelativeEncoder = turnMotor.getAlternateEncoder(SparkMaxAlternateEncoder.Type.kQuadrature, 8192);
-        driveInverted = position.driveInverted;
         initialOffsetRadians = Units.rotationsToRadians(position.cancoderOffsetRotations);
 
         /** Configure Drive Motors */
         var driveConfig = new TalonFXConfiguration();
         // change factory defaults here
-        driveConfig.MotorOutput.Inverted = driveInverted;
+        driveConfig.MotorOutput.Inverted = position.driveInverted;
         driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         driveConfig.MotorOutput.DutyCycleNeutralDeadband = 0.0;
         driveConfig.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.1875;
@@ -59,10 +69,22 @@ public class ModuleIOFalcon550 implements ModuleIO {
         turnMotor.setSmartCurrentLimit(40);
         turnMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus5, 20);
         turnMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
+        turnMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus2, (int) (1000.0 / DriveConstants.odometryFrequency));
 
         setFramePeriods(driveMotor, true);
 
         zeroEncoders();
+
+        drivePosition = driveMotor.getPosition();
+        driveVelocity = driveMotor.getVelocity();
+        driveAppliedVolts = driveMotor.getMotorVoltage();
+        driveSupplyCurrent = driveMotor.getSupplyCurrent();
+        driveTemperature = driveMotor.getDeviceTemp();
+
+        BaseStatusSignal.setUpdateFrequencyForAll(DriveConstants.odometryFrequency, drivePosition);
+
+        drivePositionQueue = PhoenixOdometryThread.getInstance().registerSignal(driveMotor, drivePosition);
+        turnPositionQueue = SparkMaxOdometryThread.getInstance().registerSignal(() -> MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians);
 
         tempWarning = new Alert("Drive Temp", position.name() + " Module has exceeded 70C", AlertType.WARNING);
         tempAlert = new Alert("Drive Temp", position.name() + " Module has exceeded 100C", AlertType.ERROR);
@@ -80,8 +102,25 @@ public class ModuleIOFalcon550 implements ModuleIO {
 
         inputs.turnMotor.positionRad =        MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians;
         inputs.turnMotor.velocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
-        inputs.turnMotor.appliedVolts =       turnMotor.getAppliedOutput();
+        inputs.turnMotor.appliedVolts =       turnMotor.getAppliedOutput() * turnMotor.getBusVoltage();
         inputs.turnMotor.currentAmps =        turnMotor.getOutputCurrent();
+
+        inputs.odometryDrivePositionsMeters = 
+            drivePositionQueue
+            .stream()
+            .mapToDouble(
+                (p) -> Units.rotationsToRadians(p) / DriveConstants.driveWheelGearReduction * DriveConstants.wheelRadiusMeters
+            )
+            .toArray()
+        ;
+        inputs.odometryTurnPositions = 
+            turnPositionQueue
+            .stream()
+            .map(Rotation2d::fromRadians)
+            .toArray(Rotation2d[]::new)
+        ;
+        drivePositionQueue.clear();
+        turnPositionQueue.clear();
 
         tempWarning.set(inputs.driveMotor.tempCelsius > 70);
         tempAlert.set(driveMotor.getFault_DeviceTemp().getValue());

@@ -8,13 +8,20 @@
 package frc.robot.subsystems.drive;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
+import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import com.pathplanner.lib.path.PathConstraints;
@@ -30,6 +37,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveWheelPositions;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
@@ -54,9 +62,19 @@ import frc.robot.util.controllers.Joystick;
 import frc.robot.util.pathplanner.AutoBuilder;
 
 public class Drive extends VirtualSubsystem {
+
+    public static final Lock odometryLock = new ReentrantLock();
+    public static final Queue<Double> timestampQueue = new ArrayBlockingQueue<>(20);
+
+    @AutoLog
+    public static class OdometryTimestampInputs {
+        public double[] timestamps = new double[] {};
+    }
+
+    private final OdometryTimestampInputsAutoLogged odometryTimestampInputs = new OdometryTimestampInputsAutoLogged();
+
     private final GyroIO gyroIO;
     private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
-    private Rotation2d prevGyroYaw = new Rotation2d();
 
     private final Module[] modules = new Module[DriveConstants.numDriveModules]; // FL, FR, BL, BR
 
@@ -67,6 +85,8 @@ public class Drive extends VirtualSubsystem {
         new SwerveModuleState(),
         new SwerveModuleState()
     };
+    private SwerveDriveWheelPositions lastPositions = null;
+    private double lastTime;
 
     private boolean isCharacterizing = false;
     private double characterizationVolts = 0.0;
@@ -106,7 +126,6 @@ public class Drive extends VirtualSubsystem {
         // initialize pose estimator
         Pose2d initialPoseMeters = FieldConstants.subwooferFront;
         RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
-        prevGyroYaw = getPose().getRotation();
 
         this.translationSubsystem = new Translational(this);
         this.rotationalSubsystem = new Rotational(this);
@@ -126,11 +145,73 @@ public class Drive extends VirtualSubsystem {
     }
 
     public void periodic() {
+        // Update & process inputs
+        odometryLock.lock();
+        // Read timestamps from odometry thread and fake sim timestamps
+        odometryTimestampInputs.timestamps = timestampQueue.stream().mapToDouble(Double::valueOf).toArray();
+        if (odometryTimestampInputs.timestamps.length == 0) {
+            odometryTimestampInputs.timestamps = new double[] {Timer.getFPGATimestamp()};
+        }
+        timestampQueue.clear();
+        Logger.processInputs("Drive/OdometryTimestamps", odometryTimestampInputs);
         // update IO inputs
         gyroIO.updateInputs(gyroInputs);
         Logger.processInputs("Drive/Gyro", gyroInputs);
-        for (var module : modules) {
-            module.periodic();
+        Arrays.stream(modules).forEach(Module::periodic);
+
+        odometryLock.unlock();
+
+        // Calculate the min odometry position updates across all modules
+        int minOdometryUpdates =
+            IntStream.of(
+                    odometryTimestampInputs.timestamps.length,
+                    Arrays.stream(modules)
+                        .mapToInt(module -> module.getModulePositions().length)
+                        .min()
+                        .orElse(0))
+                .min()
+                .orElse(0);
+        if (gyroInputs.connected) {
+            minOdometryUpdates = Math.min(gyroInputs.odometryYawPositions.length, minOdometryUpdates);
+        }
+        // Pass odometry data to robot state
+        for (int i = 0; i < minOdometryUpdates; i++) {
+            int odometryIndex = i;
+            Rotation2d yaw = gyroInputs.connected ? gyroInputs.odometryYawPositions[i] : null;
+            // Get all four swerve module positions at that odometry update
+            // and store in SwerveDriveWheelPositions object
+            SwerveDriveWheelPositions wheelPositions =
+                new SwerveDriveWheelPositions(
+                    Arrays.stream(modules)
+                        .map(module -> module.getModulePositions()[odometryIndex])
+                        .toArray(SwerveModulePosition[]::new));
+            // Filtering based on delta wheel positions
+            boolean includeMeasurement = true;
+            if (lastPositions != null) {
+                double dt = odometryTimestampInputs.timestamps[i] - lastTime;
+                for (int j = 0; j < modules.length; j++) {
+                double velocity =
+                    (wheelPositions.positions[j].distanceMeters
+                            - lastPositions.positions[j].distanceMeters)
+                        / dt;
+                double omega =
+                    wheelPositions.positions[j].angle.minus(lastPositions.positions[j].angle).getRadians()
+                        / dt;
+                // Check if delta is too large
+                if (Math.abs(omega) > 10 * 5.0
+                    || Math.abs(velocity) > getMaxLinearSpeedMetersPerSec() * 5.0) {
+                    includeMeasurement = false;
+                    break;
+                }
+                }
+            }
+            // If delta isn't too large we can include the measurement.
+            if (includeMeasurement) {
+                lastPositions = wheelPositions;
+                RobotState.getInstance()
+                    .addDriveMeasurement(odometryTimestampInputs.timestamps[i], yaw, wheelPositions);
+                lastTime = odometryTimestampInputs.timestamps[i];
+            }
         }
 
         for (var module : modules) {
@@ -203,19 +284,6 @@ public class Drive extends VirtualSubsystem {
         Logger.recordOutput("Drive/SwerveStates/Measured", measuredStates);
         lastMeasuredStates = measuredStates;
 
-        // Update odometry
-        Rotation2d gyroAngle;
-        if (gyroInputs.connected) {
-            gyroAngle = getGyroRotation();
-        } else {
-            // either the gyro is disconnected or we are in a simulation
-            // accumulate a gyro estimate using module kinematics
-            var wheelDeltas = getModulePositionDeltas(); // get change in module positions
-            Twist2d twist = kinematics.toTwist2d(wheelDeltas); // dtheta will be the estimated change in chassis angle
-            gyroAngle = prevGyroYaw.plus(Rotation2d.fromRadians(twist.dtheta));
-        }
-        RobotState.getInstance().addDriveMeasurement(gyroAngle, getModulePositions());
-
         // Logger.recordOutput("Odometry/Robot", getPose());
 
         // Update field velocity
@@ -229,14 +297,6 @@ public class Drive extends VirtualSubsystem {
                 gyroInputs.connected
                         ? gyroInputs.yawVelocityRadPerSec
                         : chassisSpeeds.omegaRadiansPerSecond);
-
-        // Update brake mode
-        // for (var module : modules) {
-        // module.setBrakeMode(true);
-        // }
-
-        // save values for next loop
-        prevGyroYaw = gyroAngle;
     }
 
     public final Translational translationSubsystem;
