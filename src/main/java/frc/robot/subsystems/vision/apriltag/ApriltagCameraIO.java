@@ -6,8 +6,11 @@ import java.util.Optional;
 import org.littletonrobotics.junction.AutoLog;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
 
@@ -40,7 +43,7 @@ public interface ApriltagCameraIO {
         }
 
         public static ApriltagCameraResult from(PhotonPipelineResult result, EstimatedRobotPose estimatedRobotPose) {
-            return new ApriltagCameraResult(estimatedRobotPose.timestampSeconds, result.getBestTarget().getBestCameraToTarget().getTranslation().getNorm(), estimatedRobotPose.estimatedPose);
+            return new ApriltagCameraResult(estimatedRobotPose.timestampSeconds, result.getTargets().stream().map(PhotonTrackedTarget::getBestCameraToTarget).map(Transform3d::getTranslation).mapToDouble(Translation3d::getNorm).min().orElse(6), estimatedRobotPose.estimatedPose);
         }
 
         public static final ApriltagCameraResultStruct struct = new ApriltagCameraResultStruct();

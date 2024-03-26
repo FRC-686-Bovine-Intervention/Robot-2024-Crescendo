@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -38,12 +39,13 @@ public class NoteVision extends VirtualSubsystem {
 
     private static final LoggedTunableNumber updateDistanceThreshold = new LoggedTunableNumber("Vision/Note/updateDistanceThreshold", 5);
     private static final LoggedTunableNumber posUpdatingFilteringFactor = new LoggedTunableNumber("Vision/Note/posUpdatingFilteringFactor", 0.8);
-    private static final LoggedTunableNumber confUpdatingFilteringFactor = new LoggedTunableNumber("Vision/Note/posUpdatingFilteringFactor", 0.5);
-    public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/Note/confidencePerAreaPercent", 1);
-    private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/Note/confidenceDecayPerSecond", 1);
-
-    private static final double acquireConfidenceThreshold = 1;
-    private static final double detargetConfidenceThreshold = 0.5;
+    private static final LoggedTunableNumber confUpdatingFilteringFactor = new LoggedTunableNumber("Vision/Note/Confidence/UpdatingFilteringFactor", 0.5);
+    public static final LoggedTunableNumber confidencePerAreaPercent = new LoggedTunableNumber("Vision/Note/Confidence/PerAreaPercent", 1);
+    private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/Note/Confidence/DecayPerSecond", 3);
+    private static final LoggedTunableNumber priorityPerConfidence = new LoggedTunableNumber("Vision/Note/Priority/PriorityPerConfidence", 4);
+    private static final LoggedTunableNumber priorityPerDistance = new LoggedTunableNumber("Vision/Note/Priority/PriorityPerDistance", -2);
+    private static final LoggedTunableNumber acquireConfidenceThreshold = new LoggedTunableNumber("Vision/Note/Target Threshold/Acquire", 0);
+    private static final LoggedTunableNumber detargetConfidenceThreshold = new LoggedTunableNumber("Vision/Note/Target Threshold/Detarget", 0.5);
 
     private Optional<TrackedNote> optIntakeTarget = Optional.empty();
     private boolean intakeTargetLocked = false;
@@ -91,24 +93,27 @@ public class NoteVision extends VirtualSubsystem {
         }
         unusedMemories.forEach((memory) -> {
             if(RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) > 1) {
-                memory.decayConfidence(memory.isWithinView() ? 10 : 1);
+                memory.decayConfidence(1);
             }
         });
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
         noteMemories.removeIf((memory) -> Double.isNaN(memory.fieldPos.getX()));
 
-        if(optIntakeTarget.isPresent() && optIntakeTarget.get().confidence < detargetConfidenceThreshold) {
+        if(optIntakeTarget.isPresent() && optIntakeTarget.get().confidence < detargetConfidenceThreshold.get()) {
             optIntakeTarget = Optional.empty();
         }
         if(optIntakeTarget.isEmpty() || !intakeTargetLocked) {
-            optIntakeTarget = noteMemories.stream().filter((target) -> target.confidence >= acquireConfidenceThreshold).sorted((a,b) -> (int)Math.signum(a.confidence - b.confidence)).findFirst();
+            optIntakeTarget = noteMemories.stream().filter((target) -> target.getPriority() >= acquireConfidenceThreshold.get()).sorted((a,b) -> (int)Math.signum(b.getPriority() - a.getPriority())).findFirst();
         }
-        intakeTargetLocked = false;
-
+        
         // Logger.recordOutput("Vision/Note/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
-        Logger.recordOutput("Vision/Note/Note Memories", noteMemories.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
+        Logger.recordOutput("Vision/Note/Note Memories", noteMemories.stream().map(TrackedNote::toASPose).toArray(Pose3d[]::new));
         Logger.recordOutput("Vision/Note/Note Confidence", noteMemories.stream().mapToDouble((note) -> note.confidence).toArray());
+        Logger.recordOutput("Vision/Note/Note Priority", noteMemories.stream().mapToDouble(TrackedNote::getPriority).toArray());
+        Logger.recordOutput("Vision/Note/Target", optIntakeTarget.map(TrackedNote::toASPose).map((a) -> new Pose3d[]{a}).orElse(new Pose3d[0]));
+        Logger.recordOutput("Vision/Note/Locked Target", optIntakeTarget.filter((a) -> intakeTargetLocked).map(TrackedNote::toASPose).map((a) -> new Pose3d[]{a}).orElse(new Pose3d[0]));
+        intakeTargetLocked = false;
     }
 
     public DoubleSupplier applyDotProduct(Supplier<ChassisSpeeds> joystickFieldRelative) {
@@ -160,10 +165,6 @@ public class NoteVision extends VirtualSubsystem {
         ;
     }
 
-    private static Pose3d targetToPose(TrackedNote note) {
-        return new Pose3d(new Translation3d(note.fieldPos.getX(), note.fieldPos.getY(), Units.inchesToMeters(1)), new Rotation3d());
-    }
-
     private static record PhotonMemoryConnection(TrackedNote memory, TrackedNote photonFrameTarget) {
         public double getDistance() {
             return memory.fieldPos.getDistance(photonFrameTarget.fieldPos);
@@ -188,14 +189,23 @@ public class NoteVision extends VirtualSubsystem {
             this.confidence = newNote.confidence;
         }
 
-        public boolean isWithinView() {
-            return false;
-                // Math.abs() < FOVYawThreshold.get() &&
-                // fieldPos.getDistance(new Pose3d(RobotState.getInstance().getPose()).toPose2d().getTranslation()) < FOVDistanceThreshold.get();
-        }
-
         public void decayConfidence(double rate) {
             this.confidence -= confidenceDecayPerSecond.get() * rate * Constants.dtSeconds;
+        }
+
+        public double getPriority() {
+            var pose = RobotState.getInstance().getPose();
+            var FORR = fieldPos.minus(pose.getTranslation());
+            var rotation = pose.getRotation().minus(RobotConstants.intakeForward);
+            return 
+                confidence * priorityPerConfidence.get() *
+                VecBuilder.fill(rotation.getCos(), rotation.getSin()).dot(FORR.toVector().unit()) + 
+                FORR.getNorm() * priorityPerDistance.get()
+            ;
+        }
+
+        public Pose3d toASPose() {
+            return new Pose3d(new Translation3d(fieldPos.getX(), fieldPos.getY(), Units.inchesToMeters(1)), new Rotation3d());
         }
 
         public static final TrackedNoteStruct struct = new TrackedNoteStruct();
