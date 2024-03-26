@@ -16,7 +16,9 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.util.Alert;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.Alert.AlertType;
 
 public class ShooterIOFalcon implements ShooterIO {
     private final TalonFX leftMotor = new TalonFX(CANDevices.shooterLeftID);
@@ -80,7 +82,12 @@ public class ShooterIOFalcon implements ShooterIO {
             leftMotor.getConfigurator().apply(profileConfig);
             rightMotor.getConfigurator().apply(profileConfig);
         }
-    } 
+    }
+
+    private final Alert leftTempWarning = new Alert("Shooter Temp", "Left Shooter (" + CANDevices.shooterLeftID + ") has exceeded 70C", AlertType.WARNING);
+    private final Alert rightTempWarning = new Alert("Shooter Temp", "Right Shooter (" + CANDevices.shooterRightID + ") has exceeded 70C", AlertType.WARNING);
+    private final Alert leftTempAlert = new Alert("Shooter Temp", "Left Shooter (" + CANDevices.shooterLeftID + ") has exceeded 100C", AlertType.ERROR);
+    private final Alert rightTempAlert = new Alert("Shooter Temp", "Right Shooter (" + CANDevices.shooterRightID + ") has exceeded 100C", AlertType.ERROR);
 
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
@@ -88,6 +95,11 @@ public class ShooterIOFalcon implements ShooterIO {
         inputs.rightMotor.updateFrom(rightMotor);
 
         updateTunables();
+
+        leftTempWarning.set(inputs.leftMotor.tempCelsius > 70);
+        rightTempWarning.set(inputs.rightMotor.tempCelsius > 70);
+        leftTempAlert.set(leftMotor.getFault_DeviceTemp().getValue());
+        rightTempAlert.set(rightMotor.getFault_DeviceTemp().getValue());
 
         Logger.recordOutput("Shooter/Left Motor/Output", leftMotor.getClosedLoopOutput().getValueAsDouble());
         Logger.recordOutput("Shooter/Left Motor/FF Out", leftMotor.getClosedLoopFeedForward().getValueAsDouble());
