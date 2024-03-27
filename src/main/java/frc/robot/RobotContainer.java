@@ -34,6 +34,9 @@ import frc.robot.auto.BabyAuto;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.Source4Note;
+import frc.robot.subsystems.climber.Climber;
+import frc.robot.subsystems.climber.ClimberIO;
+import frc.robot.subsystems.climber.ClimberIOFalcon;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -81,6 +84,7 @@ public class RobotContainer {
     public final Pivot pivot;
     public final Kicker kicker;
     public final Shooter shooter;
+    public final Climber climber;
     public final NoteVision noteVision;
     public final ApriltagVision apriltagVision;
     public final ManualOverrides manualOverrides;
@@ -112,6 +116,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOFalcon550());
                 kicker = new Kicker(new KickerIONeo550());
                 shooter = new Shooter(new ShooterIOFalcon());
+                climber = new Climber(new ClimberIOFalcon());
                 pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
@@ -128,6 +133,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOSim(), ()->false,()->false);
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
+                climber = new Climber(new ClimberIO() {});
                 noteVision = new NoteVision(new NoteVisionIOSim());
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
@@ -144,6 +150,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIO() {}, ()->false,()->false);
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
+                climber = new Climber(new ClimberIO() {});
                 noteVision = new NoteVision(new NoteVisionIO() {});
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
@@ -227,10 +234,11 @@ public class RobotContainer {
         intake.setDefaultCommand(intake.antiDeadzone());
         kicker.setDefaultCommand(kicker.antiDeadzone());
         new Trigger(kicker::hasNote).and(() -> Optional.ofNullable(kicker.getCurrentCommand()).map((c) -> c.getName().contains("|")).orElse(false)).and(DriverStation::isEnabled).whileTrue(intake.doNothing().asProxy().alongWith(kicker.doNothing().asProxy()));
+        new Trigger(intake::hasNote).and(() -> !kicker.hasNote() && kicker.getCurrentCommand() == kicker.getDefaultCommand()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
 
         pivot.setDefaultCommand(pivot.gotoZero());
 
-        new Trigger(intake::hasNote).and(() -> !kicker.hasNote() && kicker.getCurrentCommand() == kicker.getDefaultCommand()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        climber.setDefaultCommand(climber.windDown());
     }
 
     private void configureControls() {

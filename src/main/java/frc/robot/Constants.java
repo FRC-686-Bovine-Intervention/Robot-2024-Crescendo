@@ -89,6 +89,9 @@ public final class Constants {
         public static final int shooterRightID = 9;
         public static final int shooterAmpID = 6;
 
+        // Climber
+        public static final int climberID = 10;
+
         // Misc
         public static final int pigeonCanID = 0;
         public static final int candleCanID = 0;
