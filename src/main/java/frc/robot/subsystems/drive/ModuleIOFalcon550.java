@@ -82,6 +82,15 @@ public class ModuleIOFalcon550 implements ModuleIO {
         driveTemperature = driveMotor.getDeviceTemp();
 
         BaseStatusSignal.setUpdateFrequencyForAll(DriveConstants.odometryFrequency, drivePosition);
+        BaseStatusSignal.setUpdateFrequencyForAll(
+            50,
+            driveVelocity,
+            driveAppliedVolts,
+            driveSupplyCurrent,
+            driveTemperature,
+            driveMotor.getFault_DeviceTemp()
+        );
+        driveMotor.optimizeBusUtilization();
 
         drivePositionQueue = PhoenixOdometryThread.getInstance().registerSignal(driveMotor, drivePosition);
         turnPositionQueue = SparkMaxOdometryThread.getInstance().registerSignal(() -> MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians);
