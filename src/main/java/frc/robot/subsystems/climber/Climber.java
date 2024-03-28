@@ -12,7 +12,7 @@ public class Climber extends SubsystemBase {
 
     private final LoggedTunableNumber windDownVoltage = new LoggedTunableNumber("Climber/Wind Down Voltage", 3);
     private final LoggedTunableNumber deployVoltage = new LoggedTunableNumber("Climber/Deploy Voltage", 3);
-    private final LoggedTunableNumber retractVoltage = new LoggedTunableNumber("Climber/Retract Voltage", 3);
+    private final LoggedTunableNumber retractVoltage = new LoggedTunableNumber("Climber/Retract Voltage", 10);
 
     public Climber(ClimberIO climberIO) {
         System.out.println("[Init Climber] Instantiating Climber");
