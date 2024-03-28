@@ -235,7 +235,8 @@ public class RobotContainer {
         intake.setDefaultCommand(intake.antiDeadzone());
         kicker.setDefaultCommand(kicker.antiDeadzone());
         new Trigger(kicker::hasNote).and(() -> Optional.ofNullable(kicker.getCurrentCommand()).map((c) -> c.getName().contains("|")).orElse(false)).and(DriverStation::isEnabled).whileTrue(intake.doNothing().asProxy().alongWith(kicker.doNothing().asProxy()));
-        new Trigger(intake::hasNote).and(() -> !kicker.hasNote() && kicker.getCurrentCommand() == kicker.getDefaultCommand()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        new Trigger(intake::hasNote).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(intake.feedToKicker(kicker::hasNote))
+        .and(() -> kicker.getCurrentCommand() == kicker.getDefaultCommand()).onTrue(kicker.feedIn());
 
         pivot.setDefaultCommand(pivot.gotoZero());
 
