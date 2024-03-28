@@ -117,7 +117,8 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIONeo550());
                 shooter = new Shooter(new ShooterIOFalcon());
                 climber = new Climber(new ClimberIOFalcon());
-                pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
+                // pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
+                pivot = new Pivot(new PivotIOFalcon(), ()->false,()->false);
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
             break;
@@ -319,12 +320,14 @@ public class RobotContainer {
         driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
 
 
-        driveController.start().or(driveController.back()).onTrue(Commands.runOnce(() -> {
-            var offset = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
-            var rotation = drive.getRotation();
-            var pos = new Translation2d(rotation.getCos(), rotation.getSin()).times(-FieldConstants.subwooferToSpeakerDist);
-            drive.setPose(new Pose2d(pos.plus(offset), rotation));
-        }));
+        // driveController.start().or(driveController.back()).onTrue(Commands.runOnce(() -> {
+        //     var offset = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
+        //     var rotation = drive.getRotation();
+        //     var pos = new Translation2d(rotation.getCos(), rotation.getSin()).times(-FieldConstants.subwooferToSpeakerDist);
+        //     drive.setPose(new Pose2d(pos.plus(offset), rotation));
+        // }));
+        driveController.start().whileTrue(climber.deploy());
+        driveController.back().whileTrue(climber.retract());
         // new Trigger(() -> 
         //     drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
         //     MathUtil.isNear(

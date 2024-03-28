@@ -13,7 +13,9 @@ public class ClimberIOFalcon implements ClimberIO {
     public ClimberIOFalcon() {
         var config = new TalonFXConfiguration();
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        config.CurrentLimits.StatorCurrentLimit = 2;
+        config.CurrentLimits.StatorCurrentLimitEnable = true;
         climberMotor.getConfigurator().apply(config);
     }
 
