@@ -7,7 +7,6 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveWheelPositions;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -41,8 +40,8 @@ public class RobotState {
         logOdometry();
     }
 
-    public void addDriveMeasurement(double timestamp, Rotation2d rotation, SwerveDriveWheelPositions modulePositions) {
-        poseEstimator.updateWithTime(timestamp, rotation, modulePositions);
+    public void addDriveMeasurement(Rotation2d rotation, SwerveModulePosition[] modulePositions) {
+        poseEstimator.update(rotation, modulePositions);
     }
 
     public void addVisionMeasurement(Pose2d pose, Matrix<N3, N1> stdDevs, double timestamp) {

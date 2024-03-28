@@ -193,8 +193,6 @@ public final class Constants {
         }
         public static final int numDriveModules = DriveModulePosition.values().length;
 
-        public static final double odometryFrequency = 250;
-
         /**Weight with battery and bumpers*/
         public static final double weightKg = Pounds.of(58.0).in(Kilograms);
         

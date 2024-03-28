@@ -2,17 +2,14 @@ package frc.robot.subsystems.drive;
 
 import org.littletonrobotics.junction.AutoLog;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.util.loggerUtil.LoggedMotor;
 
 public interface ModuleIO {
 
     @AutoLog
     public static class ModuleIOInputs {
-        public double[] odometryDrivePositionsMeters = new double[] {};
         public LoggedMotor driveMotor = new LoggedMotor();
-        
-        public Rotation2d[] odometryTurnPositions = new Rotation2d[] {};
+
         public LoggedMotor turnMotor = new LoggedMotor();
     }
 
