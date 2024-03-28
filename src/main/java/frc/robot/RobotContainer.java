@@ -239,7 +239,7 @@ public class RobotContainer {
 
         pivot.setDefaultCommand(pivot.gotoZero());
 
-        climber.setDefaultCommand(climber.windDown());
+        // climber.setDefaultCommand(climber.windDown());
     }
 
     private void configureControls() {
@@ -250,13 +250,16 @@ public class RobotContainer {
                     driveController.rightStick.smoothRadialDeadband(0.85),
                     new Rotation2d[]{
                         // Center Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+150))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-150))),
                         // Up Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-90))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-30))),
                         // Down Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+90))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+30))),
                     },
-                    () -> RobotConstants.shooterForward
+                    () -> Rotation2d.fromDegrees(90)
                 )
                 .withName("Climbing")
                 .asProxy(),
