@@ -407,7 +407,7 @@ public class RobotContainer {
         autoSelector.addRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new SneakySource3Note(this));
         autoSelector.addRoutine(new Source3Note(this));
-        autoSelector.addRoutine(new Disruptor(this));
+        // autoSelector.addRoutine(new Disruptor(this));
         autoSelector.addRoutine(new BabyAuto(this));
     }
 
