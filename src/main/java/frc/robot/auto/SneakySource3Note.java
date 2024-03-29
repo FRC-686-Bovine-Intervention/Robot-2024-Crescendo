@@ -66,20 +66,17 @@ public class SneakySource3Note extends AutoRoutine {
                             AutoCommons.autoAim(sneakyStageShot, shooter, kicker),
                             Commands.runOnce(noteVision::clearMemory)
                             .andThen(
-                                pivot.gotoZero(),
                                 AutoCommons.followPathFlipped(wingToCenter, drive)
-                                .onlyWhile(() -> !noteVision.hasTarget())
-                                .andThen(
-                                    intake.intake(drive::getChassisSpeeds)
-                                    .deadlineWith(
-                                        noteVision.autoIntake(() -> 2, drive, intake)
-                                    ),
-                                    AutoCommons.autoAim(sneakyStageShot, drive.rotationalSubsystem)
-                                    .alongWith(
-                                        AutoCommons.followPathFlipped(centerToWingStop, drive.translationSubsystem)
-                                        .andThen(
-                                            AutoCommons.autoAim(sneakyStageShot, pivot)
-                                        )
+                                .onlyWhile(() -> !noteVision.hasTarget()),
+                                intake.intake(drive::getChassisSpeeds)
+                                .deadlineWith(
+                                    noteVision.autoIntake(() -> 2, drive, intake)
+                                ),
+                                AutoCommons.autoAim(sneakyStageShot, drive.rotationalSubsystem)
+                                .alongWith(
+                                    AutoCommons.followPathFlipped(centerToSneakyStage, drive.translationSubsystem)
+                                    .andThen(
+                                        AutoCommons.autoAim(sneakyStageShot, pivot)
                                     )
                                 )
                             )
