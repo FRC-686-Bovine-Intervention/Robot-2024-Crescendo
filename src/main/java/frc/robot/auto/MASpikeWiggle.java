@@ -28,6 +28,7 @@ public class MASpikeWiggle extends AutoRoutine {
     private static final AutoQuestion<Number> noteCount = new AutoQuestion<>("Note Count", Number::values);
 
     private static enum Number {
+        k6(6),
         k5(5),
         k4(4),
         k3(3),
@@ -201,6 +202,30 @@ public class MASpikeWiggle extends AutoRoutine {
                             )
                         )
                     );
+                    if(noteCount.asInt >= 6) {
+                        var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center");
+                        commands.add(
+                            AutoCommons.shootWhenReady(centerShot, drive, shooter, pivot, kicker)
+                            .deadlineWith(
+                                AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
+                                Commands.runOnce(noteVision::clearMemory)
+                                .andThen(
+                                    AutoCommons.followPathFlipped(wingToCenter, drive)
+                                    .onlyWhile(() -> !noteVision.hasTarget())
+                                    .andThen(
+                                        intake.intake(drive::getChassisSpeeds)
+                                        .deadlineWith(
+                                            noteVision.autoIntake(() -> 2, drive, intake)
+                                        ),
+                                        AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
+                                        .alongWith(
+                                            AutoCommons.followPathFlipped(centerToWing, drive.translationSubsystem)
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                    }
                 }
 
                 return AutoCommons.setOdometryFlipped(startPosition.startPose, drive).andThen(commands.toArray(Command[]::new));
