@@ -15,8 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.BooleanSubscriber;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
@@ -27,9 +25,9 @@ import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.util.Alert;
+import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.MathExtraUtil;
-import frc.robot.util.Alert.AlertType;
 
 public class AutoCommons {
     public static enum StartPosition {
@@ -46,7 +44,7 @@ public class AutoCommons {
         Podium(new Pose2d(
             new Translation2d(
                 1.40,
-                4.10
+                4.20
             ),
             Rotation2d.fromDegrees(180)
         )),
