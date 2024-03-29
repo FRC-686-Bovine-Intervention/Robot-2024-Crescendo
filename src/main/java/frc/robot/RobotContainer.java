@@ -31,10 +31,11 @@ import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.BabyAuto;
+import frc.robot.auto.Disruptor;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.SneakySource3Note;
-import frc.robot.auto.Source4Note;
+import frc.robot.auto.Source3Note;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.climber.ClimberIOFalcon;
@@ -402,11 +403,11 @@ public class RobotContainer {
         // ));
         // autoSelector.addRoutine(new SpikeMarkShots(this));
         // autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
-        // autoSelector.addRoutine(new CleanSpikes(this));
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
-        autoSelector.addRoutine(new Source4Note(this));
         autoSelector.addRoutine(new SneakySource3Note(this));
+        autoSelector.addRoutine(new Source3Note(this));
+        autoSelector.addRoutine(new Disruptor(this));
         autoSelector.addRoutine(new BabyAuto(this));
     }
 
@@ -419,8 +420,8 @@ public class RobotContainer {
         return autoSelector.getSelectedAutoCommand();
     }
 
-    private final Alert xboxConnect = new Alert("Controller Connection", "Xbox Controller (Port 0) not connected", AlertType.ERROR);
-    private final Alert buttonBoardConnect = new Alert("Controller Connection", "Button Board (Port 1) not connected", AlertType.WARNING);
+    private final Alert xboxConnect = new Alert("Xbox Controller (Port 0) not connected", AlertType.ERROR);
+    private final Alert buttonBoardConnect = new Alert("Button Board (Port 1) not connected", AlertType.WARNING);
 
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();

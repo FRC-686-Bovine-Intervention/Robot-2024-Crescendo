@@ -1,0 +1,91 @@
+{
+  "version": 1.0,
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 2.629272310567743,
+        "y": 2.56123121659951
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 3.629272310567743,
+        "y": 2.06123121659951
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 8.16781735958187,
+        "y": 1.4275709476274447
+      },
+      "prevControl": {
+        "x": 8.126604155080244,
+        "y": 0.013958033221695976
+      },
+      "nextControl": {
+        "x": 8.236110146869343,
+        "y": 3.7700135515877964
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 8.16781735958187,
+        "y": 6.508554321815497
+      },
+      "prevControl": {
+        "x": 8.195134474496859,
+        "y": 4.828551754543641
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.05,
+      "rotationDegrees": -132.59571750268339,
+      "rotateFast": false
+    },
+    {
+      "waypointRelativePos": 1.75,
+      "rotationDegrees": -135.0,
+      "rotateFast": false
+    }
+  ],
+  "constraintZones": [
+    {
+      "name": "New Constraints Zone",
+      "minWaypointRelativePos": 0.65,
+      "maxWaypointRelativePos": 1.0,
+      "constraints": {
+        "maxVelocity": 2.0,
+        "maxAcceleration": 6.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0
+      }
+    }
+  ],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 4.0,
+    "maxAcceleration": 6.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -134.39690880561957,
+    "rotateFast": false
+  },
+  "reversed": false,
+  "folder": "Disruptor",
+  "previewStartingState": {
+    "rotation": 125.20218259219243,
+    "velocity": 0
+  },
+  "useDefaultConstraints": false
+}
