@@ -22,8 +22,8 @@ import frc.robot.util.AllianceFlipUtil;
 
 public class MASpikeWiggle extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
+        StartPosition.Podium,
         StartPosition.Amp,
-        StartPosition.Podium
     });
     private static final AutoQuestion<Number> noteCount = new AutoQuestion<>("Note Count", Number::values);
 
@@ -49,6 +49,14 @@ public class MASpikeWiggle extends AutoRoutine {
             () -> {
                 var startPosition = MASpikeWiggle.startPosition.getResponse();
                 var noteCount = MASpikeWiggle.noteCount.getResponse();
+
+                var wiggleAngle = Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(
+                    switch(startPosition) {
+                        case Amp, SubwooferAmp -> 135;
+                        case Podium, SubwooferSource -> -135;
+                        default -> 0;
+                    }
+                )));
                 
                 var commands = new ArrayList<Command>();
 
@@ -118,7 +126,7 @@ public class MASpikeWiggle extends AutoRoutine {
                             intake.intake(drive::getChassisSpeeds),
                             AutoCommons.autoAim(spike2Shot, shooter, kicker, pivot),
                             AutoCommons.followPathFlipped(spike1ToSpike2, drive.translationSubsystem),
-                            drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(135))))
+                            drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
                             .until(intake::hasNote)
                             .andThen(
                                 AutoCommons.autoAim(spike2Shot, drive.rotationalSubsystem)
@@ -153,7 +161,7 @@ public class MASpikeWiggle extends AutoRoutine {
                             intake.intake(drive::getChassisSpeeds),
                             AutoCommons.autoAim(podiumSpikeShot, shooter, kicker, pivot),
                             AutoCommons.followPathFlipped(centerSpikeToPodiumSpike, drive.translationSubsystem),
-                            drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(135))))
+                            drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
                             .until(intake::hasNote)
                             .andThen(
                                 AutoCommons.autoAim(podiumSpikeShot, drive.rotationalSubsystem)
@@ -163,7 +171,13 @@ public class MASpikeWiggle extends AutoRoutine {
                 }
                 
                 if(noteCount.asInt >= 5) {
-                    var podiumSpikeToCenter = AutoPaths.loadPath("MASW Podium Spike to Center");
+                    var podiumSpikeToCenter = AutoPaths.loadPath(
+                        switch(startPosition) {
+                            case Amp, SubwooferAmp -> "MASW Podium Spike to Center";
+                            case Podium, SubwooferSource -> "R6N Amp Spike to Center";
+                            default -> "";
+                        }
+                    );
                     var centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
                     var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
                     commands.add(
@@ -177,7 +191,7 @@ public class MASpikeWiggle extends AutoRoutine {
                                 .andThen(
                                     intake.intake(drive::getChassisSpeeds)
                                     .deadlineWith(
-                                        noteVision.autoIntake(() -> 1.5, drive, intake)
+                                        noteVision.autoIntake(() -> 2, drive, intake)
                                     ),
                                     AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
                                     .alongWith(

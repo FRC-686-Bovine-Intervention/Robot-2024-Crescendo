@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
 
@@ -77,13 +79,19 @@ public class AutoCommons {
         var FORR = getFORR(pos);
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
-        BooleanSupplier condition = () -> 
-            // kicker.hasNote() && 
-            shooter.readyToShoot() && 
-            pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
-            MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
-            MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
-        ;
+        BooleanSupplier condition = () -> {
+            var shooterReady = shooter.readyToShoot();
+            var pivotReady = pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle));
+            var poseReady = MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(10));
+            var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.75, 1);
+
+            Logger.recordOutput("DEBUG/Shooter Ready", shooterReady);
+            Logger.recordOutput("DEBUG/Pivot Ready", pivotReady);
+            Logger.recordOutput("DEBUG/Pose Ready", poseReady);
+            Logger.recordOutput("DEBUG/Speed Ready", speedReady);
+
+            return shooterReady && pivotReady && poseReady && speedReady;
+        };
         return kicker.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(kicker::sensorFallingEdge);
         // return Commands.waitUntil(() -> 
         //     // kicker.hasNote() && 
@@ -129,6 +137,9 @@ public class AutoCommons {
             loadPath("MASW Amp Spike to Center Spike");
             loadPath("MASW Center Spike to Podium Spike");
             loadPath("MASW Podium Spike to Center");
+            loadPath("MASW Podium Start to Spike");
+            loadPath("MASW Podium Spike to Center Spike");
+            loadPath("MASW Center Spike to Amp Spike");
             loadPath("R6N Amp Start to Spike");
             loadPath("R6N Amp Spike to Center");
             loadPath("R6N Center to Amp Wing");
