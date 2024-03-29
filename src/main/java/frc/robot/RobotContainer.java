@@ -33,6 +33,7 @@ import frc.robot.auto.AutoSelector;
 import frc.robot.auto.BabyAuto;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
+import frc.robot.auto.SneakySource3Note;
 import frc.robot.auto.Source4Note;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
@@ -405,6 +406,7 @@ public class RobotContainer {
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new Source4Note(this));
+        autoSelector.addRoutine(new SneakySource3Note(this));
         autoSelector.addRoutine(new BabyAuto(this));
     }
 
