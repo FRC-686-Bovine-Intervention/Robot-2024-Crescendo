@@ -42,18 +42,18 @@ public class Rush6Note extends AutoRoutine {
 
                 return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
                     .andThen(
-                        AutoCommons.shootWhenReady(preloadShot, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
                         ),
-                        AutoCommons.shootWhenReady(ampSpikeShot, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(ampSpikeShot, 10, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             Commands.print("[Rush6Note] Shot Preload"),
                             intake.intake(drive::getChassisSpeeds),
                             AutoCommons.autoAim(ampSpikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         ),
-                        AutoCommons.shootWhenReady(centerShot1, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(centerShot1, 10, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             Commands.print("[Rush6Note] Shot Amp Spike"),
                             AutoCommons.autoAim(centerShot1, shooter, kicker, pivot),
@@ -73,7 +73,7 @@ public class Rush6Note extends AutoRoutine {
                                 )
                             )
                         ),
-                        AutoCommons.shootWhenReady(centerShot2, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(centerShot2, 10, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             Commands.print("[Rush6Note] Shot Center 1"),
                             AutoCommons.autoAim(centerShot2, shooter, kicker, pivot),

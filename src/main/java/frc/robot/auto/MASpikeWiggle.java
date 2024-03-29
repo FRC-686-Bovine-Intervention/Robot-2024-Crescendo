@@ -64,7 +64,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 if(noteCount.asInt >= 1) {
                     var preloadShot = AllianceFlipUtil.apply(startPosition.startPose.getTranslation());
                     commands.add(
-                        AutoCommons.shootWhenReady(preloadShot, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
                         )
@@ -81,7 +81,7 @@ public class MASpikeWiggle extends AutoRoutine {
                     );
                     var spike1Shot = AllianceFlipUtil.apply(startToSpike1.getPoint(startToSpike1.numPoints() - 1).position);
                     commands.add(
-                        AutoCommons.shootWhenReady(spike1Shot, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(spike1Shot, 10, drive, shooter, pivot, kicker)
                         // .raceWith(
                         //     Commands.waitSeconds(2.5)
                         //     .andThen(
@@ -111,7 +111,7 @@ public class MASpikeWiggle extends AutoRoutine {
                     );
                     var spike2Shot = AllianceFlipUtil.apply(spike1ToSpike2.getPoint(spike1ToSpike2.numPoints() - 1).position);
                     commands.add(
-                        AutoCommons.shootWhenReady(spike2Shot, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(spike2Shot, 10, drive, shooter, pivot, kicker)
                         // .raceWith(
                         //     Commands.waitSeconds(2.5)
                         //     .andThen(
@@ -137,16 +137,16 @@ public class MASpikeWiggle extends AutoRoutine {
                 }
 
                 if(noteCount.asInt >= 4) {
-                    var centerSpikeToPodiumSpike = AutoPaths.loadPath(
+                    var spike2ToSpike3 = AutoPaths.loadPath(
                         switch(startPosition) {
                             case Amp, SubwooferAmp -> "MASW Center Spike to Podium Spike";
                             case Podium, SubwooferSource -> "MASW Center Spike to Amp Spike";
                             default -> "";
                         }
                     );
-                    var podiumSpikeShot = AllianceFlipUtil.apply(centerSpikeToPodiumSpike.getPoint(centerSpikeToPodiumSpike.numPoints() - 1).position);
+                    var spikeShot3 = AllianceFlipUtil.apply(spike2ToSpike3.getPoint(spike2ToSpike3.numPoints() - 1).position);
                     commands.add(
-                        AutoCommons.shootWhenReady(podiumSpikeShot, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(spikeShot3, 10, drive, shooter, pivot, kicker)
                         // .raceWith(
                         //     Commands.waitSeconds(2.5)
                         //     .andThen(
@@ -160,19 +160,19 @@ public class MASpikeWiggle extends AutoRoutine {
                         // )
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(podiumSpikeShot, shooter, kicker, pivot),
-                            AutoCommons.followPathFlipped(centerSpikeToPodiumSpike, drive.translationSubsystem),
+                            AutoCommons.autoAim(spikeShot3, shooter, kicker, pivot),
+                            AutoCommons.followPathFlipped(spike2ToSpike3, drive.translationSubsystem),
                             drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
                             .until(intake::hasNote)
                             .andThen(
-                                AutoCommons.autoAim(podiumSpikeShot, drive.rotationalSubsystem)
+                                AutoCommons.autoAim(spikeShot3, drive.rotationalSubsystem)
                             )
                         )
                     );
                 }
                 
                 if(noteCount.asInt >= 5) {
-                    var podiumSpikeToCenter = AutoPaths.loadPath(
+                    var spikeToCenter = AutoPaths.loadPath(
                         switch(startPosition) {
                             case Amp, SubwooferAmp -> "MASW Podium Spike to Center";
                             case Podium, SubwooferSource -> "R6N Amp Spike to Center";
@@ -182,12 +182,12 @@ public class MASpikeWiggle extends AutoRoutine {
                     var centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
                     var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
                     commands.add(
-                        AutoCommons.shootWhenReady(centerShot, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(centerShot, 3, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
                             Commands.runOnce(noteVision::clearMemory)
                             .andThen(
-                                AutoCommons.followPathFlipped(podiumSpikeToCenter, drive)
+                                AutoCommons.followPathFlipped(spikeToCenter, drive)
                                 .onlyWhile(() -> !noteVision.hasTarget())
                                 .andThen(
                                     intake.intake(drive::getChassisSpeeds)
@@ -205,7 +205,7 @@ public class MASpikeWiggle extends AutoRoutine {
                     if(noteCount.asInt >= 6) {
                         var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center");
                         commands.add(
-                            AutoCommons.shootWhenReady(centerShot, drive, shooter, pivot, kicker)
+                            AutoCommons.shootWhenReady(centerShot, 3, drive, shooter, pivot, kicker)
                             .deadlineWith(
                                 AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
                                 Commands.runOnce(noteVision::clearMemory)

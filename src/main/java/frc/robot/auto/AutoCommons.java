@@ -73,14 +73,14 @@ public class AutoCommons {
         return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive);
     }
 
-    public static Command shootWhenReady(Translation2d pos, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
+    public static Command shootWhenReady(Translation2d pos, double angularTolerance, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
         var FORR = getFORR(pos);
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
         BooleanSupplier condition = () -> {
             var shooterReady = shooter.readyToShoot();
             var pivotReady = pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle));
-            var poseReady = MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(10));
+            var poseReady = MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
             var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.75, 1);
 
             Logger.recordOutput("DEBUG/Shooter Ready", shooterReady);
