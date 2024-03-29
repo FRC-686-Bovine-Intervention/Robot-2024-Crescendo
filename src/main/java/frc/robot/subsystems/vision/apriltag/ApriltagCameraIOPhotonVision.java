@@ -3,8 +3,12 @@ package frc.robot.subsystems.vision.apriltag;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.RobotState;
 import frc.robot.util.Alert;
@@ -45,7 +49,10 @@ public class ApriltagCameraIOPhotonVision implements ApriltagCameraIO {
         
         optRobotPose.ifPresent((e) -> {
             inputs.hasResult = true;
-            inputs.result = ApriltagCameraResult.from(result, e);
+            inputs.timestamp = e.timestampSeconds;
+            inputs.estimatedRobotPose = e.estimatedPose;
+            inputs.cameraToTagDist = e.targetsUsed.stream().map(PhotonTrackedTarget::getBestCameraToTarget).map(Transform3d::getTranslation).mapToDouble(Translation3d::getNorm).toArray();
+            inputs.tagsSeen = e.targetsUsed.stream().mapToInt(PhotonTrackedTarget::getFiducialId).toArray();
         });
     }
 }

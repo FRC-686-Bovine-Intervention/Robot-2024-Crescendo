@@ -1,18 +1,11 @@
 package frc.robot.subsystems.vision.apriltag;
 
-import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Optional;
 
 import org.littletonrobotics.junction.AutoLog;
-import org.photonvision.EstimatedRobotPose;
-import org.photonvision.targeting.PhotonPipelineResult;
-import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.util.struct.Struct;
-import edu.wpi.first.util.struct.StructSerializable;
 
 public interface ApriltagCameraIO {
 
@@ -20,74 +13,89 @@ public interface ApriltagCameraIO {
     public class ApriltagCameraIOInputs {
         public boolean isConnected;
         public boolean hasResult;
-        public ApriltagCameraResult result;
+        public double timestamp;
+        public int[] tagsSeen;
+        public double[] cameraToTagDist;
+        public Pose3d estimatedRobotPose;
 
-        public Optional<ApriltagCameraResult> getResult() {
-            return Optional.ofNullable(hasResult ? result : null);
-        }
+        // public Optional<ApriltagCameraResult> getResult() {
+        //     return Optional.ofNullable(hasResult ? result : null);
+        // }
 
-        public Optional<Pose3d> getPose() {
-            return getResult().map((r) -> r.estimatedRobotPose);
-        }
+        // public Optional<Pose3d> getPose() {
+        //     return getResult().map((r) -> r.estimatedRobotPose);
+        // }
     }
 
-    public static class ApriltagCameraResult implements StructSerializable {
+    public static class ApriltagCameraResult /* implements StructSerializable */ {
         public final double timestamp;
-        public final double cameraToTargetDist;
+        public final int[] tagsSeen;
+        public final double[] cameraToTagDist;
         public final Pose3d estimatedRobotPose;
 
-        public ApriltagCameraResult(double timestamp, double cameraToTargetDist, Pose3d estimatedRobotPose) {
+        public ApriltagCameraResult(double timestamp, int[] tagsSeen, double[] cameraToTagDist, Pose3d estimatedRobotPose) {
             this.timestamp = timestamp;
-            this.cameraToTargetDist = cameraToTargetDist;
+            this.tagsSeen = tagsSeen;
+            this.cameraToTagDist = cameraToTagDist;
             this.estimatedRobotPose = estimatedRobotPose;
         }
 
-        public static ApriltagCameraResult from(PhotonPipelineResult result, EstimatedRobotPose estimatedRobotPose) {
-            return new ApriltagCameraResult(estimatedRobotPose.timestampSeconds, result.getTargets().stream().map(PhotonTrackedTarget::getBestCameraToTarget).map(Transform3d::getTranslation).mapToDouble(Translation3d::getNorm).min().orElse(6), estimatedRobotPose.estimatedPose);
+        public static Optional<ApriltagCameraResult> from(ApriltagCameraIOInputs inputs) {
+            if(!inputs.hasResult) return Optional.empty();
+            return Optional.of(new ApriltagCameraResult(
+                inputs.timestamp,
+                inputs.tagsSeen,
+                inputs.cameraToTagDist,
+                inputs.estimatedRobotPose
+            ));
         }
 
-        public static final ApriltagCameraResultStruct struct = new ApriltagCameraResultStruct();
-        public static class ApriltagCameraResultStruct implements Struct<ApriltagCameraResult> {
-            @Override
-            public Class<ApriltagCameraResult> getTypeClass() {
-                return ApriltagCameraResult.class;
-            }
-
-            @Override
-            public String getTypeString() {
-                return "struct:ApriltagCameraResult";
-            }
-
-            @Override
-            public int getSize() {
-                return kSizeDouble * 2 + Pose3d.struct.getSize();
-            }
-
-            @Override
-            public String getSchema() {
-                return "double timestamp;double cameraToTargetDist;Pose3d estimatedRobotPose";
-            }
-
-            @Override
-            public Struct<?>[] getNested() {
-                return new Struct<?>[]{Pose3d.struct};
-            }
-
-            @Override
-            public ApriltagCameraResult unpack(ByteBuffer bb) {
-                var timestamp = bb.getDouble();
-                var cameraToTargetDist = bb.getDouble();
-                var estimatedRobotPose = Pose3d.struct.unpack(bb);
-                return new ApriltagCameraResult(timestamp, cameraToTargetDist, estimatedRobotPose);
-            }
-
-            @Override
-            public void pack(ByteBuffer bb, ApriltagCameraResult value) {
-                bb.putDouble(value.timestamp);
-                bb.putDouble(value.cameraToTargetDist);
-                Pose3d.struct.pack(bb, value.estimatedRobotPose);
-            }
+        public double getAverageDist() {
+            return Arrays.stream(cameraToTagDist).average().orElse(0);
         }
+
+    //     public static final ApriltagCameraResultStruct struct = new ApriltagCameraResultStruct();
+    //     public static class ApriltagCameraResultStruct implements Struct<ApriltagCameraResult> {
+    //         @Override
+    //         public Class<ApriltagCameraResult> getTypeClass() {
+    //             return ApriltagCameraResult.class;
+    //         }
+
+    //         @Override
+    //         public String getTypeString() {
+    //             return "struct:ApriltagCameraResult";
+    //         }
+
+    //         @Override
+    //         public int getSize() {
+    //             return kSizeDouble * 2 + Pose3d.struct.getSize();
+    //         }
+
+    //         @Override
+    //         public String getSchema() {
+    //             return "double timestamp;double cameraToTargetDist;Pose3d estimatedRobotPose";
+    //         }
+
+    //         @Override
+    //         public Struct<?>[] getNested() {
+    //             return new Struct<?>[]{Pose3d.struct};
+    //         }
+
+    //         @Override
+    //         public ApriltagCameraResult unpack(ByteBuffer bb) {
+    //             var timestamp = bb.getDouble();
+    //             var cameraToTargetDist = bb.getDouble();
+    //             var estimatedRobotPose = Pose3d.struct.unpack(bb);
+    //             return new ApriltagCameraResult(timestamp, cameraToTargetDist, estimatedRobotPose);
+    //         }
+
+    //         @Override
+    //         public void pack(ByteBuffer bb, ApriltagCameraResult value) {
+    //             bb.putDouble(value.timestamp);
+    //             bb.putDouble(value.cameraToTargetDist);
+    //             Pose3d.struct.pack(bb, value.estimatedRobotPose);
+    //         }
+    //     }
     }
     
     public default void updateInputs(ApriltagCameraIOInputs inputs) {}

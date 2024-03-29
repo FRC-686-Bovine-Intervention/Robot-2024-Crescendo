@@ -286,6 +286,7 @@ public class RobotContainer {
             )
         );
         driveController.rightStickButton().toggleOnTrue(drive.rotationalSubsystem.spin(driveController.rightStick.radialSensitivity(0.75).x().multiply(DriveConstants.maxTurnRateRadiansPerSec * 0.5)).withName("Defense Spin"));
+        driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake
         driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
