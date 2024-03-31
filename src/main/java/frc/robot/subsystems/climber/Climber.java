@@ -2,6 +2,7 @@ package frc.robot.subsystems.climber;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LoggedTunableNumber;
@@ -11,13 +12,15 @@ public class Climber extends SubsystemBase {
     private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
 
     private final LoggedTunableNumber windDownVoltage = new LoggedTunableNumber("Climber/Wind Down Voltage", 3);
-    private final LoggedTunableNumber deployVoltage = new LoggedTunableNumber("Climber/Deploy Voltage", 3);
-    private final LoggedTunableNumber retractVoltage = new LoggedTunableNumber("Climber/Retract Voltage", 10);
+
+    public static final double POS_ZERO = 0;
+    public static final double POS_DEPLOY = 0.432373046875;
 
     public Climber(ClimberIO climberIO) {
         System.out.println("[Init Climber] Instantiating Climber");
         this.climberIO = climberIO;
         System.out.println("[Init Climber] Climber IO: " + this.climberIO.getClass().getSimpleName());
+        SmartDashboard.putData("Subsystems/Climber", this);
     }
 
     @Override
@@ -54,7 +57,7 @@ public class Climber extends SubsystemBase {
             }
             @Override
             public void execute() {
-                climberIO.setVoltage(deployVoltage.get());
+                climberIO.setPosition(POS_DEPLOY);
             }
             @Override
             public void end(boolean interrupted) {
@@ -72,7 +75,7 @@ public class Climber extends SubsystemBase {
             }
             @Override
             public void execute() {
-                climberIO.setVoltage(-retractVoltage.get());
+                climberIO.setPosition(POS_ZERO);
             }
             @Override
             public void end(boolean interrupted) {

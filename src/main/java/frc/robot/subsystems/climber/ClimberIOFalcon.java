@@ -1,5 +1,7 @@
 package frc.robot.subsystems.climber;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -18,12 +20,13 @@ import frc.robot.util.LoggedTunableNumber;
 public class ClimberIOFalcon implements ClimberIO {
     private final TalonFX climberMotor = new TalonFX(CANDevices.climberID);
 
-    private final LoggedTunableNumber kP = new LoggedTunableNumber("Climber/PID/kP", 1);
+    private final LoggedTunableNumber kP = new LoggedTunableNumber("Climber/PID/kP", 40);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Climber/PID/kI", 0);
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Climber/PID/kD", 0);
-    private final LoggedTunableNumber kA = new LoggedTunableNumber("Climber/PID/Profile/kA", 120);
-    private final LoggedTunableNumber kJ = new LoggedTunableNumber("Climber/PID/Profile/kJ", 120);
-    private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Climber/FF/kV", 0.4);
+    private final LoggedTunableNumber kV = new LoggedTunableNumber("Climber/PID/Profile/kV", 0.38);
+    private final LoggedTunableNumber kA = new LoggedTunableNumber("Climber/PID/Profile/kA", 0.4);
+    private final LoggedTunableNumber kJ = new LoggedTunableNumber("Climber/PID/Profile/kJ", 0);
+    private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Climber/FF/kV", 35);
     private final LoggedTunableNumber ffkA = new LoggedTunableNumber("Climber/FF/kA", 0);
     private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Climber/FF/kG", 0);
     private final LoggedTunableNumber ffkS = new LoggedTunableNumber("Climber/FF/kS", 0);
@@ -41,11 +44,11 @@ public class ClimberIOFalcon implements ClimberIO {
         config.HardwareLimitSwitch.ReverseLimitEnable = true;
         config.HardwareLimitSwitch.ReverseLimitSource = ReverseLimitSourceValue.LimitSwitchPin;
         config.HardwareLimitSwitch.ReverseLimitType = ReverseLimitTypeValue.NormallyOpen;
-        config.HardwareLimitSwitch.ReverseLimitAutosetPositionValue = 0;
+        config.HardwareLimitSwitch.ReverseLimitAutosetPositionValue = Climber.POS_ZERO;
         config.HardwareLimitSwitch.ReverseLimitAutosetPositionEnable = true;
 
         config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 5;
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Climber.POS_DEPLOY;
 
         config.Slot0.GravityType = GravityTypeValue.Elevator_Static;
         
@@ -60,6 +63,7 @@ public class ClimberIOFalcon implements ClimberIO {
             kP.hasChanged(hashCode()) |
             kI.hasChanged(hashCode()) |
             kD.hasChanged(hashCode()) |
+            kV.hasChanged(hashCode()) |
             kA.hasChanged(hashCode()) |
             kJ.hasChanged(hashCode()) |
             ffkV.hasChanged(hashCode()) |
@@ -72,6 +76,7 @@ public class ClimberIOFalcon implements ClimberIO {
             pidConfig.kP = kP.get();
             pidConfig.kI = kI.get();
             pidConfig.kD = kD.get();
+            profileConfig.MotionMagicCruiseVelocity= kV.get();
             profileConfig.MotionMagicAcceleration = kA.get();
             profileConfig.MotionMagicJerk = kJ.get();
             pidConfig.kV = ffkV.get();
@@ -87,8 +92,15 @@ public class ClimberIOFalcon implements ClimberIO {
     @Override
     public void updateInputs(ClimberIOInputs inputs) {
         inputs.climberMotor.updateFrom(climberMotor);
+        inputs.climberMotor.positionRad = climberMotor.getPosition().getValueAsDouble();
 
         updateTunables();
+
+        Logger.recordOutput("Climber/Reverse Limit", climberMotor.getReverseLimit().getValue());
+        Logger.recordOutput("Climber/Forward Limit", climberMotor.getForwardLimit().getValue());
+        Logger.recordOutput("Climber/Profile Position", climberMotor.getClosedLoopReference().getValueAsDouble());
+        Logger.recordOutput("Climber/FF Out", climberMotor.getClosedLoopFeedForward().getValueAsDouble());
+        Logger.recordOutput("Climber/P Out", climberMotor.getClosedLoopProportionalOutput().getValueAsDouble());
     }
 
     @Override
@@ -102,8 +114,8 @@ public class ClimberIOFalcon implements ClimberIO {
         0,
         0,
         false,
-        true,
-        true
+        false,
+        false
     );
 
     @Override

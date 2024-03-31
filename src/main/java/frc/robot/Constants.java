@@ -318,8 +318,8 @@ public final class Constants {
 
     public static final class ClimberConstants {
         public static final Wheel motorToSurface = new GearRatio()
-            .planetary(1/5)
-            .planetary(1/5)
+            .planetary(1.0/5.0)
+            .planetary(1.0/5.0)
             .wheelDiameter(Inches.of(1).in(Meters))
         ;
     }

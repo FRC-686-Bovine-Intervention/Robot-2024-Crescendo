@@ -242,7 +242,7 @@ public class RobotContainer {
 
         pivot.setDefaultCommand(pivot.gotoZero());
 
-        // climber.setDefaultCommand(climber.windDown());
+        climber.setDefaultCommand(climber.windDown());
     }
 
     private void configureControls() {
@@ -262,7 +262,7 @@ public class RobotContainer {
                         Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+90))),
                         Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+30))),
                     },
-                    () -> Rotation2d.fromDegrees(90)
+                    () -> Rotation2d.fromDegrees(-90)
                 )
                 .withName("Climbing")
                 .asProxy(),
@@ -284,7 +284,7 @@ public class RobotContainer {
                 )
                 .withName("DriveCustomFlick")
                 .asProxy(),
-                () -> false // Climbing mode
+                () -> climber.getCurrentCommand() != climber.getDefaultCommand()
             )
         );
         driveController.rightStickButton().toggleOnTrue(drive.rotationalSubsystem.spin(driveController.rightStick.radialSensitivity(0.75).x().multiply(DriveConstants.maxTurnRateRadiansPerSec * 0.5)).withName("Defense Spin"));
@@ -322,9 +322,9 @@ public class RobotContainer {
         driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
 
         // Auto Drive
-        driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
-        driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
-        driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
+        // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
+        // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
+        // driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
 
 
         // driveController.start().or(driveController.back()).onTrue(Commands.runOnce(() -> {
@@ -333,8 +333,8 @@ public class RobotContainer {
         //     var pos = new Translation2d(rotation.getCos(), rotation.getSin()).times(-FieldConstants.subwooferToSpeakerDist);
         //     drive.setPose(new Pose2d(pos.plus(offset), rotation));
         // }));
-        driveController.start().whileTrue(climber.deploy());
-        driveController.back().whileTrue(climber.retract());
+        driveController.start().toggleOnTrue(climber.deploy());
+        driveController.back().toggleOnTrue(climber.retract());
         // new Trigger(() -> 
         //     drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
         //     MathUtil.isNear(
