@@ -97,7 +97,6 @@ public class ClimberIOFalcon implements ClimberIO {
         updateTunables();
 
         Logger.recordOutput("Climber/Reverse Limit", climberMotor.getReverseLimit().getValue());
-        Logger.recordOutput("Climber/Forward Limit", climberMotor.getForwardLimit().getValue());
         Logger.recordOutput("Climber/Profile Position", climberMotor.getClosedLoopReference().getValueAsDouble());
         Logger.recordOutput("Climber/FF Out", climberMotor.getClosedLoopFeedForward().getValueAsDouble());
         Logger.recordOutput("Climber/P Out", climberMotor.getClosedLoopProportionalOutput().getValueAsDouble());
