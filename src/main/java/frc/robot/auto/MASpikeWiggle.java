@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
+import frc.robot.auto.AutoCommons.Count;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
@@ -25,28 +26,24 @@ public class MASpikeWiggle extends AutoRoutine {
         StartPosition.Podium,
         StartPosition.Amp,
     });
-    private static final AutoQuestion<Number> noteCount = new AutoQuestion<>("Note Count", Number::values);
-
-    private static enum Number {
-        k6(6),
-        k5(5),
-        k4(4),
-        k3(3),
-        k2(2),
-        k1(1),
-        ;
-        public final int asInt;
-        Number(int asInt) {
-            this.asInt = asInt;
-        }
-    }
+    private static final AutoQuestion<Count> noteCount = new AutoQuestion<>("Note Count", () -> new Count[]{
+        Count.k6,
+        Count.k5,
+        Count.k4,
+        Count.k3,
+        Count.k2,
+        Count.k1,
+    });
 
     public MASpikeWiggle(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
     }
     public MASpikeWiggle(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
         super("MA Spike Wiggle",
-            List.of(startPosition, noteCount),
+            List.of(
+                startPosition,
+                noteCount
+            ),
             () -> {
                 var startPosition = MASpikeWiggle.startPosition.getResponse();
                 var noteCount = MASpikeWiggle.noteCount.getResponse();

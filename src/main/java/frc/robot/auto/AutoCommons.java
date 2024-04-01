@@ -62,6 +62,20 @@ public class AutoCommons {
         }
     }
 
+    public static enum Count {
+        k1(1),
+        k2(2),
+        k3(3),
+        k4(4),
+        k5(5),
+        k6(6),
+        ;
+        public final int asInt;
+        Count(int asInt) {
+            this.asInt = asInt;
+        }
+    }
+
     public static Command setOdometryFlipped(Pose2d pose, Drive drive) {
         return Commands.runOnce(() -> RobotState.getInstance().setPose(drive.getGyroRotation(), drive.getModulePositions(), AllianceFlipUtil.apply(pose)));
     }
