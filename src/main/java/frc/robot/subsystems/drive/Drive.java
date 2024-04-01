@@ -23,8 +23,12 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 
+import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -35,6 +39,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -328,7 +333,7 @@ public class Drive extends VirtualSubsystem {
 
         private final LoggedTunableNumber defenseSpinLinearThreshold = new LoggedTunableNumber("Drive/Defense Spin Linear Threshold", 0.125);
 
-        public Command defenseSpin(DoubleSupplier omega) {
+        public Command defenseSpin(Joystick joystick) {
             var subsystem = this;
             return new Command() {
                 {
@@ -339,14 +344,27 @@ public class Drive extends VirtualSubsystem {
                 public void initialize() {
                     
                 }
+                private static final Matrix<N2, N2> perpendicularMatrix = 
+                    MatBuilder.fill(
+                        Nat.N2(), Nat.N2(), 
+                        +0,-1,
+                        +1,+0
+                    )
+                ;
                 @Override
                 public void execute() {
-                    var velo = omega.getAsDouble();
+                    var joyVec = SpectatorType.getCurrentType().toField(joystick.toVector());
                     var desiredLinear = VecBuilder.fill(drive.setpoint.vxMetersPerSecond, drive.setpoint.vyMetersPerSecond);
                     var fieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.setpoint, drive.getRotation());
-                    var dot = VecBuilder.fill(fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond).dot(SpectatorType.getCurrentType().getForwardFieldRel());
-                    velo *= Math.signum(dot);
-                    driveVelocity(velo);
+                    var perpendicularLinear = new Vector<N2>(perpendicularMatrix.times(
+                        VecBuilder.fill(fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond)
+                    ));
+                    var dot = joystick.x().getAsDouble();
+                    if(desiredLinear.norm() > defenseSpinLinearThreshold.get()) {
+                        dot = -joyVec.dot(perpendicularLinear);
+                    }
+                    var omega = dot * DriveConstants.maxTurnRateRadiansPerSec * 0.25;
+                    driveVelocity(omega);
                     if(desiredLinear.norm() <= defenseSpinLinearThreshold.get()) {
                         drive.setCenterOfRotation(new Translation2d());
                         return;

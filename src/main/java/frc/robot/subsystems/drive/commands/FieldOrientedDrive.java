@@ -119,19 +119,19 @@ public class FieldOrientedDrive extends Command {
 	public static enum SpectatorType {
 		Comp(
 			MatBuilder.fill(Nat.N2(), Nat.N2(),
-				+1,+0
-				+0,-1
+				+0,+1,
+				-1,+0
 			)
 		),
 		Spectator(
 			MatBuilder.fill(Nat.N2(), Nat.N2(),
-				+1,+0
+				+1,+0,
 				+0,+1
 			)
 		),
 		ISpectator(
 			MatBuilder.fill(Nat.N2(), Nat.N2(),
-				-1,+0
+				-1,+0,
 				+0,-1
 			)
 		),

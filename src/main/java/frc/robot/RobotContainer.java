@@ -292,8 +292,6 @@ public class RobotContainer {
                 driveController.rightStick
                 .smoothRadialDeadband(0.1)
                 .radialSensitivity(0.75)
-                .x()
-                .multiply(DriveConstants.maxTurnRateRadiansPerSec * 0.5)
             )
         );
         driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
