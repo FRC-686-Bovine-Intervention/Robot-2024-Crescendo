@@ -1,21 +1,22 @@
 package frc.robot.subsystems.drive.commands;
 
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.MatchType;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
-import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.controllers.Joystick;
 
@@ -116,38 +117,60 @@ public class FieldOrientedDrive extends Command {
 
 	private static final LoggedTunableNumber spectatorType = new LoggedTunableNumber("Spectator Type", 1);
 	public static enum SpectatorType {
-		Comp(new Translation2d(0,1), new Translation2d(-1,0)),
-		Spectator(new Translation2d(1,0), new Translation2d(0,1)),
-		ISpectator(new Translation2d(-1,0), new Translation2d(0,-1)),
+		Comp(
+			MatBuilder.fill(Nat.N2(), Nat.N2(),
+				+0,+1,
+				-1,+0
+			)
+		),
+		Spectator(
+			MatBuilder.fill(Nat.N2(), Nat.N2(),
+				+1,+0,
+				+0,+1
+			)
+		),
+		ISpectator(
+			MatBuilder.fill(Nat.N2(), Nat.N2(),
+				-1,+0,
+				+0,-1
+			)
+		),
 		;
-		private final Translation2d i;
-		private final Translation2d j;
-		SpectatorType(Translation2d i, Translation2d j) {
-			this.i = i;
-			this.j = j;
+		private final Matrix<N2, N2> spectatorToField;
+		private final Matrix<N2, N2> fieldToSpectator;
+		SpectatorType(Matrix<N2, N2> spectatorToField) {
+			this.spectatorToField = spectatorToField;
+			this.fieldToSpectator = this.spectatorToField.inv();
 		}
-		public Translation2d toField(Translation2d vec) {
-			return new Translation2d(
-				vec.getX()*i.getX() + vec.getY()*i.getY(),
-				vec.getX()*j.getX() + vec.getY()*j.getY()
-			);
+		public Vector<N2> toField(Vector<N2> vec) {
+			return new Vector<N2>(spectatorToField.times(vec));
 		}
+		public Vector<N2> toSpectator(Vector<N2> vec) {
+			return new Vector<N2>(fieldToSpectator.times(vec));
+		}
+		
+		public Vector<N2> getForwardFieldRel() {
+			return toField(VecBuilder.fill(0, 1));
+		}
+
 		public static SpectatorType getCurrentType() {
 			if(DriverStation.getMatchType() != MatchType.None) return Comp;
-			return SpectatorType.values()[MathUtil.clamp((int)spectatorType.get(), 0, values().length - 1)];
+			return SpectatorType.values()[MathUtil.clamp((int) spectatorType.get(), 0, values().length - 1)];
 		}
 	}
 	public static Supplier<ChassisSpeeds> joystickSpectatorToFieldRelative(Joystick translationalJoystick, BooleanSupplier precisionSupplier) {
 		return () -> {
-			var specTrans = new Translation2d(
-				translationalJoystick.x().getAsDouble() * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1),
-				translationalJoystick.y().getAsDouble()	 * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
+			var fieldVec = SpectatorType.getCurrentType().toField(
+				translationalJoystick.toVector()
+				.times(
+					DriveConstants.maxDriveSpeedMetersPerSec * 
+					(precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
+				)
 			);
-			var fieldTrans = SpectatorType.getCurrentType().toField(specTrans);
 			return AllianceFlipUtil.applyFieldRelative(
 				new ChassisSpeeds(
-					fieldTrans.getX(),
-					fieldTrans.getY(),
+					fieldVec.get(0),
+					fieldVec.get(1),
 					0
 				),
 				FieldFlipType.CenterPointFlip
