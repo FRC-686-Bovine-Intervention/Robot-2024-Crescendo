@@ -76,6 +76,16 @@ public class AutoCommons {
         }
     }
 
+    public static enum Bool {
+        Yes(true),
+        No(false),
+        ;
+        public final boolean asBoolean;
+        Bool(boolean asBoolean) {
+            this.asBoolean = asBoolean;
+        }
+    }
+
     public static Command setOdometryFlipped(Pose2d pose, Drive drive) {
         return Commands.runOnce(() -> RobotState.getInstance().setPose(drive.getGyroRotation(), drive.getModulePositions(), AllianceFlipUtil.apply(pose)));
     }

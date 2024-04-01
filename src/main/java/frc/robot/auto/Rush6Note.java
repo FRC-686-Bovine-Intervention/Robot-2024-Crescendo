@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
+import frc.robot.auto.AutoCommons.Bool;
 import frc.robot.auto.AutoCommons.Count;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
@@ -33,6 +34,11 @@ public class Rush6Note extends AutoRoutine {
         Count.k1,
     });
 
+    private static final AutoQuestion<Bool> skipFirstCenter = new AutoQuestion<>("Skip First Center Note", () -> new Bool[]{
+        Bool.No,
+        Bool.Yes,
+    });
+
     public Rush6Note(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
     }
@@ -41,7 +47,8 @@ public class Rush6Note extends AutoRoutine {
             "Rush 6 Note",
             List.of(
                 startPosition,
-                noteCount
+                noteCount,
+                skipFirstCenter
             )
         );
         this.drive = drive;
@@ -63,6 +70,7 @@ public class Rush6Note extends AutoRoutine {
     public Command generateCommand() {
         var startPosition = Rush6Note.startPosition.getResponse();
         var noteCount = Rush6Note.noteCount.getResponse();
+        var skipFirstCenter = Rush6Note.skipFirstCenter.getResponse();
 
         var commands = new ArrayList<Command>();
 
@@ -90,7 +98,7 @@ public class Rush6Note extends AutoRoutine {
         }
 
         if(noteCount.asInt >= 3) {
-            var spikeToCenter = AutoPaths.loadPath("R6N Amp Spike to Center");
+            var spikeToCenter = AutoPaths.loadPath("R6N Amp Spike to Center" + (skipFirstCenter.asBoolean ? " Skip" : ""));
             var centerToAmpWing = AutoPaths.loadPath("R6N Center to Amp Wing");
             var centerShot1 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
             commands.add(
@@ -117,7 +125,7 @@ public class Rush6Note extends AutoRoutine {
         }
 
         if(noteCount.asInt >= 4) {
-            var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center");
+            var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center" + (skipFirstCenter.asBoolean ? " Skip" : ""));
             var centerToAmpWing = AutoPaths.loadPath("R6N Center to Amp Wing");
             var centerShot2 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
             commands.add(
