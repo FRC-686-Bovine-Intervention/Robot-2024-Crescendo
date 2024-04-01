@@ -12,12 +12,13 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -31,7 +32,6 @@ import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.BabyAuto;
-import frc.robot.auto.Disruptor;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.SneakySource3Note;
@@ -73,7 +73,6 @@ import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
-import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.MathExtraUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
@@ -223,6 +222,9 @@ public class RobotContainer {
 
         System.out.println("[Init RobotContainer] Configuring Autonomous Modes");
         configureAutos();
+
+        System.out.println("[Init RobotContainer] Configuring System Check");
+        configureSystemCheck();
 
         if (Constants.tuningMode) {
             new Alert("Tuning mode active, do not use in competition.", AlertType.INFO).set(true);
@@ -415,6 +417,63 @@ public class RobotContainer {
         autoSelector.addRoutine(new Source3Note(this));
         // autoSelector.addRoutine(new Disruptor(this));
         autoSelector.addRoutine(new BabyAuto(this));
+    }
+
+    private void configureSystemCheck() {
+        SmartDashboard.putData("System Check/Pivot/Zero", pivot.getDefaultCommand());
+        SmartDashboard.putData("System Check/Pivot/Amp", pivot.gotoAmp());
+        SmartDashboard.putData("System Check/Climber/Wind Down", climber.getDefaultCommand());
+        SmartDashboard.putData("System Check/Climber/Deploy", climber.deploy());
+        SmartDashboard.putData("System Check/Climber/Retract", climber.retract());
+        SmartDashboard.putData("System Check/Intake/Intake", intake.intake(drive::getChassisSpeeds));
+        SmartDashboard.putData("System Check/Kicker/Kick", kicker.kick());
+        SmartDashboard.putData("System Check/Shooter/Amp", shooter.amp());
+        SmartDashboard.putData("System Check/Drive/Spin", 
+            new Command() {
+                private final Drive.Rotational rotationalSubsystem = drive.rotationalSubsystem;
+                private final Timer timer = new Timer();
+                {
+                    addRequirements(rotationalSubsystem);
+                    setName("TEST Spin");
+                }
+                public void initialize() {
+                    timer.restart();
+                }
+                public void execute() {
+                    rotationalSubsystem.driveVelocity(Math.sin(timer.get()) * 3);
+                }
+                public void end(boolean interrupted) {
+                    timer.stop();
+                    rotationalSubsystem.stop();
+                }
+            }
+        );
+        SmartDashboard.putData("System Check/Drive/Circle", 
+            new Command() {
+                private final Drive.Translational translationSubsystem = drive.translationSubsystem;
+                private final Timer timer = new Timer();
+                {
+                    addRequirements(translationSubsystem);
+                    setName("TEST Circle");
+                }
+                public void initialize() {
+                    timer.restart();
+                }
+                public void execute() {
+                    translationSubsystem.driveVelocity(
+                        new ChassisSpeeds(
+                            Math.cos(timer.get()) * 3,
+                            Math.sin(timer.get()) * 3,
+                            0
+                        )
+                    );
+                }
+                public void end(boolean interrupted) {
+                    timer.stop();
+                    translationSubsystem.stop();
+                }
+            }
+        );
     }
 
     /**
