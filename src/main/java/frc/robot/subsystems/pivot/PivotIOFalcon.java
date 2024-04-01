@@ -41,9 +41,9 @@ public class PivotIOFalcon implements PivotIO {
     private final LoggedTunableNumber kP = new LoggedTunableNumber("Pivot/PID/kP", 20);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Pivot/PID/kD", 0);
-    private final LoggedTunableNumber kV = new LoggedTunableNumber("Pivot/PID/kV", 5);
-    private final LoggedTunableNumber kA = new LoggedTunableNumber("Pivot/PID/kA", 10);
-    private final LoggedTunableNumber kJ = new LoggedTunableNumber("Pivot/PID/kJ", 10);
+    private final LoggedTunableNumber kV = new LoggedTunableNumber("Pivot/PID/Profile/kV", 5);
+    private final LoggedTunableNumber kA = new LoggedTunableNumber("Pivot/PID/Profile/kA", 10);
+    private final LoggedTunableNumber kJ = new LoggedTunableNumber("Pivot/PID/Profile/kJ", 0);
 
     private final LoggedTunableNumber ffkS = new LoggedTunableNumber("Pivot/FF/kS", 0);
     private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Pivot/FF/kG", 0.15);
@@ -55,7 +55,7 @@ public class PivotIOFalcon implements PivotIO {
         motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         motorConfig.Feedback.RotorToSensorRatio = PivotConstants.motorToEncoderRatio.ratio();
-        motorConfig.Feedback.SensorToMechanismRatio = Units.rotationsToRadians(PivotConstants.encoderToMechanismRatio.ratio());
+        motorConfig.Feedback.SensorToMechanismRatio = Units.radiansToRotations(PivotConstants.encoderToMechanismRatio.ratio());
         motorConfig.Feedback.FeedbackRemoteSensorID = pivotEncoder.getDeviceID();
         motorConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
@@ -157,7 +157,7 @@ public class PivotIOFalcon implements PivotIO {
         if(!(pivotRightMotor.getAppliedControl() instanceof StrictFollower)) {
             pivotRightMotor.setControl(new StrictFollower(pivotLeftMotor.getDeviceID()));
         }
-        pivotLeftMotor.setControl(request.withPosition(Units.radiansToRotations(pos)));
+        pivotLeftMotor.setControl(request.withPosition(pos));
     }
 
     @Override
