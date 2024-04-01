@@ -2,6 +2,7 @@ package frc.robot.auto;
 
 import java.util.List;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
@@ -23,40 +24,58 @@ public class Disruptor extends AutoRoutine {
         this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
     }
     public Disruptor(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
-        super("Disruptor",
-            List.of(startPosition),
-            () -> {
-                var disruptorPath = AutoPaths.loadPath("Disruptor");
-                var centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
+        super(
+            "Disruptor",
+            List.of(
+                startPosition
+            )
+        );
+        this.drive = drive;
+        this.shooter = shooter;
+        this.pivot = pivot;
+        this.kicker = kicker;
+        this.intake = intake;
+        this.noteVision = noteVision;
+    }
 
-                var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
-                var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
+    private final Drive drive;
+    private final Shooter shooter;
+    private final Pivot pivot;
+    private final Kicker kicker;
+    private final Intake intake;
+    private final NoteVision noteVision;
 
-                return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
+    @Override
+    public Command generateCommand() {
+        var disruptorPath = AutoPaths.loadPath("Disruptor");
+        var centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
+
+        var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
+        var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
+
+        return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
+            .andThen(
+                AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
+                .deadlineWith(
+                    AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
+                ),
+                AutoCommons.shootWhenReady(centerShot, 10, drive, shooter, pivot, kicker)
+                .deadlineWith(
+                    AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
+                    AutoCommons.followPathFlipped(disruptorPath, drive)
                     .andThen(
-                        AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
+                        Commands.runOnce(noteVision::clearMemory),
+                        intake.intake(drive::getChassisSpeeds)
                         .deadlineWith(
-                            AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
+                            noteVision.autoIntake(() -> 2, drive, intake)
                         ),
-                        AutoCommons.shootWhenReady(centerShot, 10, drive, shooter, pivot, kicker)
-                        .deadlineWith(
-                            AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
-                            AutoCommons.followPathFlipped(disruptorPath, drive)
-                            .andThen(
-                                Commands.runOnce(noteVision::clearMemory),
-                                intake.intake(drive::getChassisSpeeds)
-                                .deadlineWith(
-                                    noteVision.autoIntake(() -> 2, drive, intake)
-                                ),
-                                AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
-                                .alongWith(
-                                    AutoCommons.followPathFlipped(centerToWing, drive.translationSubsystem)
-                                )
-                            )
+                        AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
+                        .alongWith(
+                            AutoCommons.followPathFlipped(centerToWing, drive.translationSubsystem)
                         )
                     )
-                ;
-            }
-        );
+                )
+            )
+        ;
     }
 }

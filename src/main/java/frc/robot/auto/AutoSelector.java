@@ -20,7 +20,11 @@ public class AutoSelector extends VirtualSubsystem {
     private final List<SwitchableChooser> responseChoosers;
     private final String key;
     
-    private static final AutoRoutine defaultRoutine = new AutoRoutine("Do Nothing", List.of(), ()->Commands.none());
+    private static final AutoRoutine defaultRoutine = new AutoRoutine("Do Nothing", List.of()) {
+        public Command generateCommand() {
+            return Commands.none();
+        }
+    };
     private final String questionPlaceHolder = "NA"; 
 
     private AutoRoutine lastRoutine;
@@ -82,7 +86,7 @@ public class AutoSelector extends VirtualSubsystem {
     }
 
     public Command getSelectedAutoCommand() {
-        return lastRoutine.autoCommandGenerator.get().withName("AUTO " + lastRoutine.name);
+        return lastRoutine.generateCommand().withName("AUTO " + lastRoutine.name);
     }
 
     public static class AutoQuestion<T extends Enum<T>> {
@@ -114,15 +118,15 @@ public class AutoSelector extends VirtualSubsystem {
         }
     }
 
-    public static class AutoRoutine {
+    public static abstract class AutoRoutine {
         public final String name;
         public final List<AutoQuestion<?>> questions;
-        public final Supplier<? extends Command> autoCommandGenerator;
 
-        public AutoRoutine(String name, List<AutoQuestion<?>> questions, Supplier<? extends Command> autoCommandGenerator) {
+        public AutoRoutine(String name, List<AutoQuestion<?>> questions) {
             this.name = name;
             this.questions = questions;
-            this.autoCommandGenerator = autoCommandGenerator;
         }
+
+        public abstract Command generateCommand();
     }
 }

@@ -37,126 +37,142 @@ public class Rush6Note extends AutoRoutine {
         this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
     }
     public Rush6Note(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
-        super("Rush 6 Note",
+        super(
+            "Rush 6 Note",
             List.of(
                 startPosition,
                 noteCount
-            ),
-            () -> {
-                var startPosition = Rush6Note.startPosition.getResponse();
-                var noteCount = Rush6Note.noteCount.getResponse();
-
-                var commands = new ArrayList<Command>();
-
-                if(noteCount.asInt >= 1) {
-                    var preloadShot = AllianceFlipUtil.apply(startPosition.startPose.getTranslation());
-                    commands.add(
-                        AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
-                        .deadlineWith(
-                            AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
-                        )
-                    );
-                }
-
-                if(noteCount.asInt >= 2) {
-                    var startToSpike = AutoPaths.loadPath("R6N Amp Start to Spike");
-                    var spikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
-                    commands.add(
-                        AutoCommons.shootWhenReady(spikeShot, 10, drive, shooter, pivot, kicker)
-                        .deadlineWith(
-                            intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(spikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
-                            AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
-                        )
-                    );
-                }
-
-                if(noteCount.asInt >= 3) {
-                    var spikeToCenter = AutoPaths.loadPath("R6N Amp Spike to Center");
-                    var centerToAmpWing = AutoPaths.loadPath("R6N Center to Amp Wing");
-                    var centerShot1 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
-                    commands.add(
-                        AutoCommons.shootWhenReady(centerShot1, 10, drive, shooter, pivot, kicker)
-                        .deadlineWith(
-                            AutoCommons.autoAim(centerShot1, shooter, kicker, pivot),
-                            Commands.runOnce(noteVision::clearMemory)
-                            .andThen(
-                                AutoCommons.followPathFlipped(spikeToCenter, drive)
-                                .onlyWhile(() -> !noteVision.hasTarget())
-                                .andThen(
-                                    intake.intake(drive::getChassisSpeeds)
-                                    .deadlineWith(
-                                        noteVision.autoIntake(() -> 2, drive, intake)
-                                    ),
-                                    AutoCommons.autoAim(centerShot1, drive.rotationalSubsystem)
-                                    .alongWith(
-                                        AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
-                                    )
-                                )
-                            )
-                        )
-                    );
-                }
-
-                if(noteCount.asInt >= 4) {
-                    var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center");
-                    var centerToAmpWing = AutoPaths.loadPath("R6N Center to Amp Wing");
-                    var centerShot2 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
-                    commands.add(
-                        AutoCommons.shootWhenReady(centerShot2, 10, drive, shooter, pivot, kicker)
-                        .deadlineWith(
-                            AutoCommons.autoAim(centerShot2, shooter, kicker, pivot),
-                            Commands.runOnce(noteVision::clearMemory)
-                            .andThen(
-                                AutoCommons.followPathFlipped(wingToCenter, drive)
-                                .onlyWhile(() -> !noteVision.hasTarget())
-                                .andThen(
-                                    intake.intake(drive::getChassisSpeeds)
-                                    .deadlineWith(
-                                        noteVision.autoIntake(() -> 2, drive, intake)
-                                    ),
-                                    AutoCommons.autoAim(centerShot2, drive.rotationalSubsystem)
-                                    .alongWith(
-                                        AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
-                                    )
-                                )
-                            )
-                        )
-                    );
-                }
-
-                if(noteCount.asInt >= 5) {
-                    var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Sneaky Stage");
-                    var centerToAmpWing = AutoPaths.loadPath("Center to Sneaky Stage");
-                    var centerShot3 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
-                    commands.add(
-                        AutoCommons.shootWhenReady(centerShot3, 10, drive, shooter, pivot, kicker)
-                        .deadlineWith(
-                            AutoCommons.autoAim(centerShot3, shooter, kicker),
-                            Commands.runOnce(noteVision::clearMemory)
-                            .andThen(
-                                AutoCommons.followPathFlipped(wingToCenter, drive)
-                                .onlyWhile(() -> !noteVision.hasTarget())
-                                .andThen(
-                                    intake.intake(drive::getChassisSpeeds)
-                                    .deadlineWith(
-                                        noteVision.autoIntake(() -> 2, drive, intake)
-                                    ),
-                                    AutoCommons.autoAim(centerShot3, drive.rotationalSubsystem)
-                                    .alongWith(
-                                        AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
-                                        .andThen(
-                                            AutoCommons.autoAim(centerShot3, pivot)
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    );
-                }
-                
-                return AutoCommons.setOdometryFlipped(startPosition.startPose, drive).andThen(commands.toArray(Command[]::new));
-            }
+            )
         );
+        this.drive = drive;
+        this.shooter = shooter;
+        this.pivot = pivot;
+        this.kicker = kicker;
+        this.intake = intake;
+        this.noteVision = noteVision;
+    }
+
+    private final Drive drive;
+    private final Shooter shooter;
+    private final Pivot pivot;
+    private final Kicker kicker;
+    private final Intake intake;
+    private final NoteVision noteVision;
+
+    @Override
+    public Command generateCommand() {
+        var startPosition = Rush6Note.startPosition.getResponse();
+        var noteCount = Rush6Note.noteCount.getResponse();
+
+        var commands = new ArrayList<Command>();
+
+        if(noteCount.asInt >= 1) {
+            var preloadShot = AllianceFlipUtil.apply(startPosition.startPose.getTranslation());
+            commands.add(
+                AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
+                .deadlineWith(
+                    AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
+                )
+            );
+        }
+
+        if(noteCount.asInt >= 2) {
+            var startToSpike = AutoPaths.loadPath("R6N Amp Start to Spike");
+            var spikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
+            commands.add(
+                AutoCommons.shootWhenReady(spikeShot, 10, drive, shooter, pivot, kicker)
+                .deadlineWith(
+                    intake.intake(drive::getChassisSpeeds),
+                    AutoCommons.autoAim(spikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
+                    AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
+                )
+            );
+        }
+
+        if(noteCount.asInt >= 3) {
+            var spikeToCenter = AutoPaths.loadPath("R6N Amp Spike to Center");
+            var centerToAmpWing = AutoPaths.loadPath("R6N Center to Amp Wing");
+            var centerShot1 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
+            commands.add(
+                AutoCommons.shootWhenReady(centerShot1, 10, drive, shooter, pivot, kicker)
+                .deadlineWith(
+                    AutoCommons.autoAim(centerShot1, shooter, kicker, pivot),
+                    Commands.runOnce(noteVision::clearMemory)
+                    .andThen(
+                        AutoCommons.followPathFlipped(spikeToCenter, drive)
+                        .onlyWhile(() -> !noteVision.hasTarget())
+                        .andThen(
+                            intake.intake(drive::getChassisSpeeds)
+                            .deadlineWith(
+                                noteVision.autoIntake(() -> 2, drive, intake)
+                            ),
+                            AutoCommons.autoAim(centerShot1, drive.rotationalSubsystem)
+                            .alongWith(
+                                AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        if(noteCount.asInt >= 4) {
+            var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center");
+            var centerToAmpWing = AutoPaths.loadPath("R6N Center to Amp Wing");
+            var centerShot2 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
+            commands.add(
+                AutoCommons.shootWhenReady(centerShot2, 10, drive, shooter, pivot, kicker)
+                .deadlineWith(
+                    AutoCommons.autoAim(centerShot2, shooter, kicker, pivot),
+                    Commands.runOnce(noteVision::clearMemory)
+                    .andThen(
+                        AutoCommons.followPathFlipped(wingToCenter, drive)
+                        .onlyWhile(() -> !noteVision.hasTarget())
+                        .andThen(
+                            intake.intake(drive::getChassisSpeeds)
+                            .deadlineWith(
+                                noteVision.autoIntake(() -> 2, drive, intake)
+                            ),
+                            AutoCommons.autoAim(centerShot2, drive.rotationalSubsystem)
+                            .alongWith(
+                                AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        if(noteCount.asInt >= 5) {
+            var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Sneaky Stage");
+            var centerToAmpWing = AutoPaths.loadPath("Center to Sneaky Stage");
+            var centerShot3 = AllianceFlipUtil.apply(centerToAmpWing.getPoint(centerToAmpWing.numPoints() - 1).position);
+            commands.add(
+                AutoCommons.shootWhenReady(centerShot3, 10, drive, shooter, pivot, kicker)
+                .deadlineWith(
+                    AutoCommons.autoAim(centerShot3, shooter, kicker),
+                    Commands.runOnce(noteVision::clearMemory)
+                    .andThen(
+                        AutoCommons.followPathFlipped(wingToCenter, drive)
+                        .onlyWhile(() -> !noteVision.hasTarget())
+                        .andThen(
+                            intake.intake(drive::getChassisSpeeds)
+                            .deadlineWith(
+                                noteVision.autoIntake(() -> 2, drive, intake)
+                            ),
+                            AutoCommons.autoAim(centerShot3, drive.rotationalSubsystem)
+                            .alongWith(
+                                AutoCommons.followPathFlipped(centerToAmpWing, drive.translationSubsystem)
+                                .andThen(
+                                    AutoCommons.autoAim(centerShot3, pivot)
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+        
+        return AutoCommons.setOdometryFlipped(startPosition.startPose, drive).andThen(commands.toArray(Command[]::new));
     }
 }

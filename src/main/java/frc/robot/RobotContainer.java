@@ -31,7 +31,6 @@ import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
-import frc.robot.auto.BabyAuto;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.SneakySource3Note;
@@ -409,14 +408,11 @@ public class RobotContainer {
         //         drive::getCharacterizationVelocity
         //     )
         // ));
-        // autoSelector.addRoutine(new SpikeMarkShots(this));
-        // autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new SneakySource3Note(this));
         autoSelector.addRoutine(new Source3Note(this));
         // autoSelector.addRoutine(new Disruptor(this));
-        autoSelector.addRoutine(new BabyAuto(this));
     }
 
     private void configureSystemCheck() {
