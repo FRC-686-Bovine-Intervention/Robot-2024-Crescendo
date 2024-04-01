@@ -287,7 +287,15 @@ public class RobotContainer {
                 () -> climber.getCurrentCommand() != climber.getDefaultCommand()
             )
         );
-        driveController.rightStickButton().toggleOnTrue(drive.rotationalSubsystem.spin(driveController.rightStick.radialSensitivity(0.75).x().multiply(DriveConstants.maxTurnRateRadiansPerSec * 0.5)).withName("Defense Spin"));
+        driveController.rightStickButton().toggleOnTrue(
+            drive.rotationalSubsystem.defenseSpin(
+                driveController.rightStick
+                .smoothRadialDeadband(0.1)
+                .radialSensitivity(0.75)
+                .x()
+                .multiply(DriveConstants.maxTurnRateRadiansPerSec * 0.5)
+            )
+        );
         driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake

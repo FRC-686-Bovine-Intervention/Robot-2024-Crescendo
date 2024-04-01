@@ -38,7 +38,7 @@ public class PivotIOFalcon implements PivotIO {
     private final TalonFX pivotRightMotor = new TalonFX(CANDevices.pivotRightMotorID);
     private final CANcoder pivotEncoder = new CANcoder(CANDevices.pivotEncoderID);
 
-    private final LoggedTunableNumber kP = new LoggedTunableNumber("Pivot/PID/kP", 20);
+    private final LoggedTunableNumber kP = new LoggedTunableNumber("Pivot/PID/kP", 5);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
     private final LoggedTunableNumber kD = new LoggedTunableNumber("Pivot/PID/kD", 0);
     private final LoggedTunableNumber kV = new LoggedTunableNumber("Pivot/PID/Profile/kV", 5);

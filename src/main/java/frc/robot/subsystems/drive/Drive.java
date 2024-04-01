@@ -8,6 +8,7 @@
 package frc.robot.subsystems.drive;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -23,9 +24,11 @@ import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -73,6 +76,7 @@ public class Drive extends VirtualSubsystem {
     private final LoggedTunableNumber rotationCorrection = new LoggedTunableNumber("Drive/Rotation Correction", 0.125);
 
     private ChassisSpeeds setpoint = new ChassisSpeeds();
+    private Translation2d centerOfRotation = new Translation2d();
     private SwerveModuleState[] lastSetpointStates = new SwerveModuleState[] {
         new SwerveModuleState(),
         new SwerveModuleState(),
@@ -173,7 +177,7 @@ public class Drive extends VirtualSubsystem {
 
         } else {
             ChassisSpeeds correctedSpeeds = ChassisSpeeds.discretize(setpoint, rotationCorrection.get());
-            SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(correctedSpeeds);
+            SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(correctedSpeeds, centerOfRotation);
             SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeedMetersPerSec);
 
             // Set to last angles if zero
@@ -237,6 +241,8 @@ public class Drive extends VirtualSubsystem {
 
         // save values for next loop
         prevGyroYaw = gyroAngle;
+
+        Logger.recordOutput("Drive/Center of Rotation", getPose().transformBy(new Transform2d(centerOfRotation, new Rotation2d())));
     }
 
     public final Translational translationSubsystem;
@@ -316,6 +322,51 @@ public class Drive extends VirtualSubsystem {
 
         public Command spin(DoubleSupplier omega) {
             return Commands.runEnd(() -> driveVelocity(omega.getAsDouble()), this::stop, this);
+        }
+
+        private final LoggedTunableNumber defenseSpinLinearThreshold = new LoggedTunableNumber("Drive/Defense Spin Linear Threshold", 0.125);
+
+        public Command defenseSpin(DoubleSupplier omega) {
+            var subsystem = this;
+            return new Command() {
+                {
+                    addRequirements(subsystem);
+                    setName("Defense Spin");
+                }
+                @Override
+                public void initialize() {
+                    
+                }
+                @Override
+                public void execute() {
+                    var velo = omega.getAsDouble();
+                    driveVelocity(velo);
+                    var desiredLinear = VecBuilder.fill(drive.setpoint.vxMetersPerSecond, drive.setpoint.vyMetersPerSecond);
+                    if(desiredLinear.norm() <= defenseSpinLinearThreshold.get()) {
+                        drive.setCenterOfRotation(new Translation2d());
+                        return;
+                    }
+                    var rotateAround = MathExtraUtil.vectorFromRotation(
+                        MathExtraUtil.rotationFromVector(desiredLinear)
+                        // .plus(Rotation2d.fromDegrees(45 * Math.signum(velo)))
+                    );
+                    drive.setCenterOfRotation(
+                        Arrays.stream(DriveConstants.DriveModulePosition.moduleTranslations)
+                        .sorted((a, b) -> 
+                            (int) Math.signum(
+                                b.toVector().unit().dot(rotateAround) - a.toVector().unit().dot(rotateAround)
+                            )    
+                        )
+                        .findFirst()
+                        .orElse(new Translation2d())
+                    );
+                }
+                @Override
+                public void end(boolean interrupted) {
+                    stop();
+                    drive.setCenterOfRotation(new Translation2d());
+                }
+            };
         }
 
         public Command pidControlledHeading(Supplier<Optional<Rotation2d>> headingSupplier) {
@@ -416,6 +467,10 @@ public class Drive extends VirtualSubsystem {
                 speeds.vxMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec,
                 speeds.vyMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec,
                 speeds.omegaRadiansPerSecond * DriveConstants.maxTurnRateRadiansPerSec));
+    }
+
+    public void setCenterOfRotation(Translation2d cor) {
+        centerOfRotation = cor;
     }
 
     /** Zeros the drive encoders. */
@@ -563,69 +618,6 @@ public class Drive extends VirtualSubsystem {
             driveVelocityAverage += modules[i].getCharacterizationVelocity();
         }
         return driveVelocityAverage / DriveConstants.numDriveModules;
-    }
-
-    // field-oriented directions from driver's perspective
-    public static enum CardinalDirection {
-        FORWARD(Units.degreesToRadians(0)),
-        BACKWARD(Units.degreesToRadians(180)),
-        LEFT(Units.degreesToRadians(90)),
-        RIGHT(Units.degreesToRadians(270));
-
-        private final double angleRadians;
-
-        private CardinalDirection(double angleRadians) {
-            this.angleRadians = angleRadians;
-        }
-
-        public double getAngleRadians() {
-            return angleRadians;
-        }
-    }
-
-    // turn stick must exceed this threshold to change desired heading
-    private static final double cardinalStickThreshold = 0.5;
-
-    // use joystick to select cardinal direction
-    public static Optional<CardinalDirection> getCardinalDirectionFromJoystick(DoubleSupplier xSupplier,
-            DoubleSupplier ySupplier) {
-
-        Optional<CardinalDirection> direction = Optional.empty();
-
-        double xStick = xSupplier.getAsDouble();
-        double yStick = ySupplier.getAsDouble();
-
-        double xAbs = Math.abs(xStick);
-        double yAbs = Math.abs(yStick);
-
-        double maxStick = Math.max(xAbs, yAbs);
-        if (maxStick > cardinalStickThreshold) {
-            if (Math.abs(xStick) > Math.abs(yStick)) {
-                direction = Optional.of(xStick > 0 ? CardinalDirection.LEFT : CardinalDirection.RIGHT);
-            } else {
-                direction = Optional.of(yStick > 0 ? CardinalDirection.FORWARD : CardinalDirection.BACKWARD);
-            }
-        }
-        return direction;
-    }
-
-    // use joystick to select cardinal direction
-    public static Optional<CardinalDirection> getCardinalDirectionFromButtons(
-            BooleanSupplier forwardSupplier, BooleanSupplier backwardSupplier,
-            BooleanSupplier leftSupplier, BooleanSupplier rightSupplier) {
-
-        Optional<CardinalDirection> direction = Optional.empty();
-
-        if (forwardSupplier.getAsBoolean()) {
-            direction = Optional.of(CardinalDirection.FORWARD);
-        } else if (backwardSupplier.getAsBoolean()) {
-            direction = Optional.of(CardinalDirection.BACKWARD);
-        } else if (leftSupplier.getAsBoolean()) {
-            direction = Optional.of(CardinalDirection.LEFT);
-        } else if (rightSupplier.getAsBoolean()) {
-            direction = Optional.of(CardinalDirection.RIGHT);
-        }
-        return direction;
     }
 
     public boolean collisionDetected() {
