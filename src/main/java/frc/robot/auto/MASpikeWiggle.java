@@ -9,9 +9,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
-import frc.robot.auto.AutoCommons.Bool;
-import frc.robot.auto.AutoCommons.StartPosition;
+import frc.robot.auto.AutoCommons.CenterNote;
 import frc.robot.auto.AutoCommons.Count;
+import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
@@ -37,9 +37,14 @@ public class MASpikeWiggle extends AutoRoutine {
         Count.k1,
     });
 
-    private static final AutoQuestion<Bool> skipFirstCenter = new AutoQuestion<>("Skip First Center Note", () -> new Bool[]{
-        Bool.No,
-        Bool.Yes,
+    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> new CenterNote[]{
+        CenterNote.Note1,
+        CenterNote.Note2,
+    });
+
+    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> new CenterNote[]{
+        CenterNote.Note2,
+        CenterNote.Note1,
     });
 
     public MASpikeWiggle(RobotContainer robot) {
@@ -50,7 +55,9 @@ public class MASpikeWiggle extends AutoRoutine {
             "MA Spike Wiggle",
             List.of(
                 startPosition,
-                noteCount
+                noteCount,
+                firstCenterNote,
+                secondCenterNote
             )
         );
         this.drive = drive;
@@ -72,7 +79,8 @@ public class MASpikeWiggle extends AutoRoutine {
     public Command generateCommand() {
         var startPosition = MASpikeWiggle.startPosition.getResponse();
         var noteCount = MASpikeWiggle.noteCount.getResponse();
-        var skipFirstCenter = MASpikeWiggle.skipFirstCenter.getResponse();
+        var firstCenterNote = MASpikeWiggle.firstCenterNote.getResponse();
+        var secondCenterNote = MASpikeWiggle.secondCenterNote.getResponse();
 
         var wiggleAngle = Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(
             switch(startPosition) {
@@ -198,7 +206,7 @@ public class MASpikeWiggle extends AutoRoutine {
             var spikeToCenter = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "MASW Podium Spike to Center";
-                    case Podium, SubwooferSource -> "R6N Amp Spike to Center" + (skipFirstCenter.asBoolean ? " Skip" : "");
+                    case Podium, SubwooferSource -> "R6N Amp Spike to Center " + firstCenterNote.name();
                     default -> "";
                 }
             );
@@ -226,7 +234,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 )
             );
             if(noteCount.asInt >= 6) {
-                var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center");
+                var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center " + secondCenterNote.name());
                 commands.add(
                     AutoCommons.shootWhenReady(centerShot, 3, drive, shooter, pivot, kicker)
                     .deadlineWith(

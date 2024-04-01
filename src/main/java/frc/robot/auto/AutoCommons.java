@@ -76,6 +76,15 @@ public class AutoCommons {
         }
     }
 
+    public static enum CenterNote {
+        Note1,
+        Note2,
+        Note3,
+        Note4,
+        Note5,
+        ;
+    }
+
     public static enum Bool {
         Yes(true),
         No(false),
@@ -155,17 +164,20 @@ public class AutoCommons {
         public static void preload() {
             preloading = true;
             // loadPath(String.format(AutoPaths.startToSpike, "Amp"));
-            loadPath("MASW Amp Start to Spike");
             loadPath("MASW Amp Spike to Center Spike");
+            loadPath("MASW Amp Start to Spike");
+            loadPath("MASW Center Spike to Amp Spike");
             loadPath("MASW Center Spike to Podium Spike");
+            loadPath("MASW Podium Spike to Center Spike");
             loadPath("MASW Podium Spike to Center");
             loadPath("MASW Podium Start to Spike");
-            loadPath("MASW Podium Spike to Center Spike");
-            loadPath("MASW Center Spike to Amp Spike");
+            loadPath("R6N Amp Spike to Center Note1");
+            loadPath("R6N Amp Spike to Center Note2");
             loadPath("R6N Amp Start to Spike");
-            loadPath("R6N Amp Spike to Center");
+            loadPath("R6N Amp Wing to Center Note1");
+            loadPath("R6N Amp Wing to Center Note2");
+            loadPath("R6N Amp Wing to Sneaky Stage");
             loadPath("R6N Center to Amp Wing");
-            loadPath("R6N Amp Wing to Center");
             preloading = false;
             System.out.println("[Init AutoPaths] Loaded paths");
         }
