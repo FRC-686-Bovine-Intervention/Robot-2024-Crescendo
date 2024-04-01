@@ -284,15 +284,17 @@ public class Drive extends VirtualSubsystem {
 
         public static Supplier<ChassisSpeeds> joystickSpectatorToFieldRelative(Joystick translationalJoystick, BooleanSupplier precisionSupplier) {
             return () -> {
-                var specTrans = new Translation2d(
-                    translationalJoystick.x().getAsDouble() * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1),
-                    translationalJoystick.y().getAsDouble()	 * DriveConstants.maxDriveSpeedMetersPerSec * (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
+                var fieldVec = SpectatorType.getCurrentType().toField(
+                    translationalJoystick.toVector()
+                    .times(
+                        DriveConstants.maxDriveSpeedMetersPerSec * 
+                        (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
+                    )
                 );
-                var fieldTrans = SpectatorType.getCurrentType().toField(specTrans);
                 return AllianceFlipUtil.applyFieldRelative(
                     new ChassisSpeeds(
-                        fieldTrans.getX(),
-                        fieldTrans.getY(),
+                        fieldVec.get(0),
+                        fieldVec.get(1),
                         0
                     ),
                     FieldFlipType.CenterPointFlip
@@ -340,8 +342,11 @@ public class Drive extends VirtualSubsystem {
                 @Override
                 public void execute() {
                     var velo = omega.getAsDouble();
-                    driveVelocity(velo);
                     var desiredLinear = VecBuilder.fill(drive.setpoint.vxMetersPerSecond, drive.setpoint.vyMetersPerSecond);
+                    var fieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.setpoint, drive.getRotation());
+                    var dot = VecBuilder.fill(fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond).dot(SpectatorType.getCurrentType().getForwardFieldRel());
+                    velo *= Math.signum(dot);
+                    driveVelocity(velo);
                     if(desiredLinear.norm() <= defenseSpinLinearThreshold.get()) {
                         drive.setCenterOfRotation(new Translation2d());
                         return;
@@ -420,9 +425,8 @@ public class Drive extends VirtualSubsystem {
                             preciseTurnTimer.restart();
                             return Optional.empty();
                         }
-                        var joyVec = new Translation2d(joystick.x().getAsDouble(), joystick.y().getAsDouble());
-                        joyVec = SpectatorType.getCurrentType().toField(joyVec);
-                        Rotation2d joyHeading = AllianceFlipUtil.apply(new Rotation2d(joyVec.getX(), joyVec.getY()), FieldFlipType.CenterPointFlip);
+                        var joyVec = SpectatorType.getCurrentType().toField(joystick.toVector());
+                        Rotation2d joyHeading = AllianceFlipUtil.apply(MathExtraUtil.rotationFromVector(joyVec), FieldFlipType.CenterPointFlip);
                         if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
                             return outputMap(joyHeading);
                         }

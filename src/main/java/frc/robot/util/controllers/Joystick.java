@@ -4,7 +4,10 @@ import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -35,6 +38,10 @@ public class Joystick {
 
     public Axis y() {
         return y;
+    }
+
+    public Vector<N2> toVector() {
+        return VecBuilder.fill(x.getAsDouble(), y.getAsDouble());
     }
 
     public Joystick multiplyX(DoubleSupplier xCoef) {
