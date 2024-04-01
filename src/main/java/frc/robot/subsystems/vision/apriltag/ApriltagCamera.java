@@ -19,7 +19,7 @@ public class ApriltagCamera {
 
     public Optional<ApriltagCameraResult> periodic() {
         cameraIO.updateInputs(inputs);
-        Logger.processInputs("ApriltagVision/Camera/" + name, inputs);
-        return inputs.getResult();
+        Logger.processInputs("ApriltagVision/" + name, inputs);
+        return ApriltagCameraResult.from(inputs);
     }
 }

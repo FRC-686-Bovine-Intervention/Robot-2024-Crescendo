@@ -35,63 +35,18 @@ public class Pivot extends SubsystemBase {
   private final PivotIO pivotIO;
   private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
+  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
+
   public static final double POS_ZERO = Units.degreesToRadians(9);
   public static final double POS_AMP = Units.degreesToRadians(108/* .193359375 */);
-
-  private final LoggedTunableNumber pidkP = new LoggedTunableNumber("Pivot/PID/kP", 20);
-  private final LoggedTunableNumber pidkI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
-  private final LoggedTunableNumber pidkD = new LoggedTunableNumber("Pivot/PID/kD", 0);
-  private final LoggedTunableNumber pidkV = new LoggedTunableNumber("Pivot/PID/kV", 5);
-  private final LoggedTunableNumber pidkA = new LoggedTunableNumber("Pivot/PID/kA", 10);
-  private final LoggedTunableNumber pidIZone = new LoggedTunableNumber("Pivot/PID/IZone", Units.degreesToRadians(3));
-  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
-  private final ProfiledPIDController pivotPID = 
-    new ProfiledPIDController(
-      pidkP.get(),
-      pidkI.get(),
-      pidkD.get(),
-      new Constraints(
-          pidkV.get(),
-          pidkA.get()
-      )
-    );
-
-  private final LoggedTunableNumber ffkS = new LoggedTunableNumber("Pivot/FF/kS", 0);
-  private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Pivot/FF/kG", 0.15);
-  private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Pivot/FF/kV", 1.5);
-  private final LoggedTunableNumber ffkA = new LoggedTunableNumber("Pivot/FF/kA", 0);
-  private ArmFeedforward feedforward = 
-    new ArmFeedforward(
-      ffkS.get(),
-      ffkG.get(),
-      ffkV.get(),
-      ffkA.get()
-    );
 
   private static final Translation3d robotToPivotTranslation = 
     new Translation3d(
       Inches.of(13),
       Inches.of(0),
       Inches.of(22.665031)
-    );
-
-  private void updateTunables() {
-    if(pidkP.hasChanged(hashCode()) | pidkI.hasChanged(hashCode()) | pidkD.hasChanged(hashCode())) {
-      pivotPID.setPID(pidkP.get(), pidkI.get(), pidkD.get());
-    }
-    if(pidkV.hasChanged(hashCode()) | pidkA.hasChanged(hashCode())) {
-      pivotPID.setConstraints(new Constraints(pidkV.get(), pidkA.get()));
-    }
-    if(pidIZone.hasChanged(hashCode())) {
-      pivotPID.setIZone(pidIZone.get());
-    }
-    if(toleranceDeg.hasChanged(hashCode())) {
-      pivotPID.setTolerance(Units.degreesToRadians(toleranceDeg.get()));
-    }
-    if(ffkS.hasChanged(hashCode()) | ffkG.hasChanged(hashCode()) | ffkV.hasChanged(hashCode()) | ffkA.hasChanged(hashCode())) {
-      feedforward = new ArmFeedforward(ffkS.get(), ffkG.get(), ffkV.get(), ffkA.get());
-    }
-  }
+    )
+  ;
 
   public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
     System.out.println("[Init Pivot] Instantiating Pivot");
@@ -106,7 +61,6 @@ public class Pivot extends SubsystemBase {
   public void periodic() {
     pivotIO.updateInputs(inputs);
     Logger.processInputs("Pivot", inputs);
-    updateTunables();
     Logger.recordOutput("Mechanism3d/Shooter", getRobotToPivot());
     if(increaseRuntimeOffset.getAsBoolean() && !prevInc) {
       runtimeOffset += 0.5;
@@ -147,20 +101,24 @@ public class Pivot extends SubsystemBase {
   private final BooleanSupplier decreaseRuntimeOffset;
 
   private Command go(DoubleSupplier pos) {
-    return new ProfiledPIDCommand(
-      pivotPID,
-      () -> inputs.pivotEncoder.positionRad,
-      () -> pos.getAsDouble() + Units.degreesToRadians(runtimeOffset),
-      (output, setpoint) -> {
-        Logger.recordOutput("Pivot/PID out", output);
-        Logger.recordOutput("Pivot/Profile Position", setpoint.position);
-        Logger.recordOutput("Pivot/Profile Velocity", setpoint.velocity);
-        var ff = feedforward.calculate(setpoint.position, setpoint.velocity);
-        Logger.recordOutput("Pivot/FF out", ff);
-        pivotIO.setPivotVoltage(output + ff);
-      },
-      this
-    );
+    var subsystem = this;
+    return new Command() {
+      {
+        addRequirements(subsystem);
+      }
+      @Override
+      public void initialize() {
+        execute();
+      }
+      @Override
+      public void execute() {
+        pivotIO.setPivotPos(pos.getAsDouble());
+      }
+      @Override
+      public void end(boolean interrupted) {
+        pivotIO.stop();
+      }
+    };
   }
 
   public Command gotoAmp() {
@@ -190,7 +148,7 @@ public class Pivot extends SubsystemBase {
   }
 
   public boolean atPos() {
-    return pivotPID.atGoal();
+    return MathUtil.isNear(0, inputs.pivotError, Units.degreesToRadians(toleranceDeg.get()));
   }
 
   public boolean isAtAngle(double angleRad) {

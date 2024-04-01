@@ -15,11 +15,16 @@ public interface PivotIO {
         public LoggedMotor pivotLeftMotor = new LoggedMotor();
         public LoggedMotor pivotRightMotor = new LoggedMotor();
         public LoggedEncoder pivotEncoder = new LoggedEncoder();
+        public double pivotError = 0;
     }
 
     public default void updateInputs(PivotIOInputs inputs) {}
 
     public default void setPivotVoltage(double volts) {}
+
+    public default void setPivotPos(double pos) {}
+
+    public default void stop() {}
 
     public default void setCoast(boolean coast) {}
 }

@@ -84,10 +84,10 @@ public class ShooterIOFalcon implements ShooterIO {
         }
     }
 
-    private final Alert leftTempWarning = new Alert("Shooter Temp", "Left Shooter (" + CANDevices.shooterLeftID + ") has exceeded 70C", AlertType.WARNING);
-    private final Alert rightTempWarning = new Alert("Shooter Temp", "Right Shooter (" + CANDevices.shooterRightID + ") has exceeded 70C", AlertType.WARNING);
-    private final Alert leftTempAlert = new Alert("Shooter Temp", "Left Shooter (" + CANDevices.shooterLeftID + ") has exceeded 100C", AlertType.ERROR);
-    private final Alert rightTempAlert = new Alert("Shooter Temp", "Right Shooter (" + CANDevices.shooterRightID + ") has exceeded 100C", AlertType.ERROR);
+    private final Alert leftTempWarning = new Alert("Left Shooter (" + CANDevices.shooterLeftID + ") has exceeded 70C", AlertType.WARNING);
+    private final Alert rightTempWarning = new Alert("Right Shooter (" + CANDevices.shooterRightID + ") has exceeded 70C", AlertType.WARNING);
+    private final Alert leftTempAlert = new Alert("Left Shooter (" + CANDevices.shooterLeftID + ") has exceeded 100C", AlertType.ERROR);
+    private final Alert rightTempAlert = new Alert("Right Shooter (" + CANDevices.shooterRightID + ") has exceeded 100C", AlertType.ERROR);
 
     @Override
     public void updateInputs(ShooterIOInputs inputs) {

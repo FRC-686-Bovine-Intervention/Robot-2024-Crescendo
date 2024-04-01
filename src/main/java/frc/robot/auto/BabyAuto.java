@@ -55,7 +55,7 @@ public class BabyAuto extends AutoRoutine {
 
                 var command = AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
                 .andThen(
-                    AutoCommons.shootWhenReady(preloadShot, drive, shooter, pivot, kicker)
+                    AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
                     .deadlineWith(
                         AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
                     )
@@ -64,7 +64,7 @@ public class BabyAuto extends AutoRoutine {
                     default:
                     case Yes:
                         command = command.andThen(
-                            AutoCommons.shootWhenReady(spikeShot, drive, shooter, pivot, kicker)
+                            AutoCommons.shootWhenReady(spikeShot, 10, drive, shooter, pivot, kicker)
                             .deadlineWith(
                                 intake.intake(drive::getChassisSpeeds),
                                 AutoCommons.autoAim(spikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),

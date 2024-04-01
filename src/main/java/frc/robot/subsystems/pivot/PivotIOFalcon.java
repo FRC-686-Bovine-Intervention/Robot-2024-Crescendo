@@ -7,40 +7,61 @@ package frc.robot.subsystems.pivot;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
 
+import org.littletonrobotics.junction.Logger;
+
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
+import edu.wpi.first.math.util.Units;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.PivotConstants;
+import frc.robot.util.LoggedTunableNumber;
 
 public class PivotIOFalcon implements PivotIO {
     private final TalonFX pivotLeftMotor = new TalonFX(CANDevices.pivotLeftMotorID);
     private final TalonFX pivotRightMotor = new TalonFX(CANDevices.pivotRightMotorID);
     private final CANcoder pivotEncoder = new CANcoder(CANDevices.pivotEncoderID);
+
+    private final LoggedTunableNumber kP = new LoggedTunableNumber("Pivot/PID/kP", 20);
+    private final LoggedTunableNumber kI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
+    private final LoggedTunableNumber kD = new LoggedTunableNumber("Pivot/PID/kD", 0);
+    private final LoggedTunableNumber kV = new LoggedTunableNumber("Pivot/PID/Profile/kV", 5);
+    private final LoggedTunableNumber kA = new LoggedTunableNumber("Pivot/PID/Profile/kA", 10);
+    private final LoggedTunableNumber kJ = new LoggedTunableNumber("Pivot/PID/Profile/kJ", 0);
+
+    private final LoggedTunableNumber ffkS = new LoggedTunableNumber("Pivot/FF/kS", 0);
+    private final LoggedTunableNumber ffkG = new LoggedTunableNumber("Pivot/FF/kG", 0.15);
+    private final LoggedTunableNumber ffkV = new LoggedTunableNumber("Pivot/FF/kV", 1.5);
+    private final LoggedTunableNumber ffkA = new LoggedTunableNumber("Pivot/FF/kA", 0);
     
     public PivotIOFalcon() {
         var motorConfig = new TalonFXConfiguration();
         motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         motorConfig.Feedback.RotorToSensorRatio = PivotConstants.motorToEncoderRatio.ratio();
-        motorConfig.Feedback.SensorToMechanismRatio = PivotConstants.encoderToMechanismRatio.ratio();
+        motorConfig.Feedback.SensorToMechanismRatio = Units.radiansToRotations(PivotConstants.encoderToMechanismRatio.ratio());
         motorConfig.Feedback.FeedbackRemoteSensorID = pivotEncoder.getDeviceID();
         motorConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Radians.of(Pivot.POS_ZERO).in(Rotations);
+        motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Pivot.POS_ZERO;
         motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Radians.of(Pivot.POS_AMP).in(Rotations);
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Pivot.POS_AMP;
         pivotLeftMotor.getConfigurator().apply(motorConfig);
         motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         pivotRightMotor.getConfigurator().apply(motorConfig);
@@ -52,14 +73,65 @@ public class PivotIOFalcon implements PivotIO {
         encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         pivotEncoder.getConfigurator().apply(encoderConfig);
 
+        updateTunables();
+
+        BaseStatusSignal.setUpdateFrequencyForAll(
+            50,
+            pivotLeftMotor.getPosition(),
+            pivotLeftMotor.getVelocity(),
+            pivotLeftMotor.getClosedLoopError()
+        );
+        pivotLeftMotor.getClosedLoopError().setUpdateFrequency(50);
+
         pivotRightMotor.setControl(new StrictFollower(pivotLeftMotor.getDeviceID()));
+    }
+
+    private void updateTunables() {
+        if(
+            kP.hasChanged(hashCode()) |
+            kI.hasChanged(hashCode()) |
+            kD.hasChanged(hashCode()) |
+            kV.hasChanged(hashCode()) |
+            kA.hasChanged(hashCode()) |
+            kJ.hasChanged(hashCode()) |
+            ffkV.hasChanged(hashCode()) |
+            ffkA.hasChanged(hashCode()) |
+            ffkG.hasChanged(hashCode()) |
+            ffkS.hasChanged(hashCode())
+        ) {
+            var pidConfig = new Slot0Configs();
+            var profileConfig = new MotionMagicConfigs();
+            pidConfig.kP = kP.get();
+            pidConfig.kI = kI.get();
+            pidConfig.kD = kD.get();
+            profileConfig.MotionMagicCruiseVelocity= kV.get();
+            profileConfig.MotionMagicAcceleration = kA.get();
+            profileConfig.MotionMagicJerk = kJ.get();
+            pidConfig.kV = ffkV.get();
+            pidConfig.kA = ffkA.get();
+            pidConfig.kG = ffkG.get();
+            pidConfig.kS = ffkS.get();
+            pidConfig.GravityType = GravityTypeValue.Arm_Cosine;
+
+            pivotLeftMotor.getConfigurator().apply(pidConfig);
+            pivotLeftMotor.getConfigurator().apply(profileConfig);
+        }
     }
 
     @Override
     public void updateInputs(PivotIOInputs inputs) {
         inputs.pivotLeftMotor.updateFrom(pivotLeftMotor);
         inputs.pivotRightMotor.updateFrom(pivotRightMotor);
-        inputs.pivotEncoder.updateFrom(pivotEncoder);
+        inputs.pivotEncoder.positionRad = pivotLeftMotor.getPosition().getValueAsDouble();
+        inputs.pivotEncoder.velocityRadPerSec = pivotLeftMotor.getVelocity().getValueAsDouble();
+
+        inputs.pivotError = pivotLeftMotor.getClosedLoopError().getValueAsDouble();
+
+        updateTunables();
+
+        Logger.recordOutput("Pivot/Profile Position", pivotLeftMotor.getClosedLoopReference().getValueAsDouble());
+        Logger.recordOutput("Pivot/P Out", pivotLeftMotor.getClosedLoopProportionalOutput().getValueAsDouble());
+        Logger.recordOutput("Pivot/FF Out", pivotLeftMotor.getClosedLoopFeedForward().getValueAsDouble());
     }
 
     @Override
@@ -68,6 +140,29 @@ public class PivotIOFalcon implements PivotIO {
             pivotRightMotor.setControl(new StrictFollower(pivotLeftMotor.getDeviceID()));
         }
         pivotLeftMotor.setVoltage(volts);
+    }
+
+    private final MotionMagicVoltage request = new MotionMagicVoltage(
+        0,
+        false,
+        0,
+        0,
+        false,
+        false,
+        false
+    );
+
+    @Override
+    public void setPivotPos(double pos) {
+        if(!(pivotRightMotor.getAppliedControl() instanceof StrictFollower)) {
+            pivotRightMotor.setControl(new StrictFollower(pivotLeftMotor.getDeviceID()));
+        }
+        pivotLeftMotor.setControl(request.withPosition(pos));
+    }
+
+    @Override
+    public void stop() {
+        pivotLeftMotor.disable();
     }
 
     private static final ControlRequest COAST_OUT = new CoastOut();

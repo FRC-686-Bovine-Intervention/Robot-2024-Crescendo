@@ -3,41 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 4.6985437653782,
-        "y": 7.082213735030277
+        "x": 2.629272310567743,
+        "y": 2.56123121659951
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.307328239759701,
-        "y": 7.314409211807688
+        "x": 3.629272310567743,
+        "y": 2.06123121659951
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 7.157084107727257,
-        "y": 6.296846681224329
+        "x": 8.557086247120472,
+        "y": 1.3387903241537276
       },
       "prevControl": {
-        "x": 7.116108435354772,
-        "y": 7.020750226471551
+        "x": 8.5775740833033,
+        "y": 0.013910250773322915
       },
       "nextControl": {
-        "x": 7.198964083011041,
-        "y": 5.556967117877469
+        "x": 8.521158409415293,
+        "y": 3.662123829481648
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 7.157084107727257,
-        "y": 4.343672964802577
+        "x": 8.557086247120472,
+        "y": 6.576847109099558
       },
       "prevControl": {
-        "x": 7.157084107727257,
-        "y": 5.723187268009548
+        "x": 8.584403362035461,
+        "y": 4.896844541827702
       },
       "nextControl": null,
       "isLocked": false,
@@ -46,24 +46,24 @@
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 0.4,
-      "rotationDegrees": -167.1419098270018,
+      "waypointRelativePos": 1.05,
+      "rotationDegrees": -40.641617869789776,
       "rotateFast": false
     },
     {
-      "waypointRelativePos": 1.0,
-      "rotationDegrees": 156.5498195657015,
+      "waypointRelativePos": 1.75,
+      "rotationDegrees": -51.29546057498393,
       "rotateFast": false
     }
   ],
   "constraintZones": [
     {
       "name": "New Constraints Zone",
-      "minWaypointRelativePos": 0.85,
-      "maxWaypointRelativePos": 2.0,
+      "minWaypointRelativePos": 0.65,
+      "maxWaypointRelativePos": 1.0,
       "constraints": {
-        "maxVelocity": 1.5,
-        "maxAcceleration": 3.0,
+        "maxVelocity": 2.0,
+        "maxAcceleration": 6.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0
       }
@@ -71,20 +71,20 @@
   ],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 3.0,
+    "maxVelocity": 4.0,
     "maxAcceleration": 6.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 132.70938995736148,
+    "rotation": -45.0,
     "rotateFast": false
   },
   "reversed": false,
-  "folder": "Rush 6 Note",
+  "folder": "Disruptor",
   "previewStartingState": {
-    "rotation": -167.73522627210764,
+    "rotation": 125.20218259219243,
     "velocity": 0
   },
   "useDefaultConstraints": false

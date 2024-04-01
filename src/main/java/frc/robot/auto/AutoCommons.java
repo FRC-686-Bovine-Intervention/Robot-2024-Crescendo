@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
 
@@ -13,8 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.BooleanSubscriber;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
@@ -25,9 +25,9 @@ import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.util.Alert;
+import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.MathExtraUtil;
-import frc.robot.util.Alert.AlertType;
 
 public class AutoCommons {
     public static enum StartPosition {
@@ -44,7 +44,7 @@ public class AutoCommons {
         Podium(new Pose2d(
             new Translation2d(
                 1.40,
-                4.10
+                4.20
             ),
             Rotation2d.fromDegrees(180)
         )),
@@ -73,17 +73,23 @@ public class AutoCommons {
         return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive);
     }
 
-    public static Command shootWhenReady(Translation2d pos, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
+    public static Command shootWhenReady(Translation2d pos, double angularTolerance, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
         var FORR = getFORR(pos);
         var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
-        BooleanSupplier condition = () -> 
-            // kicker.hasNote() && 
-            shooter.readyToShoot() && 
-            pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
-            MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
-            MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
-        ;
+        BooleanSupplier condition = () -> {
+            var shooterReady = shooter.readyToShoot();
+            var pivotReady = pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle));
+            var poseReady = MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
+            var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.75, 1);
+
+            Logger.recordOutput("DEBUG/Shooter Ready", shooterReady);
+            Logger.recordOutput("DEBUG/Pivot Ready", pivotReady);
+            Logger.recordOutput("DEBUG/Pose Ready", poseReady);
+            Logger.recordOutput("DEBUG/Speed Ready", speedReady);
+
+            return shooterReady && pivotReady && poseReady && speedReady;
+        };
         return kicker.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(kicker::sensorFallingEdge);
         // return Commands.waitUntil(() -> 
         //     // kicker.hasNote() && 
@@ -129,6 +135,9 @@ public class AutoCommons {
             loadPath("MASW Amp Spike to Center Spike");
             loadPath("MASW Center Spike to Podium Spike");
             loadPath("MASW Podium Spike to Center");
+            loadPath("MASW Podium Start to Spike");
+            loadPath("MASW Podium Spike to Center Spike");
+            loadPath("MASW Center Spike to Amp Spike");
             loadPath("R6N Amp Start to Spike");
             loadPath("R6N Amp Spike to Center");
             loadPath("R6N Center to Amp Wing");

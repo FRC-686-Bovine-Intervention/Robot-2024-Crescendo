@@ -31,9 +31,14 @@ import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.BabyAuto;
+import frc.robot.auto.Disruptor;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
-import frc.robot.auto.Source4Note;
+import frc.robot.auto.SneakySource3Note;
+import frc.robot.auto.Source3Note;
+import frc.robot.subsystems.climber.Climber;
+import frc.robot.subsystems.climber.ClimberIO;
+import frc.robot.subsystems.climber.ClimberIOFalcon;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -81,6 +86,7 @@ public class RobotContainer {
     public final Pivot pivot;
     public final Kicker kicker;
     public final Shooter shooter;
+    public final Climber climber;
     public final NoteVision noteVision;
     public final ApriltagVision apriltagVision;
     public final ManualOverrides manualOverrides;
@@ -112,7 +118,9 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOFalcon550());
                 kicker = new Kicker(new KickerIONeo550());
                 shooter = new Shooter(new ShooterIOFalcon());
-                pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
+                climber = new Climber(new ClimberIOFalcon());
+                // pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
+                pivot = new Pivot(new PivotIOFalcon(), ()->false,()->false);
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
             break;
@@ -128,6 +136,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOSim(), ()->false,()->false);
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
+                climber = new Climber(new ClimberIO() {});
                 noteVision = new NoteVision(new NoteVisionIOSim());
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
@@ -144,6 +153,7 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIO() {}, ()->false,()->false);
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
+                climber = new Climber(new ClimberIO() {});
                 noteVision = new NoteVision(new NoteVisionIO() {});
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
@@ -227,10 +237,12 @@ public class RobotContainer {
         intake.setDefaultCommand(intake.antiDeadzone());
         kicker.setDefaultCommand(kicker.antiDeadzone());
         new Trigger(kicker::hasNote).and(() -> Optional.ofNullable(kicker.getCurrentCommand()).map((c) -> c.getName().contains("|")).orElse(false)).and(DriverStation::isEnabled).whileTrue(intake.doNothing().asProxy().alongWith(kicker.doNothing().asProxy()));
+        new Trigger(intake::hasNote).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(intake.feedToKicker(kicker::hasNote))
+        .and(() -> kicker.getCurrentCommand() == kicker.getDefaultCommand()).onTrue(kicker.feedIn());
 
         pivot.setDefaultCommand(pivot.gotoZero());
 
-        new Trigger(intake::hasNote).and(() -> !kicker.hasNote() && kicker.getCurrentCommand() == kicker.getDefaultCommand()).and(DriverStation::isEnabled).onTrue(SuperCommands.feedToKicker(intake, kicker));
+        climber.setDefaultCommand(climber.windDown());
     }
 
     private void configureControls() {
@@ -241,13 +253,16 @@ public class RobotContainer {
                     driveController.rightStick.smoothRadialDeadband(0.85),
                     new Rotation2d[]{
                         // Center Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+150))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-150))),
                         // Up Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-90))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-30))),
                         // Down Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+90))),
+                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+30))),
                     },
-                    () -> RobotConstants.shooterForward
+                    () -> Rotation2d.fromDegrees(-90)
                 )
                 .withName("Climbing")
                 .asProxy(),
@@ -269,10 +284,11 @@ public class RobotContainer {
                 )
                 .withName("DriveCustomFlick")
                 .asProxy(),
-                () -> false // Climbing mode
+                () -> climber.getCurrentCommand() != climber.getDefaultCommand()
             )
         );
         driveController.rightStickButton().toggleOnTrue(drive.rotationalSubsystem.spin(driveController.rightStick.radialSensitivity(0.75).x().multiply(DriveConstants.maxTurnRateRadiansPerSec * 0.5)).withName("Defense Spin"));
+        driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake
         driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
@@ -306,17 +322,19 @@ public class RobotContainer {
         driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
 
         // Auto Drive
-        driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
-        driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
-        driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
+        // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
+        // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
+        // driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
 
 
-        driveController.start().or(driveController.back()).onTrue(Commands.runOnce(() -> {
-            var offset = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
-            var rotation = drive.getRotation();
-            var pos = new Translation2d(rotation.getCos(), rotation.getSin()).times(-FieldConstants.subwooferToSpeakerDist);
-            drive.setPose(new Pose2d(pos.plus(offset), rotation));
-        }));
+        // driveController.start().or(driveController.back()).onTrue(Commands.runOnce(() -> {
+        //     var offset = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
+        //     var rotation = drive.getRotation();
+        //     var pos = new Translation2d(rotation.getCos(), rotation.getSin()).times(-FieldConstants.subwooferToSpeakerDist);
+        //     drive.setPose(new Pose2d(pos.plus(offset), rotation));
+        // }));
+        driveController.start().toggleOnTrue(climber.deploy());
+        driveController.back().toggleOnTrue(climber.retract());
         // new Trigger(() -> 
         //     drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
         //     MathUtil.isNear(
@@ -385,10 +403,11 @@ public class RobotContainer {
         // ));
         // autoSelector.addRoutine(new SpikeMarkShots(this));
         // autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
-        // autoSelector.addRoutine(new CleanSpikes(this));
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
-        autoSelector.addRoutine(new Source4Note(this));
+        autoSelector.addRoutine(new SneakySource3Note(this));
+        autoSelector.addRoutine(new Source3Note(this));
+        // autoSelector.addRoutine(new Disruptor(this));
         autoSelector.addRoutine(new BabyAuto(this));
     }
 
@@ -401,8 +420,8 @@ public class RobotContainer {
         return autoSelector.getSelectedAutoCommand();
     }
 
-    private final Alert xboxConnect = new Alert("Controller Connection", "Xbox Controller (Port 0) not connected", AlertType.ERROR);
-    private final Alert buttonBoardConnect = new Alert("Controller Connection", "Button Board (Port 1) not connected", AlertType.WARNING);
+    private final Alert xboxConnect = new Alert("Xbox Controller (Port 0) not connected", AlertType.ERROR);
+    private final Alert buttonBoardConnect = new Alert("Button Board (Port 1) not connected", AlertType.WARNING);
 
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();

@@ -35,6 +35,6 @@ public class ApriltagCameraIOLimelight implements ApriltagCameraIO {
         var timestamp = Timer.getFPGATimestamp() - latencySeconds;
 
         inputs.hasResult = true;
-        inputs.result = new ApriltagCameraResult(timestamp, cameraToTargetDist, visionPose);
+        // inputs.result = new ApriltagCameraResult(timestamp, cameraToTargetDist, visionPose);
     }
 }

@@ -64,8 +64,8 @@ public class ModuleIOFalcon550 implements ModuleIO {
 
         zeroEncoders();
 
-        tempWarning = new Alert("Drive Temp", position.name() + " Module has exceeded 70C", AlertType.WARNING);
-        tempAlert = new Alert("Drive Temp", position.name() + " Module has exceeded 100C", AlertType.ERROR);
+        tempWarning = new Alert(position.name() + " Module has exceeded 70C", AlertType.WARNING);
+        tempAlert = new Alert(position.name() + " Module has exceeded 100C", AlertType.ERROR);
     }
 
     private final Alert tempWarning;

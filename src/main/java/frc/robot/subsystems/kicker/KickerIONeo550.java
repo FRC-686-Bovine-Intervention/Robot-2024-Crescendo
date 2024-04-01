@@ -20,7 +20,7 @@ public class KickerIONeo550 implements KickerIO {
     private final CANSparkMax rightMotor = new CANSparkMax(CANDevices.kickerRightID, MotorType.kBrushless);
 
     private final DigitalInput sensor = new DigitalInput(DIOPorts.kickerSensorPort);
-    private final Debouncer sensorDebouncer = new Debouncer(Constants.dtSeconds * 3, DebounceType.kBoth);
+    // private final Debouncer sensorDebouncer = new Debouncer(Constants.dtSeconds * 3, DebounceType.kBoth);
 
     public KickerIONeo550() {
         leftMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
@@ -30,7 +30,7 @@ public class KickerIONeo550 implements KickerIO {
 
     @Override
     public void updateInputs(KickerIOInputs inputs) {
-        inputs.notePresent = sensorDebouncer.calculate(!sensor.get());
+        inputs.notePresent = !sensor.get();
 
         inputs.leftMotor.updateFrom(leftMotor);
         inputs.rightMotor.updateFrom(rightMotor);

@@ -3,49 +3,55 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.3931728606644662,
-        "y": 4.43928286700504
+        "x": 2.7590286064139424,
+        "y": 4.719283294883684
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.919071666874068,
-        "y": 4.43928286700504
+        "x": 2.574638080737763,
+        "y": 5.074405788778548
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.267320537944131,
-        "y": 4.43928286700504
+        "x": 2.991224083191354,
+        "y": 5.682211595637065
       },
       "prevControl": {
-        "x": 1.368913412021884,
-        "y": 4.43928286700504
+        "x": 2.5882966381952586,
+        "y": 5.395381889029675
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": -139.89585522120672,
+      "rotateFast": false
+    }
+  ],
   "constraintZones": [],
   "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 1.5,
-    "maxAcceleration": 2.0,
+    "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 154.22075188757532,
+    "rotation": 179.31793960682745,
     "rotateFast": false
   },
   "reversed": false,
-  "folder": null,
+  "folder": "MA Spike Wiggle",
   "previewStartingState": {
-    "rotation": 180.0,
+    "rotation": 163.28627616573004,
     "velocity": 0
   },
   "useDefaultConstraints": false

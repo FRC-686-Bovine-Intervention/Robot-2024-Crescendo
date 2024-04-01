@@ -44,8 +44,8 @@ public class NoteVision extends VirtualSubsystem {
     private static final LoggedTunableNumber confidenceDecayPerSecond = new LoggedTunableNumber("Vision/Note/Confidence/DecayPerSecond", 3);
     private static final LoggedTunableNumber priorityPerConfidence = new LoggedTunableNumber("Vision/Note/Priority/PriorityPerConfidence", 4);
     private static final LoggedTunableNumber priorityPerDistance = new LoggedTunableNumber("Vision/Note/Priority/PriorityPerDistance", -2);
-    private static final LoggedTunableNumber acquireConfidenceThreshold = new LoggedTunableNumber("Vision/Note/Target Threshold/Acquire", 0);
-    private static final LoggedTunableNumber detargetConfidenceThreshold = new LoggedTunableNumber("Vision/Note/Target Threshold/Detarget", 0.5);
+    private static final LoggedTunableNumber acquireConfidenceThreshold = new LoggedTunableNumber("Vision/Note/Target Threshold/Acquire", -2);
+    private static final LoggedTunableNumber detargetConfidenceThreshold = new LoggedTunableNumber("Vision/Note/Target Threshold/Detarget", -3);
 
     private Optional<TrackedNote> optIntakeTarget = Optional.empty();
     private boolean intakeTargetLocked = false;

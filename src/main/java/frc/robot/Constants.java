@@ -89,6 +89,9 @@ public final class Constants {
         public static final int shooterRightID = 9;
         public static final int shooterAmpID = 6;
 
+        // Climber
+        public static final int climberID = 10;
+
         // Misc
         public static final int pigeonCanID = 0;
         public static final int candleCanID = 0;
@@ -293,7 +296,7 @@ public final class Constants {
             // Degrees.of(27.2).in(Radians),
             // Degrees.of(50).in(Radians),
             Degrees.of(59.39+5.09765625-4.5+0.5).in(Radians),
-            Degrees.of(37.2+5.09765625-2.5+0.5).in(Radians),
+            Degrees.of(37.2+5.09765625-2.5+0.5+1).in(Radians),
             Degrees.of(27.2+5.09765625-2.5).in(Radians),
             Degrees.of(50+5.09765625).in(Radians),
         };
@@ -311,6 +314,14 @@ public final class Constants {
             double target = MathUtil.interpolate(lerpTarget[lowerBound], lerpTarget[upperBound], t);
             return target;
         }
+    }
+
+    public static final class ClimberConstants {
+        public static final Wheel motorToSurface = new GearRatio()
+            .planetary(1.0/5.0)
+            .planetary(1.0/5.0)
+            .wheelDiameter(Inches.of(1).in(Meters))
+        ;
     }
 
     public static final class VisionConstants {

@@ -1,11 +1,11 @@
 package frc.robot.auto;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.pathplanner.lib.path.PathPlannerPath;
-
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
@@ -21,34 +21,67 @@ import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.AllianceFlipUtil;
 
 public class MASpikeWiggle extends AutoRoutine {
-    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{StartPosition.Amp});
+    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
+        StartPosition.Podium,
+        StartPosition.Amp,
+    });
+    private static final AutoQuestion<Number> noteCount = new AutoQuestion<>("Note Count", Number::values);
+
+    private static enum Number {
+        k6(6),
+        k5(5),
+        k4(4),
+        k3(3),
+        k2(2),
+        k1(1),
+        ;
+        public final int asInt;
+        Number(int asInt) {
+            this.asInt = asInt;
+        }
+    }
 
     public MASpikeWiggle(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
     }
     public MASpikeWiggle(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
         super("MA Spike Wiggle",
-            List.of(),
+            List.of(startPosition, noteCount),
             () -> {
-                PathPlannerPath startToSpike = AutoPaths.loadPath("MASW Amp Start to Spike");
-                PathPlannerPath ampSpikeToCenterSpike = AutoPaths.loadPath("MASW Amp Spike to Center Spike");
-                PathPlannerPath centerSpikeToPodiumSpike = AutoPaths.loadPath("MASW Center Spike to Podium Spike");
-                PathPlannerPath podiumSpikeToCenter = AutoPaths.loadPath("MASW Podium Spike to Center");
-                PathPlannerPath centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
+                var startPosition = MASpikeWiggle.startPosition.getResponse();
+                var noteCount = MASpikeWiggle.noteCount.getResponse();
 
-                var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
-                var ampSpikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
-                var centerSpikeShot = AllianceFlipUtil.apply(ampSpikeToCenterSpike.getPoint(ampSpikeToCenterSpike.numPoints() - 1).position);
-                var podiumSpikeShot = AllianceFlipUtil.apply(centerSpikeToPodiumSpike.getPoint(centerSpikeToPodiumSpike.numPoints() - 1).position);
-                var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
+                var wiggleAngle = Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(
+                    switch(startPosition) {
+                        case Amp, SubwooferAmp -> 135;
+                        case Podium, SubwooferSource -> -135;
+                        default -> 0;
+                    }
+                )));
+                
+                var commands = new ArrayList<Command>();
 
-                return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
-                    .andThen(
-                        AutoCommons.shootWhenReady(preloadShot, drive, shooter, pivot, kicker)
+                if(noteCount.asInt >= 1) {
+                    var preloadShot = AllianceFlipUtil.apply(startPosition.startPose.getTranslation());
+                    commands.add(
+                        AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
-                        ),
-                        AutoCommons.shootWhenReady(ampSpikeShot, drive, shooter, pivot, kicker)
+                        )
+                    );
+                }
+
+                if(noteCount.asInt >= 2) {
+                    var startToSpike1 = AutoPaths.loadPath(
+                        switch(startPosition) {
+                            case Amp, SubwooferAmp -> "MASW Amp Start to Spike";
+                            case Podium, SubwooferSource -> "MASW Podium Start to Spike";
+                            default -> "";
+                        }
+                    );
+                    var spike1Shot = AllianceFlipUtil.apply(startToSpike1.getPoint(startToSpike1.numPoints() - 1).position);
+                    commands.add(
+                        AutoCommons.shootWhenReady(spike1Shot, 10, drive, shooter, pivot, kicker)
                         // .raceWith(
                         //     Commands.waitSeconds(2.5)
                         //     .andThen(
@@ -62,10 +95,23 @@ public class MASpikeWiggle extends AutoRoutine {
                         // )
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(ampSpikeShot, shooter, kicker, pivot, drive.rotationalSubsystem),
-                            AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
-                        ),
-                        AutoCommons.shootWhenReady(centerSpikeShot, drive, shooter, pivot, kicker)
+                            AutoCommons.autoAim(spike1Shot, shooter, kicker, pivot, drive.rotationalSubsystem),
+                            AutoCommons.followPathFlipped(startToSpike1, drive.translationSubsystem)
+                        )
+                    );
+                }
+
+                if(noteCount.asInt >= 3) {
+                    var spike1ToSpike2 = AutoPaths.loadPath(
+                        switch(startPosition) {
+                            case Amp, SubwooferAmp -> "MASW Amp Spike to Center Spike";
+                            case Podium, SubwooferSource -> "MASW Podium Spike to Center Spike";
+                            default -> "";
+                        }
+                    );
+                    var spike2Shot = AllianceFlipUtil.apply(spike1ToSpike2.getPoint(spike1ToSpike2.numPoints() - 1).position);
+                    commands.add(
+                        AutoCommons.shootWhenReady(spike2Shot, 10, drive, shooter, pivot, kicker)
                         // .raceWith(
                         //     Commands.waitSeconds(2.5)
                         //     .andThen(
@@ -79,15 +125,28 @@ public class MASpikeWiggle extends AutoRoutine {
                         // )
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(centerSpikeShot, shooter, kicker, pivot),
-                            AutoCommons.followPathFlipped(ampSpikeToCenterSpike, drive.translationSubsystem),
-                            drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(135))))
+                            AutoCommons.autoAim(spike2Shot, shooter, kicker, pivot),
+                            AutoCommons.followPathFlipped(spike1ToSpike2, drive.translationSubsystem),
+                            drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
                             .until(intake::hasNote)
                             .andThen(
-                                AutoCommons.autoAim(centerSpikeShot, drive.rotationalSubsystem)
+                                AutoCommons.autoAim(spike2Shot, drive.rotationalSubsystem)
                             )
-                        ),
-                        AutoCommons.shootWhenReady(podiumSpikeShot, drive, shooter, pivot, kicker)
+                        )
+                    );
+                }
+
+                if(noteCount.asInt >= 4) {
+                    var spike2ToSpike3 = AutoPaths.loadPath(
+                        switch(startPosition) {
+                            case Amp, SubwooferAmp -> "MASW Center Spike to Podium Spike";
+                            case Podium, SubwooferSource -> "MASW Center Spike to Amp Spike";
+                            default -> "";
+                        }
+                    );
+                    var spikeShot3 = AllianceFlipUtil.apply(spike2ToSpike3.getPoint(spike2ToSpike3.numPoints() - 1).position);
+                    commands.add(
+                        AutoCommons.shootWhenReady(spikeShot3, 10, drive, shooter, pivot, kicker)
                         // .raceWith(
                         //     Commands.waitSeconds(2.5)
                         //     .andThen(
@@ -101,25 +160,39 @@ public class MASpikeWiggle extends AutoRoutine {
                         // )
                         .deadlineWith(
                             intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(podiumSpikeShot, shooter, kicker, pivot),
-                            AutoCommons.followPathFlipped(centerSpikeToPodiumSpike, drive.translationSubsystem),
-                            drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(135))))
+                            AutoCommons.autoAim(spikeShot3, shooter, kicker, pivot),
+                            AutoCommons.followPathFlipped(spike2ToSpike3, drive.translationSubsystem),
+                            drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
                             .until(intake::hasNote)
                             .andThen(
-                                AutoCommons.autoAim(podiumSpikeShot, drive.rotationalSubsystem)
+                                AutoCommons.autoAim(spikeShot3, drive.rotationalSubsystem)
                             )
-                        ),
-                        AutoCommons.shootWhenReady(centerShot, drive, shooter, pivot, kicker)
+                        )
+                    );
+                }
+                
+                if(noteCount.asInt >= 5) {
+                    var spikeToCenter = AutoPaths.loadPath(
+                        switch(startPosition) {
+                            case Amp, SubwooferAmp -> "MASW Podium Spike to Center";
+                            case Podium, SubwooferSource -> "R6N Amp Spike to Center";
+                            default -> "";
+                        }
+                    );
+                    var centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
+                    var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
+                    commands.add(
+                        AutoCommons.shootWhenReady(centerShot, 3, drive, shooter, pivot, kicker)
                         .deadlineWith(
                             AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
                             Commands.runOnce(noteVision::clearMemory)
                             .andThen(
-                                AutoCommons.followPathFlipped(podiumSpikeToCenter, drive)
+                                AutoCommons.followPathFlipped(spikeToCenter, drive)
                                 .onlyWhile(() -> !noteVision.hasTarget())
                                 .andThen(
                                     intake.intake(drive::getChassisSpeeds)
                                     .deadlineWith(
-                                        noteVision.autoIntake(() -> 1.5, drive, intake)
+                                        noteVision.autoIntake(() -> 2, drive, intake)
                                     ),
                                     AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
                                     .alongWith(
@@ -128,17 +201,34 @@ public class MASpikeWiggle extends AutoRoutine {
                                 )
                             )
                         )
-                        // Commands.runOnce(noteVision::clearMemory)
-                        // .andThen(
-                        //     AutoCommons.followPathFlipped(podiumSpikeToWing, drive)
-                        //     .onlyWhile(() -> !noteVision.hasTarget()),
-                        //     intake.intake(drive::getChassisSpeeds)
-                        //     .deadlineWith(
-                        //         noteVision.autoIntake(() -> 1.5, drive, intake)
-                        //     )
-                        // )
-                    )
-                ;
+                    );
+                    if(noteCount.asInt >= 6) {
+                        var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center");
+                        commands.add(
+                            AutoCommons.shootWhenReady(centerShot, 3, drive, shooter, pivot, kicker)
+                            .deadlineWith(
+                                AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
+                                Commands.runOnce(noteVision::clearMemory)
+                                .andThen(
+                                    AutoCommons.followPathFlipped(wingToCenter, drive)
+                                    .onlyWhile(() -> !noteVision.hasTarget())
+                                    .andThen(
+                                        intake.intake(drive::getChassisSpeeds)
+                                        .deadlineWith(
+                                            noteVision.autoIntake(() -> 2, drive, intake)
+                                        ),
+                                        AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
+                                        .alongWith(
+                                            AutoCommons.followPathFlipped(centerToWing, drive.translationSubsystem)
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                    }
+                }
+
+                return AutoCommons.setOdometryFlipped(startPosition.startPose, drive).andThen(commands.toArray(Command[]::new));
             }
         );
     }
