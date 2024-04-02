@@ -14,17 +14,13 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -100,6 +96,8 @@ public class Pivot extends SubsystemBase {
   private boolean prevDec;
   private final BooleanSupplier decreaseRuntimeOffset;
 
+  private boolean outtakeCommand;
+
   private Command go(DoubleSupplier pos) {
     var subsystem = this;
     return new Command() {
@@ -121,8 +119,31 @@ public class Pivot extends SubsystemBase {
     };
   }
 
+  private Command aim(DoubleSupplier pos) {
+    var subsystem = this;
+    return new Command() {
+      {
+        addRequirements(subsystem);
+      }
+      @Override
+      public void initialize() {
+        execute();
+      }
+      @Override
+      public void execute() {
+        outtakeCommand = true;
+        pivotIO.setPivotPos(pos.getAsDouble());
+      }
+      @Override
+      public void end(boolean interrupted) {
+        outtakeCommand = false;
+        pivotIO.stop();
+      }
+    };
+  }
+
   public Command gotoAmp() {
-    return go(() -> POS_AMP).withName("Go to Amp");
+    return aim(() -> POS_AMP).withName("Go to Amp");
   }
 
   public Command gotoZero() {
@@ -144,7 +165,11 @@ public class Pivot extends SubsystemBase {
   }
 
   public Command autoAim(Supplier<Translation2d> FORR) {
-    return go(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
+    return aim(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
+  }
+
+  public boolean readyToShoot() {
+    return atPos() && outtakeCommand;
   }
 
   public boolean atPos() {

@@ -116,7 +116,7 @@ public class AutoCommons {
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
         BooleanSupplier condition = () -> {
             var shooterReady = shooter.readyToShoot();
-            var pivotReady = pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle));
+            var pivotReady = pivot.readyToShoot();
             var poseReady = MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
             var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.75, 1);
 

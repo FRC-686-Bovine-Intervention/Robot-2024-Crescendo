@@ -133,6 +133,8 @@ public final class Constants {
         public static final Measure<Distance> robotWidth = Centimeters.of(90);
         /**Distance between left bumper and right bumper, aka in the Y axis */
         public static final double robotWidthMeters = robotWidth.in(Meters);
+
+        public static final double centerToBumperCornerMeters = Math.hypot(robotLengthMeters/2, robotWidthMeters/2);
     }
 
     public static final class DriveConstants {
