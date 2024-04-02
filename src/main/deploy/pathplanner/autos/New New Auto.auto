@@ -1,0 +1,49 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.3927511382477007,
+      "y": 4.200258111498882
+    },
+    "rotation": -179.43829466743344
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Podium Start to Spike"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S4N Podium Spike to Center Note5"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S4N Center Note5 to Source Wing"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S4N Source Wing to Center Note3"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S4N Center Note3 to Amp Wing"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

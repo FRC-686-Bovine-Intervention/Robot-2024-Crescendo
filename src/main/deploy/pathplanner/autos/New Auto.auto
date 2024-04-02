@@ -1,0 +1,49 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.4268996258458406,
+      "y": 6.829530422066625
+    },
+    "rotation": 179.54346958590094
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "R6N Amp Start to Spike"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "R6N Amp Spike to Center Note2"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "R6N Center Note1 to Amp Wing"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "R6N Amp Wing to Center Note3"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S4N Center Note3 to Amp Wing"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

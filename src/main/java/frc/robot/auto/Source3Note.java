@@ -6,6 +6,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
+import frc.robot.auto.AutoCommons.CenterNote;
+import frc.robot.auto.AutoCommons.Count;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
@@ -18,7 +20,55 @@ import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.AllianceFlipUtil;
 
 public class Source3Note extends AutoRoutine {
-    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{StartPosition.Source});
+    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
+        StartPosition.Podium,
+        StartPosition.Source,
+    });
+    
+    private static final AutoQuestion<Count> noteCount = new AutoQuestion<>("Note Count", () -> 
+        switch(startPosition.getResponse()) {
+            case Podium -> new Count[] {
+                Count.k4,
+                Count.k3,
+                Count.k2,
+                Count.k1,
+            };
+            case Source -> new Count[] {
+                Count.k3,
+                Count.k2,
+                Count.k1,
+            };
+            default -> new Count[]{};
+        }
+    );
+
+    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> 
+        noteCount.getResponse().asInt >= switch(startPosition.getResponse()) {
+            case Podium -> 3;
+            case Source -> 2;
+            default -> 5;
+        } ?
+        new CenterNote[] {
+            CenterNote.Note5,
+            CenterNote.Note4,
+            CenterNote.Note3,
+        } :
+        new CenterNote[]{}
+    );
+
+    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> 
+        noteCount.getResponse().asInt >= switch(startPosition.getResponse()) {
+            case Podium -> 4;
+            case Source -> 3;
+            default -> 5;
+        } ?
+        new CenterNote[] {
+            CenterNote.Note5,
+            CenterNote.Note4,
+            CenterNote.Note3,
+        } :
+        new CenterNote[]{}
+    );
 
     public Source3Note(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
@@ -27,7 +77,10 @@ public class Source3Note extends AutoRoutine {
         super(
             "Source 3 Note",
             List.of(
-                startPosition
+                startPosition,
+                noteCount,
+                firstCenterNote,
+                secondCenterNote
             )
         );
         this.drive = drive;
@@ -59,12 +112,12 @@ public class Source3Note extends AutoRoutine {
             .andThen(
                 AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
-                    AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
+                    AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
                 ),
                 AutoCommons.shootWhenReady(centerShot1, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
                     Commands.print("[Source4Note] Shot Preload"),
-                    AutoCommons.autoAim(centerShot1, shooter, kicker, pivot),
+                    AutoCommons.autoAim(centerShot1, shooter, pivot),
                     Commands.runOnce(noteVision::clearMemory)
                     .andThen(
                         AutoCommons.followPathFlipped(wingToCenter, drive)
@@ -84,7 +137,7 @@ public class Source3Note extends AutoRoutine {
                 AutoCommons.shootWhenReady(centerShot2, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
                     Commands.print("[Source4Note] Shot Center 1"),
-                    AutoCommons.autoAim(centerShot2, shooter, kicker, pivot),
+                    AutoCommons.autoAim(centerShot2, shooter, pivot),
                     Commands.runOnce(noteVision::clearMemory)
                     .andThen(
                         AutoCommons.followPathFlipped(wingToCenter, drive)
@@ -104,7 +157,7 @@ public class Source3Note extends AutoRoutine {
                 AutoCommons.shootWhenReady(centerShot3, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
                     Commands.print("[Source4Note] Shot Center 1"),
-                    AutoCommons.autoAim(centerShot3, shooter, kicker, pivot),
+                    AutoCommons.autoAim(centerShot3, shooter, pivot),
                     Commands.runOnce(noteVision::clearMemory)
                     .andThen(
                         AutoCommons.followPathFlipped(wingToCenter, drive)

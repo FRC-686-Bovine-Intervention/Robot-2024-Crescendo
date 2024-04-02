@@ -48,7 +48,7 @@ public class Disruptor extends AutoRoutine {
     @Override
     public Command generateCommand() {
         var disruptorPath = AutoPaths.loadPath("Disruptor");
-        var centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
+        var centerToWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
 
         var preloadShot = AllianceFlipUtil.apply(startPosition.getResponse().startPose.getTranslation());
         var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
@@ -57,11 +57,11 @@ public class Disruptor extends AutoRoutine {
             .andThen(
                 AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
-                    AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
+                    AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
                 ),
                 AutoCommons.shootWhenReady(centerShot, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
-                    AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
+                    AutoCommons.autoAim(centerShot, shooter, pivot),
                     AutoCommons.followPathFlipped(disruptorPath, drive)
                     .andThen(
                         Commands.runOnce(noteVision::clearMemory),

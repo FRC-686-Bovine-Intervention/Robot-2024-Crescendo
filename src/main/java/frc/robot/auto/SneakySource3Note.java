@@ -61,12 +61,12 @@ public class SneakySource3Note extends AutoRoutine {
             .andThen(
                 AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
-                    AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
+                    AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
                 ),
                 AutoCommons.shootWhenReady(centerShot1, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
                     Commands.print("[Source3Note] Shot Preload"),
-                    AutoCommons.autoAim(centerShot1, shooter, kicker, pivot),
+                    AutoCommons.autoAim(centerShot1, shooter, pivot),
                     Commands.runOnce(noteVision::clearMemory)
                     .andThen(
                         AutoCommons.followPathFlipped(wingToCenter, drive)
@@ -86,7 +86,7 @@ public class SneakySource3Note extends AutoRoutine {
                 AutoCommons.shootWhenReady(sneakyStageShot, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
                     Commands.print("[Source3Note] Shot Center 1"),
-                    AutoCommons.autoAim(sneakyStageShot, shooter, kicker),
+                    AutoCommons.autoAim(sneakyStageShot, shooter),
                     Commands.runOnce(noteVision::clearMemory)
                     .andThen(
                         AutoCommons.followPathFlipped(wingToCenter, drive)

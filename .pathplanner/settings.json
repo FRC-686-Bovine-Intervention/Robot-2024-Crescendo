@@ -3,10 +3,11 @@
   "robotLength": 0.9,
   "holonomicMode": true,
   "pathFolders": [
-    "Disruptor",
-    "MA Spike Wiggle",
+    "Source 4 Note",
     "Rush 6 Note",
-    "Source 4 Note"
+    "Start to Spikes",
+    "MA Spike Wiggle",
+    "Disruptor"
   ],
   "autoFolders": [],
   "defaultMaxVel": 4.0,

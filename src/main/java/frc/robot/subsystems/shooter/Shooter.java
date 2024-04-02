@@ -160,6 +160,10 @@ public class Shooter extends SubsystemBase {
         return surfaceSpeed(tuningMPS::get).withName("Shoot with tunable number");
     }
 
+    public Command shoot(Supplier<Translation2d> FORR) {
+        return surfaceSpeed(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.surfaceSpeed), () -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.acceptableSurfaceSpeed)).withName("Shoot at pos");
+    }
+
     public Command shoot(Supplier<Translation2d> FORR, BooleanSupplier shot) {
         return surfaceSpeedWithFinish(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.surfaceSpeed), () -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.acceptableSurfaceSpeed), shot).withName("Shoot at pos");
     }

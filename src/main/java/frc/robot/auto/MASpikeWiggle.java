@@ -37,15 +37,25 @@ public class MASpikeWiggle extends AutoRoutine {
         Count.k1,
     });
 
-    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> new CenterNote[]{
-        CenterNote.Note1,
-        CenterNote.Note2,
-    });
+    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> 
+        noteCount.getResponse().asInt >= 5 ?
+        new CenterNote[] {
+            CenterNote.Note1,
+            CenterNote.Note2,
+            CenterNote.Note3,
+        } :
+        new CenterNote[]{}
+    );
 
-    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> new CenterNote[]{
-        CenterNote.Note2,
-        CenterNote.Note1,
-    });
+    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> 
+        noteCount.getResponse().asInt >= 6 ?
+        new CenterNote[] {
+            CenterNote.Note2,
+            CenterNote.Note1,
+            CenterNote.Note3,
+        } :
+        new CenterNote[]{}
+    );
 
     public MASpikeWiggle(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
@@ -97,7 +107,7 @@ public class MASpikeWiggle extends AutoRoutine {
             commands.add(
                 AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
                 .deadlineWith(
-                    AutoCommons.autoAim(preloadShot, shooter, kicker, pivot, drive.rotationalSubsystem)
+                    AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
                 )
             );
         }
@@ -126,7 +136,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 // )
                 .deadlineWith(
                     intake.intake(drive::getChassisSpeeds),
-                    AutoCommons.autoAim(spike1Shot, shooter, kicker, pivot, drive.rotationalSubsystem),
+                    AutoCommons.autoAim(spike1Shot, shooter, pivot, drive.rotationalSubsystem),
                     AutoCommons.followPathFlipped(startToSpike1, drive.translationSubsystem)
                 )
             );
@@ -156,7 +166,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 // )
                 .deadlineWith(
                     intake.intake(drive::getChassisSpeeds),
-                    AutoCommons.autoAim(spike2Shot, shooter, kicker, pivot),
+                    AutoCommons.autoAim(spike2Shot, shooter, pivot),
                     AutoCommons.followPathFlipped(spike1ToSpike2, drive.translationSubsystem),
                     drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
                     .until(intake::hasNote)
@@ -191,7 +201,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 // )
                 .deadlineWith(
                     intake.intake(drive::getChassisSpeeds),
-                    AutoCommons.autoAim(spikeShot3, shooter, kicker, pivot),
+                    AutoCommons.autoAim(spikeShot3, shooter, pivot),
                     AutoCommons.followPathFlipped(spike2ToSpike3, drive.translationSubsystem),
                     drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
                     .until(intake::hasNote)
@@ -205,58 +215,33 @@ public class MASpikeWiggle extends AutoRoutine {
         if(noteCount.asInt >= 5) {
             var spikeToCenter = AutoPaths.loadPath(
                 switch(startPosition) {
-                    case Amp, SubwooferAmp -> "MASW Podium Spike to Center";
+                    case Amp, SubwooferAmp -> "MASW Podium Spike to Center " + firstCenterNote.name();
                     case Podium, SubwooferSource -> "R6N Amp Spike to Center " + firstCenterNote.name();
                     default -> "";
                 }
             );
-            var centerToWing = AutoPaths.loadPath("R6N Center to Amp Wing");
-            var centerShot = AllianceFlipUtil.apply(centerToWing.getPoint(centerToWing.numPoints() - 1).position);
+            var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
+            var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
             commands.add(
-                AutoCommons.shootWhenReady(centerShot, 3, drive, shooter, pivot, kicker)
-                .deadlineWith(
-                    AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
-                    Commands.runOnce(noteVision::clearMemory)
-                    .andThen(
-                        AutoCommons.followPathFlipped(spikeToCenter, drive)
-                        .onlyWhile(() -> !noteVision.hasTarget())
-                        .andThen(
-                            intake.intake(drive::getChassisSpeeds)
-                            .deadlineWith(
-                                noteVision.autoIntake(() -> 2, drive, intake)
-                            ),
-                            AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
-                            .alongWith(
-                                AutoCommons.followPathFlipped(centerToWing, drive.translationSubsystem)
-                            )
-                        )
-                    )
+                firstCenterNote.equals(CenterNote.Note3) ? (
+                    AutoCommons.centerNote(spikeToCenter, centerNote3ToAmpWing, centerNote1ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                ) : (
+                    AutoCommons.centerNote(spikeToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
                 )
             );
-            if(noteCount.asInt >= 6) {
-                var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center " + secondCenterNote.name());
-                commands.add(
-                    AutoCommons.shootWhenReady(centerShot, 3, drive, shooter, pivot, kicker)
-                    .deadlineWith(
-                        AutoCommons.autoAim(centerShot, shooter, kicker, pivot),
-                        Commands.runOnce(noteVision::clearMemory)
-                        .andThen(
-                            AutoCommons.followPathFlipped(wingToCenter, drive)
-                            .onlyWhile(() -> !noteVision.hasTarget())
-                            .andThen(
-                                intake.intake(drive::getChassisSpeeds)
-                                .deadlineWith(
-                                    noteVision.autoIntake(() -> 2, drive, intake)
-                                ),
-                                AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
-                                .alongWith(
-                                    AutoCommons.followPathFlipped(centerToWing, drive.translationSubsystem)
-                                )
-                            )
-                        )
-                    )
-                );
-            }
+        }
+
+        if(noteCount.asInt >= 6) {
+            var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center " + secondCenterNote.name());
+            var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
+            var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
+            commands.add(
+                secondCenterNote.equals(CenterNote.Note3) ? (
+                    AutoCommons.centerNote(wingToCenter, centerNote3ToAmpWing, centerNote1ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                ) : (
+                    AutoCommons.centerNote(wingToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                )
+            );
         }
 
         return AutoCommons.setOdometryFlipped(startPosition.startPose, drive).andThen(commands.toArray(Command[]::new));
