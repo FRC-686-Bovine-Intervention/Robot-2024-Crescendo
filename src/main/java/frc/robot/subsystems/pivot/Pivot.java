@@ -35,7 +35,7 @@ public class Pivot extends SubsystemBase {
   private final PivotIO pivotIO;
   private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
-  private final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
+  public static final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
 
   public static final double POS_ZERO = Units.degreesToRadians(9);
   public static final double POS_AMP = Units.degreesToRadians(108/* .193359375 */);

@@ -28,6 +28,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.PivotConstants;
@@ -125,6 +126,14 @@ public class PivotIOFalcon implements PivotIO {
         inputs.pivotEncoder.updateFrom(pivotLeftMotor);
 
         updateTunables();
+
+        var accel = Units.rotationsToRadians(pivotLeftMotor.getClosedLoopReferenceSlope().getValueAsDouble());
+        var error = Units.rotationsToRadians(pivotLeftMotor.getClosedLoopError().getValueAsDouble());
+
+        inputs.atGoal = 
+            MathUtil.isNear(0, accel, 0.1) && 
+            MathUtil.isNear(0, error, Units.degreesToRadians(Pivot.toleranceDeg.get()))
+        ;
 
         Logger.recordOutput("Pivot/Profile Position", Units.rotationsToRadians(pivotLeftMotor.getClosedLoopReference().getValueAsDouble()));
         Logger.recordOutput("Pivot/P Out", pivotLeftMotor.getClosedLoopProportionalOutput().getValueAsDouble());
