@@ -386,13 +386,27 @@ public class RobotContainer {
             leds.noteAcquired()
         );
         new Trigger(intake::hasNote).and(DriverStation::isTeleopEnabled).whileTrue(
-            driveController.rumble(RumbleType.kBothRumble, 0.2)
+            driveController.rumble(RumbleType.kBothRumble, 0.4)
         );
         
-        new Trigger(kicker::hasNote)
-        .whileTrue(
-            leds.noteSecured()
+        // Kicker Notification
+        new Trigger(kicker::hasNote).whileTrue(leds.noteSecured());
+        
+        // Note Vision Notification
+        new Trigger(noteVision::hasTarget).whileTrue(leds.visionAcquired());
+        new Trigger(noteVision::targetLocked).whileTrue(leds.visionLocked());
+        
+        // Shooter Notification
+        new Trigger(() -> shooter.getCurrentCommand() != null).whileTrue(
+            leds.shooterBarGraph(
+                shooter::getAverageSurfaceSpeed,
+                shooter::getTargetSpeed,
+                shooter::readyToShoot
+            )
         );
+
+        // Human Player Notification
+        driveController.leftStickButton().onTrue(leds.humanPlayerFlash());
     }
 
     private void configureAutos() {

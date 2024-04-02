@@ -1,6 +1,8 @@
 package frc.robot.subsystems.leds;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -14,6 +16,7 @@ import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.led.animation.EndgameTimerAnimation;
 import frc.robot.util.led.animation.FillAnimation;
 import frc.robot.util.led.animation.FlashingAnimation;
+import frc.robot.util.led.animation.LEDAnimation;
 import frc.robot.util.led.animation.LEDManager;
 import frc.robot.util.led.animation.ScrollingAnimation;
 import frc.robot.util.led.functions.Gradient.BasicGradient;
@@ -32,6 +35,7 @@ public class Leds extends VirtualSubsystem {
     private final LEDStrip leftStrip;
 
     private final LEDStrip sideStrips;
+    private final LEDStrip sideStripTips;
 
     private final LEDStrip backRightStrip;
     private final LEDStrip backLeftStrip;
@@ -85,6 +89,7 @@ public class Leds extends VirtualSubsystem {
         leftStrip = offboardLEDs.substrip(38, 57).reverse();
 
         sideStrips = leftStrip.parallel(rightStrip);
+        sideStripTips = sideStrips.substrip(15);
 
         backRightStrip = backStrip.substrip(0, 10);
         backLeftStrip = backStrip.substrip(10, 19).reverse();
@@ -208,7 +213,7 @@ public class Leds extends VirtualSubsystem {
 
     public Command noteAcquired() {
         return new FlashingAnimation(
-            6,
+            20,
             new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kGreen),
             TilingFunction.Sawtooth,
             fullSideStrips
@@ -219,7 +224,47 @@ public class Leds extends VirtualSubsystem {
         return new FillAnimation(
             5,
             Color.kLime,
-            sideStrips.substrip(15)
+            sideStripTips
         );
+    }
+
+    public Command visionAcquired() {
+        return new FillAnimation(
+            3,
+            () -> (DriverStation.getAlliance().equals(Optional.of(Alliance.Red)) ? Color.kPurple : Color.kOrange),
+            sideStripTips
+        );
+    }
+
+    public Command visionLocked() {
+        return new FillAnimation(
+            3,
+            () -> (DriverStation.getAlliance().equals(Optional.of(Alliance.Red)) ? Color.kOrange : Color.kPurple),
+            sideStripTips
+        );
+    }
+
+    public Command humanPlayerFlash() {
+        return new FlashingAnimation(
+            15,
+            new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kWhite),
+            TilingFunction.Modulo,
+            fullSideStrips
+        ).setPeriod(0.125).withTimeout(1);
+    }
+
+    public Command shooterBarGraph(DoubleSupplier shooterSpeed, DoubleSupplier shooterTarget, BooleanSupplier shooterReady) {
+        return new LEDAnimation(12) {
+            @Override
+            public void execute() {
+                sideStrips.foreach((i) -> {
+                    var pos = (double) i / sideStrips.getLength();
+                    var barPos = shooterSpeed.getAsDouble() / 30;
+                    sideStrips.setLED(i, (pos <= barPos ? (shooterReady.getAsBoolean() ? Color.kGreen : Color.kRed) : (shooterReady.getAsBoolean() ? Color.kDarkOliveGreen : Color.kBlack)));
+                });
+                var dotPos = (int)Math.ceil(shooterTarget.getAsDouble() / 30 * (sideStrips.getLength() - 1));
+                sideStrips.setLED(dotPos, Color.kGreen);
+            }
+        };
     }
 }
