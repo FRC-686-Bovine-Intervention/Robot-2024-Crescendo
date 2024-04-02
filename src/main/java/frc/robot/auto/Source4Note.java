@@ -76,7 +76,7 @@ public class Source4Note extends AutoRoutine {
     }
     public Source4Note(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
         super(
-            "Source 3 Note",
+            "Source 4 Note",
             List.of(
                 startPosition,
                 noteCount,

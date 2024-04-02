@@ -115,8 +115,8 @@ public class MASpikeWiggle extends AutoRoutine {
         if(noteCount.asInt >= 2) {
             var startToSpike1 = AutoPaths.loadPath(
                 switch(startPosition) {
-                    case Amp, SubwooferAmp -> "MASW Amp Start to Spike";
-                    case Podium, SubwooferSource -> "MASW Podium Start to Spike";
+                    case Amp, SubwooferAmp -> "Amp Start to Spike";
+                    case Podium, SubwooferSource -> "Podium Start to Spike";
                     default -> "";
                 }
             );

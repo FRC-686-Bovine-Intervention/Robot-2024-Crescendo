@@ -27,7 +27,6 @@ public class AutoSelector extends VirtualSubsystem {
     };
     private final String questionPlaceHolder = "NA"; 
 
-    private AutoRoutine lastRoutine;
     private Command lastCommand;
     private List<String> lastResponses;
 
@@ -35,7 +34,6 @@ public class AutoSelector extends VirtualSubsystem {
         this.key = key;
         routineChooser = new LoggedDashboardChooser<>(key + "/Routine");
         routineChooser.addDefaultOption(defaultRoutine.name, defaultRoutine);
-        lastRoutine = defaultRoutine;
         questionPublishers = new ArrayList<>();
         responseChoosers = new ArrayList<>();
     }
@@ -68,13 +66,14 @@ public class AutoSelector extends VirtualSubsystem {
         var selectedRoutine = routineChooser.get();
         if(selectedRoutine == null) return;
         var questions = selectedRoutine.questions;
-        List<String> currentResponses = new ArrayList<>();
+        List<String> currentResponses = responseChoosers.stream().map((c) -> c.get()).toList();
         for (int i = 0; i < responseChoosers.size(); i++) {
             if(i < questions.size()) {
                 questionPublishers.get(i).set(questions.get(i).name);
                 responseChoosers.get(i).setOptions(questions.get(i).getOptionNames());
-                currentResponses.add(responseChoosers.get(i).get());
-                questions.get(i).setResponse(responseChoosers.get(i).get());
+                if(currentResponses.get(i) != null) {
+                    questions.get(i).setResponse(currentResponses.get(i));
+                }
             } else {
                 questionPublishers.get(i).set(questionPlaceHolder);
                 responseChoosers.get(i).setOptions(new String[] {});
@@ -82,14 +81,11 @@ public class AutoSelector extends VirtualSubsystem {
         }
         if(!currentResponses.equals(lastResponses)) {
             System.out.println("[AutoSelector] Generating new command");
-            lastCommand = lastRoutine.generateCommand().withName("AUTO " + lastRoutine.name);
+            System.out.println("[AutoSelector] Routine: " + selectedRoutine.name);
+            currentResponses.forEach(System.out::println);
+            lastCommand = selectedRoutine.generateCommand().withName("AUTO " + selectedRoutine.name);
         }
         lastResponses = currentResponses;
-        lastRoutine = selectedRoutine;
-    }
-
-    public AutoRoutine getSelectedRoutine() {
-        return lastRoutine;
     }
 
     public Command getSelectedAutoCommand() {
