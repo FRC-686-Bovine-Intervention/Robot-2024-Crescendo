@@ -289,7 +289,10 @@ public class AutoCommons {
             loadPath("R6N Center Note1 to Amp Wing");
             loadPath("S4N Center Note3 to Amp Wing", true);
             loadPath("S4N Center Note5 to Source Wing");
+            loadPath("S4N Podium Spike to Center Note4");
             loadPath("S4N Podium Spike to Center Note5");
+            loadPath("S4N Source Wing to Center Note3", true);
+            loadPath("S4N Source Wing to Center Note4");
             loadPath("S4N Source Wing to Center Note5");
             preloading = false;
             System.out.println("[Init AutoPaths] Loaded paths");
