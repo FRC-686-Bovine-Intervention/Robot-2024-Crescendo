@@ -406,7 +406,7 @@ public class RobotContainer {
         );
 
         // Climber Notification
-        new Trigger(() -> climber.getCurrentCommand() != climber.getDefaultCommand()).whileTrue(leds.climbingModeActivated());
+        new Trigger(() -> Optional.ofNullable(climber.getCurrentCommand()).map((c) -> c.getName().contains("Deploy")).orElse(false)).whileTrue(leds.climbingModeActivated());
         new Trigger(() -> Optional.ofNullable(climber.getCurrentCommand()).map((c) -> c.getName().contains("Retract")).orElse(false)).whileTrue(leds.climbing(climber::getClimberPos));
 
         // Defense Notification

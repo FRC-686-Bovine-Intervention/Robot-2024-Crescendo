@@ -90,18 +90,18 @@ public class Leds extends VirtualSubsystem {
         leftStrip = offboardLEDs.substrip(38, 57).reverse();
 
         sideStrips = leftStrip.parallel(rightStrip);
-        sideStripTips = sideStrips.substrip(15);
-
+        sideStripTips = sideStrips.substrip(15).concat(backStrip.substrip(5, 13));
+        
         backRightStrip = backStrip.substrip(0, 10);
-        backLeftStrip = backStrip.substrip(10, 19).reverse();
-
+        backLeftStrip = backStrip.substrip(9).reverse();
+        
         fullLeftStrip = leftStrip.concat(backLeftStrip);
         fullRightStrip = rightStrip.concat(backRightStrip);
-
-        fullSideStrips = fullLeftStrip.parallel(fullRightStrip);
-
-        backMirroredStrip = backRightStrip.reverse().parallel(backLeftStrip.reverse());
         
+        fullSideStrips = fullLeftStrip.parallel(fullRightStrip);
+        
+        backMirroredStrip = backRightStrip.reverse().parallel(backLeftStrip.reverse());
+
         // this.runners = new AnimationRunner[]{
         //     // new AnimationRunner(
         //     //     "Endgame Timer",
@@ -232,7 +232,7 @@ public class Leds extends VirtualSubsystem {
     public Command visionAcquired() {
         return new FillAnimation(
             3,
-            () -> (DriverStation.getAlliance().equals(Optional.of(Alliance.Red)) ? Color.kPurple : Color.kOrange),
+            Color.kOrange,
             sideStripTips
         );
     }
@@ -240,7 +240,7 @@ public class Leds extends VirtualSubsystem {
     public Command visionLocked() {
         return new FillAnimation(
             3,
-            () -> (DriverStation.getAlliance().equals(Optional.of(Alliance.Red)) ? Color.kOrange : Color.kPurple),
+            Color.kPurple,
             sideStripTips
         );
     }
@@ -248,8 +248,8 @@ public class Leds extends VirtualSubsystem {
     public Command humanPlayerFlash() {
         return new FlashingAnimation(
             15,
-            new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kWhite),
-            TilingFunction.Modulo,
+            new BasicGradient(InterpolationStyle.Step, Color.kBlack, Color.kWhite),
+            TilingFunction.Sawtooth,
             fullSideStrips
         ).setPeriod(0.125).withTimeout(1);
     }
@@ -260,10 +260,10 @@ public class Leds extends VirtualSubsystem {
             public void execute() {
                 sideStrips.foreach((i) -> {
                     var pos = (double) i / sideStrips.getLength();
-                    var barPos = shooterSpeed.getAsDouble() / 30;
-                    sideStrips.setLED(i, (pos <= barPos ? (shooterReady.getAsBoolean() ? Color.kGreen : Color.kRed) : (shooterReady.getAsBoolean() ? Color.kDarkOliveGreen : Color.kBlack)));
+                    var barPos = Math.sqrt(shooterSpeed.getAsDouble() / 30);
+                    sideStrips.setLED(i, (pos <= barPos ? (shooterReady.getAsBoolean() ? Color.kGreen : Color.kRed) : (shooterReady.getAsBoolean() ? new Color(0, 0.03, 0) : Color.kBlack)));
                 });
-                var dotPos = (int)Math.ceil(shooterTarget.getAsDouble() / 30 * (sideStrips.getLength() - 1));
+                var dotPos = (int)Math.ceil(Math.sqrt(shooterTarget.getAsDouble() / 30) * (sideStrips.getLength() - 1));
                 sideStrips.setLED(dotPos, Color.kGreen);
             }
         };
@@ -291,10 +291,15 @@ public class Leds extends VirtualSubsystem {
         return new LEDAnimation(25) {
             @Override
             public void execute() {
-                fullSideStrips.foreach((i) -> {
-                    var pos = (double) i / fullSideStrips.getLength();
+                sideStrips.foreach((i) -> {
+                    var pos = (double) i / sideStrips.getLength();
                     var barPos = 1 - (climbingPos.getAsDouble() / Climber.POS_DEPLOY);
-                    fullSideStrips.setLED(i, (pos <= barPos ? Color.kTeal : Color.kBlack));
+                    sideStrips.setLED(i, (pos <= barPos ? Color.kTeal : Color.kBlack));
+                });
+                backMirroredStrip.foreach((i) -> {
+                    var pos = (double) i / backMirroredStrip.getLength();
+                    var barPos = 1 - (climbingPos.getAsDouble() / Climber.POS_DEPLOY);
+                    backMirroredStrip.setLED(i, (pos <= barPos ? Color.kTeal : Color.kBlack));
                 });
             }
         };
