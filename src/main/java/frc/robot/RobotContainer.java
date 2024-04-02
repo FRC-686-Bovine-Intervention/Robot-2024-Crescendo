@@ -405,6 +405,13 @@ public class RobotContainer {
             )
         );
 
+        // Climber Notification
+        new Trigger(() -> climber.getCurrentCommand() != climber.getDefaultCommand()).whileTrue(leds.climbingModeActivated());
+        new Trigger(() -> Optional.ofNullable(climber.getCurrentCommand()).map((c) -> c.getName().contains("Retract")).orElse(false)).whileTrue(leds.climbing(climber::getClimberPos));
+
+        // Defense Notification
+        new Trigger(() -> Optional.ofNullable(drive.rotationalSubsystem.getCurrentCommand()).map((c) -> c.getName().contains("Defense")).orElse(false)).whileTrue(leds.defenseSpinActivated());
+
         // Human Player Notification
         driveController.leftStickButton().onTrue(leds.humanPlayerFlash());
     }

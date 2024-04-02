@@ -27,7 +27,10 @@ public class Climber extends SubsystemBase {
     public void periodic() {
         climberIO.updateInputs(inputs);
         Logger.processInputs("Climber", inputs);
+    }
 
+    public double getClimberPos() {
+        return inputs.climberMotor.positionRad;
     }
 
     public Command windDown() {

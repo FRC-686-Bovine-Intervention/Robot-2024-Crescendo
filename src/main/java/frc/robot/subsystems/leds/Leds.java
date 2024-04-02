@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.RobotType;
 import frc.robot.RobotType.Mode;
+import frc.robot.subsystems.climber.Climber;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.led.animation.EndgameTimerAnimation;
 import frc.robot.util.led.animation.FillAnimation;
@@ -264,6 +265,37 @@ public class Leds extends VirtualSubsystem {
                 });
                 var dotPos = (int)Math.ceil(shooterTarget.getAsDouble() / 30 * (sideStrips.getLength() - 1));
                 sideStrips.setLED(dotPos, Color.kGreen);
+            }
+        };
+    }
+
+    public Command defenseSpinActivated() {
+        return new FlashingAnimation(
+            10,
+            new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kYellow),
+            TilingFunction.Sinusoidal,
+            fullSideStrips
+        ).setPeriod(0.25);
+    }
+
+    public Command climbingModeActivated() {
+        return new FlashingAnimation(
+            6,
+            new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kTeal),
+            TilingFunction.Sinusoidal,
+            fullSideStrips
+        ).setPeriod(0.75);
+    }
+
+    public Command climbing(DoubleSupplier climbingPos) {
+        return new LEDAnimation(25) {
+            @Override
+            public void execute() {
+                fullSideStrips.foreach((i) -> {
+                    var pos = (double) i / fullSideStrips.getLength();
+                    var barPos = 1 - (climbingPos.getAsDouble() / Climber.POS_DEPLOY);
+                    fullSideStrips.setLED(i, (pos <= barPos ? Color.kTeal : Color.kBlack));
+                });
             }
         };
     }
