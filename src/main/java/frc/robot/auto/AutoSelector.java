@@ -28,6 +28,8 @@ public class AutoSelector extends VirtualSubsystem {
     private final String questionPlaceHolder = "NA"; 
 
     private AutoRoutine lastRoutine;
+    private Command lastCommand;
+    private List<String> lastResponses;
 
     public AutoSelector(String key) {
         this.key = key;
@@ -78,6 +80,11 @@ public class AutoSelector extends VirtualSubsystem {
                 responseChoosers.get(i).setOptions(new String[] {});
             }
         }
+        if(!currentResponses.equals(lastResponses)) {
+            System.out.println("[AutoSelector] Generating new command");
+            lastCommand = lastRoutine.generateCommand().withName("AUTO " + lastRoutine.name);
+        }
+        lastResponses = currentResponses;
         lastRoutine = selectedRoutine;
     }
 
@@ -86,7 +93,7 @@ public class AutoSelector extends VirtualSubsystem {
     }
 
     public Command getSelectedAutoCommand() {
-        return lastRoutine.generateCommand().withName("AUTO " + lastRoutine.name);
+        return lastCommand;
     }
 
     public static class AutoQuestion<T extends Enum<T>> {
