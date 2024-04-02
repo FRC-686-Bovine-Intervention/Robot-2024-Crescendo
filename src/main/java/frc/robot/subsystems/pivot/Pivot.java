@@ -148,7 +148,7 @@ public class Pivot extends SubsystemBase {
   }
 
   public boolean atPos() {
-    return MathUtil.isNear(0, inputs.pivotError, Units.degreesToRadians(toleranceDeg.get()));
+    return inputs.atGoal;
   }
 
   public boolean isAtAngle(double angleRad) {
