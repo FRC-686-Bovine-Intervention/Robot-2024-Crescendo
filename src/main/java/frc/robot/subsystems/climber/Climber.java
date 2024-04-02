@@ -14,7 +14,7 @@ public class Climber extends SubsystemBase {
     private final LoggedTunableNumber windDownVoltage = new LoggedTunableNumber("Climber/Wind Down Voltage", 3);
 
     public static final double POS_ZERO = 0;
-    public static final double POS_DEPLOY = 0.432373046875;
+    public static final double POS_DEPLOY = 0.422373046875;
 
     public Climber(ClimberIO climberIO) {
         System.out.println("[Init Climber] Instantiating Climber");
