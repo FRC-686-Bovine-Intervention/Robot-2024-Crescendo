@@ -30,7 +30,7 @@ public class SuperCommands {
     }
 
     public static boolean readyToShoot(Shooter shooter, Pivot pivot) {
-        return shooter.readyToShoot() && pivot.atPos();
+        return shooter.readyToShoot() && pivot.readyToShoot();
     }
 
     public static Command shootWhenReady(Shooter shooter, Pivot pivot, Kicker kicker) {
@@ -83,10 +83,9 @@ public class SuperCommands {
                         var t = FORR.get();
                         return Optional.of(new Rotation2d(t.getX(), t.getY()));
                     }
-                ),
+                ).withName("Auto Aim").asProxy(),
                 pivot.autoAim(FORR).asProxy()
             )
-            .withName("Auto Aim")
         ;
     }
 

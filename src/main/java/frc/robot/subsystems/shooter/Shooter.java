@@ -38,6 +38,7 @@ public class Shooter extends SubsystemBase {
     private final Timer followUpTimer = new Timer();
 
     private boolean readyToShoot;
+    private double targetSpeed;
 
     public Shooter(ShooterIO shooterIO) {
         System.out.println("[Init Shooter] Instantiating Pivot");
@@ -73,8 +74,12 @@ public class Shooter extends SubsystemBase {
         return readyToShoot;
     }
 
-    private double getAverageSurfaceSpeed() {
+    public double getAverageSurfaceSpeed() {
         return MathExtraUtil.average(inputs.leftMotor.velocityRadPerSec, inputs.rightMotor.velocityRadPerSec);
+    }
+
+    public double getTargetSpeed() {
+        return targetSpeed;
     }
 
     // private double getAverageCurrent() {
@@ -111,10 +116,10 @@ public class Shooter extends SubsystemBase {
             }
             @Override
             public void execute() {
-                var speed = mps.getAsDouble();
-                shooterIO.setLeftSurfaceSpeed(speed);
-                shooterIO.setRightSurfaceSpeed(speed);
-                readyToShoot = getAverageSurfaceSpeed() >= acceptableMPS.getAsDouble() && getAverageSurfaceSpeed() <= mps.getAsDouble() + 2;
+                targetSpeed = mps.getAsDouble();
+                shooterIO.setLeftSurfaceSpeed(targetSpeed);
+                shooterIO.setRightSurfaceSpeed(targetSpeed);
+                readyToShoot = getAverageSurfaceSpeed() >= acceptableMPS.getAsDouble() && getAverageSurfaceSpeed() <= targetSpeed + 2;
             }
             @Override
             public void end(boolean interrupted) {
@@ -158,6 +163,10 @@ public class Shooter extends SubsystemBase {
 
     public Command shootWithTunableNumber() {
         return surfaceSpeed(tuningMPS::get).withName("Shoot with tunable number");
+    }
+
+    public Command shoot(Supplier<Translation2d> FORR) {
+        return surfaceSpeed(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.surfaceSpeed), () -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.acceptableSurfaceSpeed)).withName("Shoot at pos");
     }
 
     public Command shoot(Supplier<Translation2d> FORR, BooleanSupplier shot) {

@@ -20,16 +20,20 @@ public class AutoSelector extends VirtualSubsystem {
     private final List<SwitchableChooser> responseChoosers;
     private final String key;
     
-    private static final AutoRoutine defaultRoutine = new AutoRoutine("Do Nothing", List.of(), ()->Commands.none());
+    private static final AutoRoutine defaultRoutine = new AutoRoutine("Do Nothing", List.of()) {
+        public Command generateCommand() {
+            return Commands.none();
+        }
+    };
     private final String questionPlaceHolder = "NA"; 
 
-    private AutoRoutine lastRoutine;
+    private Command lastCommand;
+    private List<String> lastResponses;
 
     public AutoSelector(String key) {
         this.key = key;
         routineChooser = new LoggedDashboardChooser<>(key + "/Routine");
         routineChooser.addDefaultOption(defaultRoutine.name, defaultRoutine);
-        lastRoutine = defaultRoutine;
         questionPublishers = new ArrayList<>();
         responseChoosers = new ArrayList<>();
     }
@@ -62,27 +66,30 @@ public class AutoSelector extends VirtualSubsystem {
         var selectedRoutine = routineChooser.get();
         if(selectedRoutine == null) return;
         var questions = selectedRoutine.questions;
-        List<String> currentResponses = new ArrayList<>();
+        List<String> currentResponses = responseChoosers.stream().map((c) -> c.get()).toList();
         for (int i = 0; i < responseChoosers.size(); i++) {
             if(i < questions.size()) {
                 questionPublishers.get(i).set(questions.get(i).name);
                 responseChoosers.get(i).setOptions(questions.get(i).getOptionNames());
-                currentResponses.add(responseChoosers.get(i).get());
-                questions.get(i).setResponse(responseChoosers.get(i).get());
+                if(currentResponses.get(i) != null) {
+                    questions.get(i).setResponse(currentResponses.get(i));
+                }
             } else {
                 questionPublishers.get(i).set(questionPlaceHolder);
                 responseChoosers.get(i).setOptions(new String[] {});
             }
         }
-        lastRoutine = selectedRoutine;
-    }
-
-    public AutoRoutine getSelectedRoutine() {
-        return lastRoutine;
+        if(!currentResponses.equals(lastResponses)) {
+            System.out.println("[AutoSelector] Generating new command");
+            System.out.println("[AutoSelector] Routine: " + selectedRoutine.name);
+            currentResponses.forEach(System.out::println);
+            lastCommand = selectedRoutine.generateCommand().withName("AUTO " + selectedRoutine.name);
+        }
+        lastResponses = currentResponses;
     }
 
     public Command getSelectedAutoCommand() {
-        return lastRoutine.autoCommandGenerator.get().withName("AUTO " + lastRoutine.name);
+        return lastCommand;
     }
 
     public static class AutoQuestion<T extends Enum<T>> {
@@ -114,15 +121,15 @@ public class AutoSelector extends VirtualSubsystem {
         }
     }
 
-    public static class AutoRoutine {
+    public static abstract class AutoRoutine {
         public final String name;
         public final List<AutoQuestion<?>> questions;
-        public final Supplier<? extends Command> autoCommandGenerator;
 
-        public AutoRoutine(String name, List<AutoQuestion<?>> questions, Supplier<? extends Command> autoCommandGenerator) {
+        public AutoRoutine(String name, List<AutoQuestion<?>> questions) {
             this.name = name;
             this.questions = questions;
-            this.autoCommandGenerator = autoCommandGenerator;
         }
+
+        public abstract Command generateCommand();
     }
 }

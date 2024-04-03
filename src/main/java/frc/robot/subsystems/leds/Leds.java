@@ -1,6 +1,8 @@
 package frc.robot.subsystems.leds;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -10,10 +12,12 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.RobotType;
 import frc.robot.RobotType.Mode;
+import frc.robot.subsystems.climber.Climber;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.led.animation.EndgameTimerAnimation;
 import frc.robot.util.led.animation.FillAnimation;
 import frc.robot.util.led.animation.FlashingAnimation;
+import frc.robot.util.led.animation.LEDAnimation;
 import frc.robot.util.led.animation.LEDManager;
 import frc.robot.util.led.animation.ScrollingAnimation;
 import frc.robot.util.led.functions.Gradient.BasicGradient;
@@ -32,6 +36,7 @@ public class Leds extends VirtualSubsystem {
     private final LEDStrip leftStrip;
 
     private final LEDStrip sideStrips;
+    private final LEDStrip sideStripTips;
 
     private final LEDStrip backRightStrip;
     private final LEDStrip backLeftStrip;
@@ -85,17 +90,18 @@ public class Leds extends VirtualSubsystem {
         leftStrip = offboardLEDs.substrip(38, 57).reverse();
 
         sideStrips = leftStrip.parallel(rightStrip);
-
+        sideStripTips = sideStrips.substrip(15).concat(backStrip.substrip(5, 13));
+        
         backRightStrip = backStrip.substrip(0, 10);
-        backLeftStrip = backStrip.substrip(10, 19).reverse();
-
+        backLeftStrip = backStrip.substrip(9).reverse();
+        
         fullLeftStrip = leftStrip.concat(backLeftStrip);
         fullRightStrip = rightStrip.concat(backRightStrip);
-
-        fullSideStrips = fullLeftStrip.parallel(fullRightStrip);
-
-        backMirroredStrip = backRightStrip.reverse().parallel(backLeftStrip.reverse());
         
+        fullSideStrips = fullLeftStrip.parallel(fullRightStrip);
+        
+        backMirroredStrip = backRightStrip.reverse().parallel(backLeftStrip.reverse());
+
         // this.runners = new AnimationRunner[]{
         //     // new AnimationRunner(
         //     //     "Endgame Timer",
@@ -208,7 +214,7 @@ public class Leds extends VirtualSubsystem {
 
     public Command noteAcquired() {
         return new FlashingAnimation(
-            6,
+            20,
             new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kGreen),
             TilingFunction.Sawtooth,
             fullSideStrips
@@ -219,7 +225,83 @@ public class Leds extends VirtualSubsystem {
         return new FillAnimation(
             5,
             Color.kLime,
-            sideStrips.substrip(15)
+            sideStripTips
         );
+    }
+
+    public Command visionAcquired() {
+        return new FillAnimation(
+            3,
+            Color.kOrange,
+            sideStripTips
+        );
+    }
+
+    public Command visionLocked() {
+        return new FillAnimation(
+            3,
+            Color.kPurple,
+            sideStripTips
+        );
+    }
+
+    public Command humanPlayerFlash() {
+        return new FlashingAnimation(
+            15,
+            new BasicGradient(InterpolationStyle.Step, Color.kBlack, Color.kWhite),
+            TilingFunction.Sawtooth,
+            fullSideStrips
+        ).setPeriod(0.125).withTimeout(1);
+    }
+
+    public Command shooterBarGraph(DoubleSupplier shooterSpeed, DoubleSupplier shooterTarget, BooleanSupplier shooterReady) {
+        return new LEDAnimation(12) {
+            @Override
+            public void execute() {
+                sideStrips.foreach((i) -> {
+                    var pos = (double) i / sideStrips.getLength();
+                    var barPos = Math.sqrt(shooterSpeed.getAsDouble() / 30);
+                    sideStrips.setLED(i, (pos <= barPos ? (shooterReady.getAsBoolean() ? Color.kGreen : Color.kRed) : (shooterReady.getAsBoolean() ? new Color(0, 0.03, 0) : Color.kBlack)));
+                });
+                var dotPos = (int)Math.ceil(Math.sqrt(shooterTarget.getAsDouble() / 30) * (sideStrips.getLength() - 1));
+                sideStrips.setLED(dotPos, Color.kGreen);
+            }
+        };
+    }
+
+    public Command defenseSpinActivated() {
+        return new FlashingAnimation(
+            10,
+            new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kYellow),
+            TilingFunction.Sinusoidal,
+            fullSideStrips
+        ).setPeriod(0.25);
+    }
+
+    public Command climbingModeActivated() {
+        return new FlashingAnimation(
+            6,
+            new BasicGradient(InterpolationStyle.Linear, Color.kBlack, Color.kTeal),
+            TilingFunction.Sinusoidal,
+            fullSideStrips
+        ).setPeriod(0.75);
+    }
+
+    public Command climbing(DoubleSupplier climbingPos) {
+        return new LEDAnimation(25) {
+            @Override
+            public void execute() {
+                sideStrips.foreach((i) -> {
+                    var pos = (double) i / sideStrips.getLength();
+                    var barPos = 1 - (climbingPos.getAsDouble() / Climber.POS_DEPLOY);
+                    sideStrips.setLED(i, (pos <= barPos ? Color.kTeal : Color.kBlack));
+                });
+                backMirroredStrip.foreach((i) -> {
+                    var pos = (double) i / backMirroredStrip.getLength();
+                    var barPos = 1 - (climbingPos.getAsDouble() / Climber.POS_DEPLOY);
+                    backMirroredStrip.setLED(i, (pos <= barPos ? Color.kTeal : Color.kBlack));
+                });
+            }
+        };
     }
 }

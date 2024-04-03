@@ -21,6 +21,7 @@ import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
@@ -113,7 +114,6 @@ public class NoteVision extends VirtualSubsystem {
         Logger.recordOutput("Vision/Note/Note Priority", noteMemories.stream().mapToDouble(TrackedNote::getPriority).toArray());
         Logger.recordOutput("Vision/Note/Target", optIntakeTarget.map(TrackedNote::toASPose).map((a) -> new Pose3d[]{a}).orElse(new Pose3d[0]));
         Logger.recordOutput("Vision/Note/Locked Target", optIntakeTarget.filter((a) -> intakeTargetLocked).map(TrackedNote::toASPose).map((a) -> new Pose3d[]{a}).orElse(new Pose3d[0]));
-        intakeTargetLocked = false;
     }
 
     public DoubleSupplier applyDotProduct(Supplier<ChassisSpeeds> joystickFieldRelative) {
@@ -139,14 +139,15 @@ public class NoteVision extends VirtualSubsystem {
     }
 
     public LazyOptional<Translation2d> autoIntakeTargetLocation() {
-        return () -> optIntakeTarget.map((target) -> {
-            intakeTargetLocked = true;
-            return target.fieldPos;
-        });
+        return () -> optIntakeTarget.map((target) -> target.fieldPos);
     }
 
     public boolean hasTarget() {
         return optIntakeTarget.isPresent();
+    }
+
+    public boolean targetLocked() {
+        return intakeTargetLocked;
     }
 
     public void clearMemory() {
@@ -156,11 +157,13 @@ public class NoteVision extends VirtualSubsystem {
 
     public Command autoIntake(DoubleSupplier throttle, Drive drive, Intake intake) {
         return 
-            drive.translationSubsystem.fieldRelative(getAutoIntakeTransSpeed(throttle).orElseGet(ChassisSpeeds::new))
+            Commands.runOnce(() -> intakeTargetLocked = true)
             .alongWith(
+                drive.translationSubsystem.fieldRelative(getAutoIntakeTransSpeed(throttle).orElseGet(ChassisSpeeds::new)),
                 drive.rotationalSubsystem.pointTo(autoIntakeTargetLocation(), () -> RobotConstants.intakeForward)
             )
             .onlyWhile(() -> !intake.hasNote())
+            .finallyDo(() -> intakeTargetLocked = false)
             .withName("Auto Intake")
         ;
     }

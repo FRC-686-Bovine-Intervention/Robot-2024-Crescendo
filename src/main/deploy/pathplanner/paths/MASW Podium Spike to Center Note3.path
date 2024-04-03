@@ -1,0 +1,90 @@
+{
+  "version": 1.0,
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 2.656589425482732,
+        "y": 5.053917952592305
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 3.5509355544501444,
+        "y": 5.6823083363304825
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 4.616368367512109,
+        "y": 4.623705220788145
+      },
+      "prevControl": {
+        "x": 3.8928795685620203,
+        "y": 5.505457194508564
+      },
+      "nextControl": {
+        "x": 5.0534690087683005,
+        "y": 4.090988814257163
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 6.221347284624685,
+        "y": 3.9270760737860906
+      },
+      "prevControl": {
+        "x": 5.408773816264117,
+        "y": 3.9095385169149997
+      },
+      "nextControl": {
+        "x": 7.170675239852976,
+        "y": 3.9475651663449742
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 7.102378264656696,
+        "y": 1.2088564609741532
+      },
+      "prevControl": {
+        "x": 7.19116433241186,
+        "y": 3.4216784573336207
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 2.1999999999999997,
+      "rotationDegrees": -171.2506768755271,
+      "rotateFast": false
+    }
+  ],
+  "constraintZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 4.5,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 149.79676224505732,
+    "rotateFast": false
+  },
+  "reversed": false,
+  "folder": "MA Spike Wiggle",
+  "previewStartingState": {
+    "rotation": 158.73524358419084,
+    "velocity": 0
+  },
+  "useDefaultConstraints": false
+}

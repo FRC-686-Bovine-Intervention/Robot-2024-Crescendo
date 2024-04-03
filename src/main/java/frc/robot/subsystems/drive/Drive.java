@@ -50,6 +50,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive.SpectatorType;
 import frc.robot.util.AllianceFlipUtil;
@@ -375,6 +376,7 @@ public class Drive extends VirtualSubsystem {
                     );
                     drive.setCenterOfRotation(
                         Arrays.stream(DriveConstants.DriveModulePosition.moduleTranslations)
+                        .map((t) -> new Translation2d(t.toVector().unit().times(RobotConstants.centerToBumperCornerMeters)))
                         .sorted((a, b) -> 
                             (int) Math.signum(
                                 b.toVector().unit().dot(rotateAround) - a.toVector().unit().dot(rotateAround)

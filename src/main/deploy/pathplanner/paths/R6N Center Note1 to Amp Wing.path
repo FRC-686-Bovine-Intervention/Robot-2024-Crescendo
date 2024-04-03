@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.3658557457494767,
-        "y": 5.559284578519611
+        "x": 6.009626661516219,
+        "y": 6.549679921323237
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.2302488386975123,
-        "y": 5.955382744786959
+        "x": 4.759792015424297,
+        "y": 6.529190828764352
       },
       "isLocked": false,
-      "linkedName": "Speaker Auto Start"
+      "linkedName": null
     },
     {
       "anchor": {
-        "x": 4.971714914528095,
-        "y": 6.597334945289213
+        "x": 3.8393788768597705,
+        "y": 6.310348848455705
       },
       "prevControl": {
-        "x": 3.687810513523587,
-        "y": 6.665627732576688
+        "x": 5.278849026916024,
+        "y": 6.508701736205469
       },
       "nextControl": null,
       "isLocked": false,
@@ -32,21 +32,21 @@
   "constraintZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.0,
+    "maxVelocity": 3.0,
     "maxAcceleration": 6.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
   "goalEndState": {
-    "velocity": 1.0,
-    "rotation": 180.0,
-    "rotateFast": true
+    "velocity": 0.0,
+    "rotation": -170.90421916185426,
+    "rotateFast": false
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Rush 6 Note",
   "previewStartingState": {
-    "rotation": 180.0,
+    "rotation": 149.6887867733184,
     "velocity": 0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

@@ -31,11 +31,10 @@ import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
-import frc.robot.auto.BabyAuto;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.SneakySource3Note;
-import frc.robot.auto.Source3Note;
+import frc.robot.auto.Source4Note;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.climber.ClimberIOFalcon;
@@ -387,13 +386,34 @@ public class RobotContainer {
             leds.noteAcquired()
         );
         new Trigger(intake::hasNote).and(DriverStation::isTeleopEnabled).whileTrue(
-            driveController.rumble(RumbleType.kBothRumble, 0.2)
+            driveController.rumble(RumbleType.kBothRumble, 0.4)
         );
         
-        new Trigger(kicker::hasNote)
-        .whileTrue(
-            leds.noteSecured()
+        // Kicker Notification
+        new Trigger(kicker::hasNote).whileTrue(leds.noteSecured());
+        
+        // Note Vision Notification
+        new Trigger(noteVision::hasTarget).whileTrue(leds.visionAcquired());
+        new Trigger(noteVision::targetLocked).whileTrue(leds.visionLocked());
+        
+        // Shooter Notification
+        new Trigger(() -> shooter.getCurrentCommand() != null).whileTrue(
+            leds.shooterBarGraph(
+                shooter::getAverageSurfaceSpeed,
+                shooter::getTargetSpeed,
+                shooter::readyToShoot
+            )
         );
+
+        // Climber Notification
+        new Trigger(() -> Optional.ofNullable(climber.getCurrentCommand()).map((c) -> c.getName().contains("Deploy")).orElse(false)).whileTrue(leds.climbingModeActivated());
+        new Trigger(() -> Optional.ofNullable(climber.getCurrentCommand()).map((c) -> c.getName().contains("Retract")).orElse(false)).whileTrue(leds.climbing(climber::getClimberPos));
+
+        // Defense Notification
+        new Trigger(() -> Optional.ofNullable(drive.rotationalSubsystem.getCurrentCommand()).map((c) -> c.getName().contains("Defense")).orElse(false)).whileTrue(leds.defenseSpinActivated());
+
+        // Human Player Notification
+        driveController.leftStickButton().onTrue(leds.humanPlayerFlash());
     }
 
     private void configureAutos() {
@@ -409,14 +429,11 @@ public class RobotContainer {
         //         drive::getCharacterizationVelocity
         //     )
         // ));
-        // autoSelector.addRoutine(new SpikeMarkShots(this));
-        // autoSelector.addRoutine(new SpikeMarkAndCenterLine(this));
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new SneakySource3Note(this));
-        autoSelector.addRoutine(new Source3Note(this));
+        autoSelector.addRoutine(new Source4Note(this));
         // autoSelector.addRoutine(new Disruptor(this));
-        autoSelector.addRoutine(new BabyAuto(this));
     }
 
     private void configureSystemCheck() {
