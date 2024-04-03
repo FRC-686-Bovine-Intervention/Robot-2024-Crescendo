@@ -96,6 +96,7 @@ public class Pivot extends SubsystemBase {
   private boolean prevDec;
   private final BooleanSupplier decreaseRuntimeOffset;
 
+  private double targetPos;
   private boolean outtakeCommand;
 
   private Command go(DoubleSupplier pos) {
@@ -110,7 +111,8 @@ public class Pivot extends SubsystemBase {
       }
       @Override
       public void execute() {
-        pivotIO.setPivotPos(pos.getAsDouble());
+        targetPos = pos.getAsDouble();
+        pivotIO.setPivotPos(targetPos);
       }
       @Override
       public void end(boolean interrupted) {
@@ -132,7 +134,8 @@ public class Pivot extends SubsystemBase {
       @Override
       public void execute() {
         outtakeCommand = true;
-        pivotIO.setPivotPos(pos.getAsDouble());
+        targetPos = pos.getAsDouble();
+        pivotIO.setPivotPos(targetPos);
       }
       @Override
       public void end(boolean interrupted) {
@@ -169,7 +172,7 @@ public class Pivot extends SubsystemBase {
   }
 
   public boolean readyToShoot() {
-    return atPos() && outtakeCommand;
+    return atPos() && outtakeCommand && MathUtil.isNear(targetPos, inputs.pivotEncoder.positionRad, Units.degreesToRadians(toleranceDeg.get()*2));
   }
 
   public boolean atPos() {

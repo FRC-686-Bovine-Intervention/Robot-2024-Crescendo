@@ -27,14 +27,14 @@ public class ApriltagVision extends VirtualSubsystem {
         this.cameras = cameras;
     }
 
-    private static final LoggedTunableNumber rejectDist = new LoggedTunableNumber("Vision/Apriltags/Reject Distance", 4);
+    // private static final LoggedTunableNumber rejectDist = new LoggedTunableNumber("Vision/Apriltags/Reject Distance", 4);
     private final AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo);
 
     @Override
     public void periodic() {
         var results = Arrays.stream(cameras).map(ApriltagCamera::periodic).filter(Optional::isPresent).map(Optional::get).toArray(ApriltagCameraResult[]::new);
-        var accepted = Arrays.stream(results).filter((r) -> r.getAverageDist() < rejectDist.get()).toArray(ApriltagCameraResult[]::new);
-        var rejected = Arrays.stream(results).filter((r) -> r.getAverageDist() >= rejectDist.get()).toArray(ApriltagCameraResult[]::new);
+        var accepted = Arrays.stream(results).filter((r) -> r.getAverageDist() < r.cameraMeta.trustDistance).toArray(ApriltagCameraResult[]::new);
+        var rejected = Arrays.stream(results).filter((r) -> r.getAverageDist() >= r.cameraMeta.trustDistance).toArray(ApriltagCameraResult[]::new);
         var tagsSeen = Arrays.stream(results).flatMapToInt((r) -> Arrays.stream(r.tagsSeen)).toArray();
         Logger.recordOutput("Vision/Apriltags/Tags Seen", tagsSeen);
         Logger.recordOutput("Vision/Apriltags/Tags Seen Poses", Arrays.stream(tagsSeen).mapToObj(fieldLayout::getTagPose).filter(Optional::isPresent).map(Optional::get).toArray(Pose3d[]::new));
@@ -58,7 +58,7 @@ public class ApriltagVision extends VirtualSubsystem {
     private Matrix<N3, N1> computeStdDevs(ApriltagCameraResult result) {
         var averageDist = result.getAverageDist();
         var numTags = result.tagsSeen.length;
-        double transStdDev = (kTransA.get() * averageDist * averageDist + kTransC.get()) / numTags;
+        double transStdDev = (kTransA.get() * averageDist * averageDist + kTransC.get()) / numTags * result.cameraMeta.cameraStdCoef;
         double rotStdDev = (kRotA.get() * averageDist * averageDist + (DriverStation.isEnabled() ? kRotC.get() : kRotCDisabled.get())) / numTags;
         return VecBuilder.fill(transStdDev, transStdDev, rotStdDev);
     }

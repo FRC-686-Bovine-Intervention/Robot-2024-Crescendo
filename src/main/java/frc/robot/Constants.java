@@ -29,6 +29,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.geometry.Quaternion;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
@@ -330,6 +331,8 @@ public final class Constants {
         public static enum Camera {
             LeftApriltag(
                 "Left Apriltag Cam",
+                0.6,
+                5,
                 new Transform3d(
                     new Translation3d(
                         Inches.of(+12.225),
@@ -337,14 +340,43 @@ public final class Constants {
                         Inches.of(+10.932)
                     ),
                     new Rotation3d(
-                        Units.degreesToRadians(+(90.0-87.654)),
-                        Units.degreesToRadians(-32.414),
-                        Units.degreesToRadians(+9.707)
+                        Units.degreesToRadians(0),
+                        Units.degreesToRadians(0),
+                        Units.degreesToRadians(+0)
                     )
                 )
+                // robotToCameraFromCalibTag(
+                //     new Transform3d(
+                //         new Translation3d(
+                //             4.62,
+                //             0,
+                //             1.465
+                //         ),
+                //         new Rotation3d(
+                //             0,0,Math.PI
+                //         )
+                //     ),
+                //     new Transform3d(
+                //         new Translation3d(
+                //             4.26,
+                //             -0.126,
+                //             1.145
+                //         ),
+                //         new Rotation3d(
+                //             new Quaternion(
+                //                 0.033,
+                //                 0.03,
+                //                 0,
+                //                 1
+                //             )
+                //         )
+                //     )
+                // )
             ),
             RightApriltag(
                 "Right Apriltag Cam",
+                1,
+                4,
                 new Transform3d(
                     new Translation3d(
                         Inches.of(+12.225),
@@ -360,6 +392,8 @@ public final class Constants {
             ),
             NoteVision(
                 "Note Cam",
+                0,
+                0,
                 new Transform3d(
                     new Translation3d(
                         Inches.of(-14.047),
@@ -376,9 +410,13 @@ public final class Constants {
             ;
             public final String hardwareName;
             private final Transform3d intermediateToCamera;
+            public final double cameraStdCoef;
+            public final double trustDistance;
             private Supplier<Transform3d> robotToIntermediate;
-            Camera(String hardwareName, Transform3d finalToCamera) {
+            Camera(String hardwareName, double cameraStdCoef, double trustDistance, Transform3d finalToCamera) {
                 this.hardwareName = hardwareName;
+                this.cameraStdCoef = cameraStdCoef;
+                this.trustDistance = trustDistance;
                 this.intermediateToCamera = finalToCamera;
                 this.robotToIntermediate = Transform3d::new;
             }
@@ -396,10 +434,10 @@ public final class Constants {
             }
 
             public ApriltagCamera toApriltagCamera() {
-                return new ApriltagCamera(this.name(), new ApriltagCameraIO(){});
+                return new ApriltagCamera(this, new ApriltagCameraIO(){});
             }
             public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function) {
-                return new ApriltagCamera(this.name(), function.apply(this));
+                return new ApriltagCamera(this, function.apply(this));
             }
 
             public static void logCameraOverrides() {
