@@ -341,7 +341,7 @@ public final class Constants {
                     ),
                     new Rotation3d(
                         Units.degreesToRadians(0),
-                        Units.degreesToRadians(0),
+                        Units.degreesToRadians(-12.348),
                         Units.degreesToRadians(+0)
                     )
                 )
@@ -384,10 +384,15 @@ public final class Constants {
                         Inches.of(+10.932)
                     ),
                     new Rotation3d(
-                        Units.degreesToRadians(-(90.0-87.654)),
+                        Units.degreesToRadians(0),
                         Units.degreesToRadians(-32.414),
-                        Units.degreesToRadians(-9.707)
+                        Units.degreesToRadians(0)
                     )
+                    // new Rotation3d(
+                    //     Units.degreesToRadians(-(90.0-87.654)),
+                    //     Units.degreesToRadians(-32.414),
+                    //     Units.degreesToRadians(-9.707)
+                    // )
                 )
             ),
             NoteVision(
