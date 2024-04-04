@@ -71,6 +71,7 @@ import frc.robot.subsystems.vision.note.NoteVisionIO;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
+import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.MathExtraUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
@@ -177,7 +178,8 @@ public class RobotContainer {
 
         joystickTranslational = FieldOrientedDrive.joystickSpectatorToFieldRelative(
             driveJoystick,
-            driveController.leftBumper()
+            () -> false
+            // driveController.leftBumper()
         );
         
         // driveCustomFlick = Drive.Rotational.headingFromJoystick(
@@ -322,7 +324,16 @@ public class RobotContainer {
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWithTunableNumber());
 
         // Auto Aim
+        var subwooferFORR = SuperCommands.autoAimFORR(() -> AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()), ChassisSpeeds::new);
         driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(drive.rotationalSubsystem, shooter, kicker, pivot));
+        driveController.leftBumper().toggleOnTrue(
+            shooter.shoot(subwooferFORR, kicker::sensorFallingEdge)
+            .withName("Shoot from Subwoofer")
+            .asProxy()
+            .deadlineWith(
+                pivot.autoAim(subwooferFORR).asProxy()
+            )
+        );
         // driveController.leftBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
 
         // Auto Intake
@@ -364,7 +375,8 @@ public class RobotContainer {
                 drive.getRotation(),
                 Units.degreesToRadians(3)
             ) && 
-            DriverStation.isTeleopEnabled()
+            DriverStation.isTeleopEnabled() &&
+            !Optional.ofNullable(shooter.getCurrentCommand()).map((c) -> c.getName().contains("Subwoofer")).orElse(false)
         ).onTrue(kicker.kick().asProxy().until(() -> shooter.getCurrentCommand() == null));
         
         // Cancel Auto Drive
