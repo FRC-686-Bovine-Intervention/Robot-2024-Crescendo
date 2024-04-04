@@ -73,7 +73,7 @@ public class Pivot extends SubsystemBase {
       robotToPivotTranslation,
       new Rotation3d(
         0,
-        inputs.pivotEncoder.positionRad,
+        -inputs.pivotEncoder.positionRad,
         0
       )
     );

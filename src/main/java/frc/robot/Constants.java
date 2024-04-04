@@ -300,7 +300,7 @@ public final class Constants {
             // Degrees.of(50).in(Radians),
             Degrees.of(59.39+5.09765625-4.5+0.5).in(Radians),
             Degrees.of(37.2+5.09765625-2.5+0.5+1+0.5).in(Radians),
-            Degrees.of(27.2+5.09765625-2.5).in(Radians),
+            Degrees.of(27.2+5.09765625-2.5-0.5).in(Radians),
             Degrees.of(50+5.09765625).in(Radians),
         };
         public static double distLerp(double dist, double[] lerpTarget) {
