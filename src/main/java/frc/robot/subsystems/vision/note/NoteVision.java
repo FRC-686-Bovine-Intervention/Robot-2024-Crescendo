@@ -62,7 +62,14 @@ public class NoteVision extends VirtualSubsystem {
         System.out.println("[Init NoteVision] NoteVision IO: " + this.noteVisionIO.getClass().getSimpleName());
 
         CommandScheduler.getInstance().onCommandFinish((comm) -> {if (comm.getName() == IntakeCommand.INTAKE.name()) {
-            optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
+            var closestNote = noteMemories.stream().sorted((a, b) -> 
+                (int) Math.signum(
+                    RobotState.getInstance().getPose().getTranslation().getDistance(a.fieldPos) - 
+                    RobotState.getInstance().getPose().getTranslation().getDistance(b.fieldPos)
+                )
+            ).findFirst();
+            closestNote.ifPresent(noteMemories::remove);
+            // optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
             optIntakeTarget = Optional.empty();
         }});
         
@@ -107,8 +114,9 @@ public class NoteVision extends VirtualSubsystem {
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
         noteMemories.removeIf((memory) -> Double.isNaN(memory.fieldPos.getX()));
+        noteMemories.removeIf((memory) -> RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) <= 0.07);
 
-        if(optIntakeTarget.isPresent() && optIntakeTarget.get().confidence < detargetConfidenceThreshold.get()) {
+        if(optIntakeTarget.isPresent() && (optIntakeTarget.get().confidence < detargetConfidenceThreshold.get() || !noteMemories.contains(optIntakeTarget.get()))) {
             optIntakeTarget = Optional.empty();
         }
         if(optIntakeTarget.isEmpty() || !intakeTargetLocked) {
@@ -169,7 +177,7 @@ public class NoteVision extends VirtualSubsystem {
                 drive.translationSubsystem.fieldRelative(getAutoIntakeTransSpeed(throttle).orElseGet(ChassisSpeeds::new)),
                 drive.rotationalSubsystem.pointTo(autoIntakeTargetLocation(), () -> RobotConstants.intakeForward)
             )
-            .onlyWhile(() -> !intake.hasNote())
+            .onlyWhile(() -> !intake.hasNote() && optIntakeTarget.isPresent())
             .finallyDo(() -> intakeTargetLocked = false)
             .withName("Auto Intake")
         ;
