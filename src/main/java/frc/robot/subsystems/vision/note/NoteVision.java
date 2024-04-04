@@ -66,7 +66,7 @@ public class NoteVision extends VirtualSubsystem {
             optIntakeTarget = Optional.empty();
         }});
         
-        new Trigger(DriverStation::isDisabled).whileTrue(new FillAnimation(2, () -> (inputs.connected ? Color.kGreen : Color.kOrange), connectedStrip));
+        new Trigger(DriverStation::isDisabled).debounce(1).whileTrue(new FillAnimation(2, () -> (inputs.connected ? Color.kGreen : Color.kOrange), connectedStrip));
     }
 
     @Override

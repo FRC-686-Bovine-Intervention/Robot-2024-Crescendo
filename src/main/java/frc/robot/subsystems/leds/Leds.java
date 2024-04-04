@@ -111,7 +111,7 @@ public class Leds extends VirtualSubsystem {
             )
         );
 
-        new Trigger(DriverStation::isDisabled)
+        new Trigger(DriverStation::isDisabled).debounce(1)
         .whileTrue(
             new FillAnimation(
                 1,

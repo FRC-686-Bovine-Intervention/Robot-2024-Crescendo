@@ -20,7 +20,7 @@ public class ApriltagCamera {
     public ApriltagCamera(Camera cameraMeta, ApriltagCameraIO cameraIO, LEDStrip connectedStrip) {
         this.cameraMeta = cameraMeta;
         this.cameraIO = cameraIO;
-        new Trigger(DriverStation::isDisabled).whileTrue(new FillAnimation(2, () -> (inputs.isConnected ? Color.kGreen : Color.kOrange), connectedStrip));
+        new Trigger(DriverStation::isDisabled).debounce(1).whileTrue(new FillAnimation(2, () -> (inputs.isConnected ? Color.kGreen : Color.kOrange), connectedStrip));
     }
 
     public Optional<ApriltagCameraResult> periodic() {
