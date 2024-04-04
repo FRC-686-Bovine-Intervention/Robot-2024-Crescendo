@@ -38,9 +38,9 @@ public class Pivot extends SubsystemBase {
 
   private static final Translation3d robotToPivotTranslation = 
     new Translation3d(
-      Inches.of(13),
+      Inches.of(-7.5),
       Inches.of(0),
-      Inches.of(22.665031)
+      Inches.of(19.01)
     )
   ;
 
