@@ -431,8 +431,8 @@ public class RobotContainer {
         // ));
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
-        autoSelector.addRoutine(new SneakySource3Note(this));
         autoSelector.addRoutine(new Source4Note(this));
+        autoSelector.addRoutine(new SneakySource3Note(this));
         // autoSelector.addRoutine(new Disruptor(this));
     }
 
