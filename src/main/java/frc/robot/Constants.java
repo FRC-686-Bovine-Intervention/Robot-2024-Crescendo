@@ -29,7 +29,6 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.geometry.Quaternion;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
@@ -37,6 +36,7 @@ import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
 import frc.robot.util.GearRatio.Wheel;
+import frc.robot.util.led.strips.LEDStrip;
 
 public final class Constants {
 
@@ -438,11 +438,11 @@ public final class Constants {
                 return robotToIntermediate.get().plus(intermediateToCamera);
             }
 
-            public ApriltagCamera toApriltagCamera() {
-                return new ApriltagCamera(this, new ApriltagCameraIO(){});
+            public ApriltagCamera toApriltagCamera(LEDStrip connectedStrip) {
+                return new ApriltagCamera(this, new ApriltagCameraIO(){}, connectedStrip);
             }
-            public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function) {
-                return new ApriltagCamera(this, function.apply(this));
+            public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function, LEDStrip connectedStrip) {
+                return new ApriltagCamera(this, function.apply(this), connectedStrip);
             }
 
             public static void logCameraOverrides() {

@@ -104,6 +104,7 @@ public class RobotContainer {
 
     public RobotContainer() {
         System.out.println("[Init RobotContainer] Creating " + RobotType.getMode().name() + " " + RobotType.getRobot().name());
+        leds = new Leds();
         switch(RobotType.getMode()) {
             case REAL:
                 drive = new Drive(
@@ -119,8 +120,8 @@ public class RobotContainer {
                 climber = new Climber(new ClimberIOFalcon());
                 // pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
                 pivot = new Pivot(new PivotIOFalcon(), ()->false,()->false);
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
-                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision), leds.getNoteVisionStrip());
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new, leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new, leds.getRightApriltagStrip()));
             break;
             case SIM:
                 drive = new Drive(
@@ -135,8 +136,8 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
                 climber = new Climber(new ClimberIO() {});
-                noteVision = new NoteVision(new NoteVisionIOSim());
-                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
+                noteVision = new NoteVision(new NoteVisionIOSim(),leds.getNoteVisionStrip());
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(leds.getRightApriltagStrip()));
             break;
             default:
             case REPLAY:
@@ -152,8 +153,8 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIO() {});
                 shooter = new Shooter(new ShooterIO() {});
                 climber = new Climber(new ClimberIO() {});
-                noteVision = new NoteVision(new NoteVisionIO() {});
-                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
+                noteVision = new NoteVision(new NoteVisionIO() {},leds.getNoteVisionStrip());
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(leds.getRightApriltagStrip()));
             break;
         }
         // ledSystem = new Leds(
@@ -169,7 +170,6 @@ public class RobotContainer {
         //     // () -> kicker.hasNote()
         // );
         manualOverrides = new ManualOverrides(pivot::setCoast);
-        leds = new Leds();
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)

@@ -19,9 +19,12 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
@@ -31,6 +34,8 @@ import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.VirtualSubsystem;
+import frc.robot.util.led.animation.FillAnimation;
+import frc.robot.util.led.strips.LEDStrip;
 
 public class NoteVision extends VirtualSubsystem {
     private final NoteVisionIO noteVisionIO;
@@ -51,7 +56,7 @@ public class NoteVision extends VirtualSubsystem {
     private Optional<TrackedNote> optIntakeTarget = Optional.empty();
     private boolean intakeTargetLocked = false;
 
-    public NoteVision(NoteVisionIO noteVisionIO) {
+    public NoteVision(NoteVisionIO noteVisionIO, LEDStrip connectedStrip) {
         System.out.println("[Init NoteVision] Instantiating NoteVision");
         this.noteVisionIO = noteVisionIO;
         System.out.println("[Init NoteVision] NoteVision IO: " + this.noteVisionIO.getClass().getSimpleName());
@@ -60,6 +65,8 @@ public class NoteVision extends VirtualSubsystem {
             optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
             optIntakeTarget = Optional.empty();
         }});
+        
+        new Trigger(DriverStation::isDisabled).whileTrue(new FillAnimation(2, () -> (inputs.connected ? Color.kGreen : Color.kOrange), connectedStrip));
     }
 
     @Override
