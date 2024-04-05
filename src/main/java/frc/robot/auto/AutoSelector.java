@@ -66,13 +66,15 @@ public class AutoSelector extends VirtualSubsystem {
         var selectedRoutine = routineChooser.get();
         if(selectedRoutine == null) return;
         var questions = selectedRoutine.questions;
-        List<String> currentResponses = responseChoosers.stream().map((c) -> c.get()).toList();
+        List<String> currentResponses = new ArrayList<>();
         for (int i = 0; i < responseChoosers.size(); i++) {
             if(i < questions.size()) {
                 questionPublishers.get(i).set(questions.get(i).name);
                 responseChoosers.get(i).setOptions(questions.get(i).getOptionNames());
-                if(currentResponses.get(i) != null) {
-                    questions.get(i).setResponse(currentResponses.get(i));
+                var response = responseChoosers.get(i).get();
+                currentResponses.add(response);
+                if(response != null) {
+                    questions.get(i).setResponse(response);
                 }
             } else {
                 questionPublishers.get(i).set(questionPlaceHolder);
