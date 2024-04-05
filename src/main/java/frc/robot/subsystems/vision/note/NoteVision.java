@@ -62,13 +62,14 @@ public class NoteVision extends VirtualSubsystem {
         System.out.println("[Init NoteVision] NoteVision IO: " + this.noteVisionIO.getClass().getSimpleName());
 
         CommandScheduler.getInstance().onCommandFinish((comm) -> {if (comm.getName() == IntakeCommand.INTAKE.name()) {
-            var closestNote = noteMemories.stream().sorted((a, b) -> 
+            noteMemories.stream().sorted((a, b) -> 
                 (int) Math.signum(
                     RobotState.getInstance().getPose().getTranslation().getDistance(a.fieldPos) - 
                     RobotState.getInstance().getPose().getTranslation().getDistance(b.fieldPos)
                 )
-            ).findFirst();
-            closestNote.ifPresent(noteMemories::remove);
+            )
+            .findFirst()
+            .ifPresent(noteMemories::remove);
             // optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
             optIntakeTarget = Optional.empty();
         }});
@@ -107,7 +108,7 @@ public class NoteVision extends VirtualSubsystem {
             );
         }
         unusedMemories.forEach((memory) -> {
-            if(RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) > 1) {
+            if(RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) > RobotConstants.robotLengthMeters*0.5) {
                 memory.decayConfidence(1);
             }
         });
