@@ -27,4 +27,8 @@ public interface PivotIO {
     public default void stop() {}
 
     public default void setCoast(boolean coast) {}
+
+    public default void enableSoftLimits(boolean enable) {}
+
+    public default void zeroEncoder() {}
 }

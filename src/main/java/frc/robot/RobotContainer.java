@@ -119,8 +119,8 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIONeo550());
                 shooter = new Shooter(new ShooterIOFalcon());
                 climber = new Climber(new ClimberIOFalcon());
-                // pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
-                pivot = new Pivot(new PivotIOFalcon(), ()->false,()->false);
+                pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
+                // pivot = new Pivot(new PivotIOFalcon(), ()->false,()->false);
                 noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision), leds.getNoteVisionStrip());
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new, leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new, leds.getRightApriltagStrip()));
             break;
@@ -338,6 +338,8 @@ public class RobotContainer {
 
         // Auto Intake
         driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
+
+        SmartDashboard.putData("Recal Pivot", pivot.recal());
 
         // Auto Drive
         // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));

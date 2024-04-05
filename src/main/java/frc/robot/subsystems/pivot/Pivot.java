@@ -171,6 +171,29 @@ public class Pivot extends SubsystemBase {
     return aim(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
   }
 
+  public Command recal() {
+    var subsystem = this;
+    return new Command() {
+      {
+        addRequirements(subsystem);
+        setName("Recal");
+      }
+      @Override
+      public void initialize() {
+        pivotIO.enableSoftLimits(false);
+      }
+      @Override
+      public void execute() {
+        pivotIO.setPivotVoltage(-1);
+      }
+      @Override
+      public void end(boolean interrupted) {
+        pivotIO.enableSoftLimits(true);
+        pivotIO.stop();
+      }
+    };
+  }
+
   public boolean readyToShoot() {
     return atPos() && outtakeCommand && MathUtil.isNear(targetPos, inputs.pivotEncoder.positionRad, Units.degreesToRadians(toleranceDeg.get()*2));
   }

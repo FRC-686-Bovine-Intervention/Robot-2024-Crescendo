@@ -4,15 +4,14 @@
 
 package frc.robot.subsystems.pivot;
 
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.Rotations;
-
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.ControlRequest;
@@ -177,5 +176,22 @@ public class PivotIOFalcon implements PivotIO {
     public void setCoast(boolean coast) {
         pivotLeftMotor.setControl(coast ? COAST_OUT : NEUTRAL_OUT);
         pivotRightMotor.setControl(coast ? COAST_OUT : NEUTRAL_OUT);
+    }
+
+    @Override
+    public void enableSoftLimits(boolean enable) {
+        var config = new SoftwareLimitSwitchConfigs();
+        pivotLeftMotor.getConfigurator().refresh(config);
+        config.ForwardSoftLimitEnable = enable;
+        config.ReverseSoftLimitEnable = enable;
+        pivotLeftMotor.getConfigurator().apply(config);
+    }
+
+    @Override
+    public void zeroEncoder() {
+        var config = new MagnetSensorConfigs();
+        pivotEncoder.getConfigurator().refresh(config);
+        config.MagnetOffset = pivotEncoder.getAbsolutePosition().getValueAsDouble();
+        pivotEncoder.getConfigurator().apply(config);
     }
 }
