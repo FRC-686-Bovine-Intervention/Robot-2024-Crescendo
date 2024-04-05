@@ -20,19 +20,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "R6N Amp Spike to Center Note2"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "R6N Center Note1 to Amp Wing"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "R6N Amp Wing to Center Note3"
+            "pathName": "R6N Amp Spike to Center Note3"
           }
         },
         {
