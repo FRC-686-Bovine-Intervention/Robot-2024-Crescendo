@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
+import frc.robot.auto.AutoCommons.Bool;
 import frc.robot.auto.AutoCommons.CenterNote;
 import frc.robot.auto.AutoCommons.Count;
 import frc.robot.auto.AutoCommons.StartPosition;
@@ -32,6 +33,11 @@ public class Source4Note extends AutoRoutine {
         Count.k3,
         Count.k2,
         Count.k1,
+    });
+
+    private static final AutoQuestion<Bool> skipPreload = new AutoQuestion<>("Skip Preload", () -> new Bool[] {
+        Bool.No,
+        Bool.Yes
     });
 
     private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> 
@@ -87,6 +93,7 @@ public class Source4Note extends AutoRoutine {
             List.of(
                 startPosition,
                 noteCount,
+                skipPreload,
                 firstCenterNote,
                 secondCenterNote,
                 thirdCenterNote
@@ -111,13 +118,14 @@ public class Source4Note extends AutoRoutine {
     public Command generateCommand() {
         var startPosition = Source4Note.startPosition.getResponse();
         var noteCount = Source4Note.noteCount.getResponse();
+        var skipPreload = Source4Note.skipPreload.getResponse();
         var firstCenterNote = Source4Note.firstCenterNote.getResponse();
         var secondCenterNote = Source4Note.secondCenterNote.getResponse();
         var thirdCenterNote = Source4Note.thirdCenterNote.getResponse();
 
         var commands = new ArrayList<Command>();
 
-        if(noteCount.asInt >= 1) {
+        if(noteCount.asInt >= 1 && !skipPreload.asBoolean) {
             var preloadShot = AllianceFlipUtil.apply(startPosition.startPose.getTranslation());
             commands.add(
                 AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
