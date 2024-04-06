@@ -32,6 +32,7 @@ import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.MASpikeWiggle;
+import frc.robot.auto.RB3Note;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.SneakySource3Note;
 import frc.robot.auto.Source4Note;
@@ -447,6 +448,7 @@ public class RobotContainer {
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new Source4Note(this));
+        autoSelector.addRoutine(new RB3Note(this));
         autoSelector.addRoutine(new SneakySource3Note(this));
         // autoSelector.addRoutine(new Disruptor(this));
     }

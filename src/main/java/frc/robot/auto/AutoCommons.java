@@ -113,6 +113,7 @@ public class AutoCommons {
         var FORR = getFORR(pos);
         // var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
+        Logger.recordOutput("DEBUG/Shoot from pose", shootPos);
         BooleanSupplier condition = () -> {
             var shooterReady = shooter.readyToShoot();
             var pivotReady = pivot.readyToShoot();

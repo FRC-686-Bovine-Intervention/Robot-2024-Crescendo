@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.util.SwitchableChooser;
@@ -60,8 +61,10 @@ public class AutoSelector extends VirtualSubsystem {
         routineChooser.addDefaultOption(routine.name, routine);
     }
 
+    private Alliance prevAlliance = Alliance.Blue;
     @Override
     public void periodic() {
+        var alliance = DriverStation.getAlliance().orElse(null);
         if(DriverStation.isEnabled()) return;
         var selectedRoutine = routineChooser.get();
         if(selectedRoutine == null) return;
@@ -81,7 +84,7 @@ public class AutoSelector extends VirtualSubsystem {
                 responseChoosers.get(i).setOptions(new String[] {});
             }
         }
-        if(!currentResponses.equals(lastResponses)) {
+        if(!currentResponses.equals(lastResponses) || prevAlliance != alliance) {
             System.out.println("[AutoSelector] Generating new command");
             System.out.println("[AutoSelector] Routine: " + selectedRoutine.name);
             currentResponses.forEach(System.out::println);
