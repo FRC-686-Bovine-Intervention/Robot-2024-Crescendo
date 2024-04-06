@@ -34,7 +34,7 @@ public class Pivot extends SubsystemBase {
   public static final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
 
   public static final double POS_ZERO = Units.degreesToRadians(9);
-  public static final double POS_AMP = Units.degreesToRadians(108/* .193359375 */);
+  public static final double POS_AMP = Units.degreesToRadians(109/* .193359375 */);
 
   private static final Translation3d robotToPivotTranslation = 
     new Translation3d(
