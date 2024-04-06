@@ -340,6 +340,7 @@ public class RobotContainer {
         driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
 
         SmartDashboard.putData("Recal Pivot", pivot.recal());
+        SmartDashboard.putData("Reset pos", Commands.runOnce(() -> drive.setPose(new Pose2d(AllianceFlipUtil.apply(FieldConstants.subwooferFront).getTranslation(), drive.getRotation()))));
 
         // Auto Drive
         // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));

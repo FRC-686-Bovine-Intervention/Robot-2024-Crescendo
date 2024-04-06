@@ -58,7 +58,7 @@ public class ApriltagVision extends VirtualSubsystem {
     private static final LoggedTunableNumber kRotA = new LoggedTunableNumber("Vision/Apriltags/StdDevs/Rotational/aCoef", 5);
     private static final LoggedTunableNumber kRotC = new LoggedTunableNumber("Vision/Apriltags/StdDevs/Rotational/cCoef", 1000);
     private static final LoggedTunableNumber kRotCDisabled = new LoggedTunableNumber("Vision/Apriltags/StdDevs/Rotational/disabledcCoef", 5);
-    private static final LoggedTunableNumber kMultiTag = new LoggedTunableNumber("Vision/Apriltags/MultiStdDevs", 0.01);
+    private static final LoggedTunableNumber kMultiTag = new LoggedTunableNumber("Vision/Apriltags/MultiStdDevs", 0.1);
 
     private Matrix<N3, N1> computeStdDevs(ApriltagCameraResult result) {
         var averageDist = result.getAverageDist();
