@@ -111,7 +111,7 @@ public class Pivot extends SubsystemBase {
       }
       @Override
       public void execute() {
-        targetPos = pos.getAsDouble();
+        targetPos = pos.getAsDouble() + Units.degreesToRadians(runtimeOffset);
         pivotIO.setPivotPos(targetPos);
       }
       @Override
