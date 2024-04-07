@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.CenterNote;
@@ -139,6 +138,7 @@ public class MASpikeWiggle extends AutoRoutine {
                     AutoCommons.autoAim(spike1Shot, shooter, pivot, drive.rotationalSubsystem),
                     AutoCommons.followPathFlipped(startToSpike1, drive.translationSubsystem)
                 )
+                .withTimeout(3)
             );
         }
 
@@ -174,6 +174,7 @@ public class MASpikeWiggle extends AutoRoutine {
                         AutoCommons.autoAim(spike2Shot, drive.rotationalSubsystem)
                     )
                 )
+                .withTimeout(4)
             );
         }
 
@@ -209,6 +210,7 @@ public class MASpikeWiggle extends AutoRoutine {
                         AutoCommons.autoAim(spikeShot3, drive.rotationalSubsystem)
                     )
                 )
+                .withTimeout(4)
             );
         }
         

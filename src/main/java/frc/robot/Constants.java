@@ -29,7 +29,6 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.geometry.Quaternion;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
@@ -37,6 +36,7 @@ import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
 import frc.robot.util.GearRatio.Wheel;
+import frc.robot.util.led.strips.LEDStrip;
 
 public final class Constants {
 
@@ -299,8 +299,8 @@ public final class Constants {
             // Degrees.of(27.2).in(Radians),
             // Degrees.of(50).in(Radians),
             Degrees.of(59.39+5.09765625-4.5+0.5).in(Radians),
-            Degrees.of(37.2+5.09765625-2.5+0.5+1).in(Radians),
-            Degrees.of(27.2+5.09765625-2.5).in(Radians),
+            Degrees.of(37.2+5.09765625-2.5+0.5+1+0.5).in(Radians),
+            Degrees.of(27.2+5.09765625-2.5-0.5-0.5-0.5).in(Radians),
             Degrees.of(50+5.09765625).in(Radians),
         };
         public static double distLerp(double dist, double[] lerpTarget) {
@@ -341,7 +341,7 @@ public final class Constants {
                     ),
                     new Rotation3d(
                         Units.degreesToRadians(0),
-                        Units.degreesToRadians(0),
+                        Units.degreesToRadians(-12.348-5),
                         Units.degreesToRadians(+0)
                     )
                 )
@@ -384,10 +384,15 @@ public final class Constants {
                         Inches.of(+10.932)
                     ),
                     new Rotation3d(
-                        Units.degreesToRadians(-(90.0-87.654)),
+                        Units.degreesToRadians(0),
                         Units.degreesToRadians(-32.414),
-                        Units.degreesToRadians(-9.707)
+                        Units.degreesToRadians(0)
                     )
+                    // new Rotation3d(
+                    //     Units.degreesToRadians(-(90.0-87.654)),
+                    //     Units.degreesToRadians(-32.414),
+                    //     Units.degreesToRadians(-9.707)
+                    // )
                 )
             ),
             NoteVision(
@@ -433,11 +438,11 @@ public final class Constants {
                 return robotToIntermediate.get().plus(intermediateToCamera);
             }
 
-            public ApriltagCamera toApriltagCamera() {
-                return new ApriltagCamera(this, new ApriltagCameraIO(){});
+            public ApriltagCamera toApriltagCamera(LEDStrip connectedStrip) {
+                return new ApriltagCamera(this, new ApriltagCameraIO(){}, connectedStrip);
             }
-            public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function) {
-                return new ApriltagCamera(this, function.apply(this));
+            public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function, LEDStrip connectedStrip) {
+                return new ApriltagCamera(this, function.apply(this), connectedStrip);
             }
 
             public static void logCameraOverrides() {

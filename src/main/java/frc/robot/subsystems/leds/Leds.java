@@ -51,25 +51,6 @@ public class Leds extends VirtualSubsystem {
     public Leds() {
         System.out.println("[Init Leds] Instantiating Leds");
         if(RobotType.getMode() == Mode.REAL) {
-            // var m_candle = new CANdle(CANDevices.candleCanID, "rio");
-            // var candleStrip = new CANdleStrip(m_candle, 57);
-
-            // ledManager.register(candleStrip);
-
-            // onboardLEDs = candleStrip.getOnboardLEDs();
-            // offboardLEDs = candleStrip.getOffboardLEDs();
-            
-            // CANdleConfiguration configAll = new CANdleConfiguration();
-            // configAll.statusLedOffWhenActive = true;
-            // configAll.disableWhenLOS = false;
-            // configAll.stripType = LEDStripType.GRB;
-            // configAll.brightnessScalar = 0.5;
-            // configAll.vBatOutputMode = VBatOutputMode.Modulated;
-            // m_candle.configFactoryDefault();
-            // m_candle.clearAnimation(0);
-            // m_candle.configAllSettings(configAll, 100);
-            // m_candle.setStatusFramePeriod(CANdleStatusFrame.CANdleStatusFrame_Status_1_General, 2000);
-            // m_candle.setControlFramePeriod(CANdleControlFrame.CANdle_Control_1_General, 1000);
             var addressableStrip = new AddressableStrip(0, 57);
             ledManager.register(addressableStrip);
             offboardLEDs = addressableStrip;
@@ -102,73 +83,6 @@ public class Leds extends VirtualSubsystem {
         
         backMirroredStrip = backRightStrip.reverse().parallel(backLeftStrip.reverse());
 
-        // this.runners = new AnimationRunner[]{
-        //     // new AnimationRunner(
-        //     //     "Endgame Timer",
-        //     //     () -> DriverStation.getMatchType() != MatchType.None && DriverStation.isTeleopEnabled() && DriverStation.getMatchTime() <= 30,
-        //     //     new EndgameTimerAnimation(
-        //     //         10,
-        //     //         offboardLEDs
-        //     //     )
-        //     // ),
-        //     // new AnimationRunner(
-        //     //     "Autonomous Robot",
-        //     //     robotAutonomous,
-        //     //     new ScrollingAnimation(
-        //     //         4,
-        //     //         new BasicGradient(InterpolationStyle.Step, Color.kRed, Color.kBlue),
-        //     //         TilingFunction.Modulo,
-        //     //         2,
-        //     //         4,
-        //     //         offboardLEDs
-        //     //     )
-        //     // ),
-        //     new AnimationRunner(
-        //         "DriverStation Connection",
-        //         DriverStation::isDisabled,
-        //         new FillAnimation(
-        //             1,
-        //             () -> (DriverStation.isDSAttached() ? Color.kGreen : Color.kOrange),
-        //             sideStrips.substrip(0, 2)
-        //         )
-        //     ),
-        //     // Intake
-        //     new AnimationRunner(
-        //         "Intaking Forward",
-        //         () -> !intakeReversed.getAsBoolean() && (intaking.getAsBoolean() || kickerFeeding.getAsBoolean()), 
-        //         new ScrollingAnimation(
-        //             0,
-        //             (x) -> InterpolationStyle.Linear.interpolate(x, kickerFeeding.getAsBoolean() ? new Color[]{Color.kGreen, Color.kYellow} : new Color[]{Color.kRed, Color.kYellow}),
-        //             TilingFunction.Sinusoidal,
-        //             2,
-        //             2,
-        //             fullSideStrips
-        //         )
-        //     ),
-        //     new AnimationRunner(
-        //         "Intaking Reversed",
-        //         () -> intakeReversed.getAsBoolean() && (intaking.getAsBoolean() || kickerFeeding.getAsBoolean()), 
-        //         new ScrollingAnimation(
-        //             0,
-        //             (x) -> InterpolationStyle.Linear.interpolate(x, kickerFeeding.getAsBoolean() ? new Color[]{Color.kGreen, Color.kYellow} : new Color[]{Color.kRed, Color.kYellow}),
-        //             TilingFunction.Sinusoidal,
-        //             -2,
-        //             2,
-        //             fullSideStrips
-        //         )
-        //     ),
-        //     // Kicker
-        //     new AnimationRunner(
-        //         "Kicker Loaded",
-        //         kickerLoaded, 
-        //         new FillAnimation(
-        //             0, 
-        //             Color.kGreen, 
-        //             fullSideStrips
-        //         )
-        //     ),
-        // };
-
         new ScrollingAnimation(
             0,
             (x) -> {
@@ -197,7 +111,7 @@ public class Leds extends VirtualSubsystem {
             )
         );
 
-        new Trigger(DriverStation::isDisabled)
+        new Trigger(DriverStation::isDisabled).debounce(1)
         .whileTrue(
             new FillAnimation(
                 1,
@@ -303,5 +217,17 @@ public class Leds extends VirtualSubsystem {
                 });
             }
         };
+    }
+
+    public LEDStrip getLeftApriltagStrip() {
+        return sideStrips.substrip(2,3);
+    }
+
+    public LEDStrip getRightApriltagStrip() {
+        return sideStrips.substrip(3,4);
+    }
+
+    public LEDStrip getNoteVisionStrip() {
+        return sideStrips.substrip(4,5);
     }
 }

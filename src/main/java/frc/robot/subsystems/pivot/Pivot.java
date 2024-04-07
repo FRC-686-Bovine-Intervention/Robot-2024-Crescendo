@@ -34,13 +34,13 @@ public class Pivot extends SubsystemBase {
   public static final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
 
   public static final double POS_ZERO = Units.degreesToRadians(9);
-  public static final double POS_AMP = Units.degreesToRadians(108/* .193359375 */);
+  public static final double POS_AMP = Units.degreesToRadians(109/* .193359375 */);
 
   private static final Translation3d robotToPivotTranslation = 
     new Translation3d(
-      Inches.of(13),
+      Inches.of(-7.5),
       Inches.of(0),
-      Inches.of(22.665031)
+      Inches.of(19.01)
     )
   ;
 
@@ -73,7 +73,7 @@ public class Pivot extends SubsystemBase {
       robotToPivotTranslation,
       new Rotation3d(
         0,
-        inputs.pivotEncoder.positionRad,
+        POS_ZERO-inputs.pivotEncoder.positionRad,
         0
       )
     );
@@ -111,7 +111,7 @@ public class Pivot extends SubsystemBase {
       }
       @Override
       public void execute() {
-        targetPos = pos.getAsDouble();
+        targetPos = pos.getAsDouble() + Units.degreesToRadians(runtimeOffset);
         pivotIO.setPivotPos(targetPos);
       }
       @Override
@@ -134,7 +134,7 @@ public class Pivot extends SubsystemBase {
       @Override
       public void execute() {
         outtakeCommand = true;
-        targetPos = pos.getAsDouble();
+        targetPos = pos.getAsDouble() + Units.degreesToRadians(runtimeOffset);
         pivotIO.setPivotPos(targetPos);
       }
       @Override
@@ -169,6 +169,29 @@ public class Pivot extends SubsystemBase {
 
   public Command autoAim(Supplier<Translation2d> FORR) {
     return aim(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
+  }
+
+  public Command recal() {
+    var subsystem = this;
+    return new Command() {
+      {
+        addRequirements(subsystem);
+        setName("Recal");
+      }
+      @Override
+      public void initialize() {
+        pivotIO.enableSoftLimits(false);
+      }
+      @Override
+      public void execute() {
+        pivotIO.setPivotVoltage(-1);
+      }
+      @Override
+      public void end(boolean interrupted) {
+        pivotIO.enableSoftLimits(true);
+        pivotIO.stop();
+      }
+    };
   }
 
   public boolean readyToShoot() {

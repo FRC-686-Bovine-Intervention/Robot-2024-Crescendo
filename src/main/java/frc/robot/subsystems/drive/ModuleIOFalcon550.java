@@ -47,10 +47,12 @@ public class ModuleIOFalcon550 implements ModuleIO {
         driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         driveConfig.MotorOutput.DutyCycleNeutralDeadband = 0.0;
         driveConfig.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.1875;
-        driveConfig.CurrentLimits.SupplyCurrentLimit = 60;
-        driveConfig.CurrentLimits.SupplyCurrentThreshold = 60;
+        driveConfig.CurrentLimits.SupplyCurrentLimit = 55;
+        driveConfig.CurrentLimits.SupplyCurrentThreshold = 55;
         driveConfig.CurrentLimits.SupplyTimeThreshold = 0;
         driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        driveConfig.CurrentLimits.StatorCurrentLimit = 55;
+        driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
         driveMotor.getConfigurator().apply(driveConfig);
 
         /** Configure Turn Motors */

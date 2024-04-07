@@ -19,9 +19,12 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
@@ -31,6 +34,8 @@ import frc.robot.subsystems.intake.Intake.IntakeCommand;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.VirtualSubsystem;
+import frc.robot.util.led.animation.FillAnimation;
+import frc.robot.util.led.strips.LEDStrip;
 
 public class NoteVision extends VirtualSubsystem {
     private final NoteVisionIO noteVisionIO;
@@ -51,15 +56,25 @@ public class NoteVision extends VirtualSubsystem {
     private Optional<TrackedNote> optIntakeTarget = Optional.empty();
     private boolean intakeTargetLocked = false;
 
-    public NoteVision(NoteVisionIO noteVisionIO) {
+    public NoteVision(NoteVisionIO noteVisionIO, LEDStrip connectedStrip) {
         System.out.println("[Init NoteVision] Instantiating NoteVision");
         this.noteVisionIO = noteVisionIO;
         System.out.println("[Init NoteVision] NoteVision IO: " + this.noteVisionIO.getClass().getSimpleName());
 
         CommandScheduler.getInstance().onCommandFinish((comm) -> {if (comm.getName() == IntakeCommand.INTAKE.name()) {
-            optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
+            noteMemories.stream().sorted((a, b) -> 
+                (int) Math.signum(
+                    RobotState.getInstance().getPose().getTranslation().getDistance(a.fieldPos) - 
+                    RobotState.getInstance().getPose().getTranslation().getDistance(b.fieldPos)
+                )
+            )
+            .findFirst()
+            .ifPresent(noteMemories::remove);
+            // optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
             optIntakeTarget = Optional.empty();
         }});
+        
+        new Trigger(DriverStation::isDisabled).debounce(1).whileTrue(new FillAnimation(2, () -> (inputs.connected ? Color.kGreen : Color.kOrange), connectedStrip));
     }
 
     @Override
@@ -93,15 +108,16 @@ public class NoteVision extends VirtualSubsystem {
             );
         }
         unusedMemories.forEach((memory) -> {
-            if(RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) > 1) {
+            if(RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) > RobotConstants.robotLengthMeters*0.5) {
                 memory.decayConfidence(1);
             }
         });
         unusedTargets.forEach((target) -> noteMemories.add(target));
         noteMemories.removeIf((memory) -> memory.confidence <= 0);
         noteMemories.removeIf((memory) -> Double.isNaN(memory.fieldPos.getX()));
+        noteMemories.removeIf((memory) -> RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) <= 0.07);
 
-        if(optIntakeTarget.isPresent() && optIntakeTarget.get().confidence < detargetConfidenceThreshold.get()) {
+        if(optIntakeTarget.isPresent() && (optIntakeTarget.get().confidence < detargetConfidenceThreshold.get() || !noteMemories.contains(optIntakeTarget.get()))) {
             optIntakeTarget = Optional.empty();
         }
         if(optIntakeTarget.isEmpty() || !intakeTargetLocked) {
@@ -162,7 +178,7 @@ public class NoteVision extends VirtualSubsystem {
                 drive.translationSubsystem.fieldRelative(getAutoIntakeTransSpeed(throttle).orElseGet(ChassisSpeeds::new)),
                 drive.rotationalSubsystem.pointTo(autoIntakeTargetLocation(), () -> RobotConstants.intakeForward)
             )
-            .onlyWhile(() -> !intake.hasNote())
+            .onlyWhile(() -> !intake.hasNote() && optIntakeTarget.isPresent())
             .finallyDo(() -> intakeTargetLocked = false)
             .withName("Auto Intake")
         ;

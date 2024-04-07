@@ -20,7 +20,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
-import frc.robot.Constants.ShooterConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.intake.Intake;
@@ -112,8 +111,9 @@ public class AutoCommons {
 
     public static Command shootWhenReady(Translation2d pos, double angularTolerance, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
         var FORR = getFORR(pos);
-        var dist = FORR.getNorm();
+        // var dist = FORR.getNorm();
         var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
+        Logger.recordOutput("DEBUG/Shoot from pose", shootPos);
         BooleanSupplier condition = () -> {
             var shooterReady = shooter.readyToShoot();
             var pivotReady = pivot.readyToShoot();
@@ -183,9 +183,10 @@ public class AutoCommons {
                     () -> !noteVision.hasTarget()
                 ),
                 intake.intake(drive::getChassisSpeeds)
-                .deadlineWith(
+                .raceWith(
                     noteVision.autoIntake(() -> 2, drive, intake)
                 )
+                .withTimeout(3)
             )
             .deadlineWith(
                 isStagePath(toCenterLine) ? (
@@ -217,7 +218,9 @@ public class AutoCommons {
                     )
                 ),
                 isDefault
-            ))
+            )
+            .onlyIf(intake::hasNote)
+            )
         ;
         // return 
         //     AutoCommons.shootWhenReady(centerShot1, 3, drive, shooter, pivot, kicker)

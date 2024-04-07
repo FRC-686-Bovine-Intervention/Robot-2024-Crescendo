@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.util.SwitchableChooser;
@@ -60,26 +61,30 @@ public class AutoSelector extends VirtualSubsystem {
         routineChooser.addDefaultOption(routine.name, routine);
     }
 
+    private Alliance prevAlliance = Alliance.Blue;
     @Override
     public void periodic() {
+        var alliance = DriverStation.getAlliance().orElse(null);
         if(DriverStation.isEnabled()) return;
         var selectedRoutine = routineChooser.get();
         if(selectedRoutine == null) return;
         var questions = selectedRoutine.questions;
-        List<String> currentResponses = responseChoosers.stream().map((c) -> c.get()).toList();
+        List<String> currentResponses = new ArrayList<>();
         for (int i = 0; i < responseChoosers.size(); i++) {
             if(i < questions.size()) {
                 questionPublishers.get(i).set(questions.get(i).name);
                 responseChoosers.get(i).setOptions(questions.get(i).getOptionNames());
-                if(currentResponses.get(i) != null) {
-                    questions.get(i).setResponse(currentResponses.get(i));
+                var response = responseChoosers.get(i).get();
+                currentResponses.add(response);
+                if(response != null) {
+                    questions.get(i).setResponse(response);
                 }
             } else {
                 questionPublishers.get(i).set(questionPlaceHolder);
                 responseChoosers.get(i).setOptions(new String[] {});
             }
         }
-        if(!currentResponses.equals(lastResponses)) {
+        if(!currentResponses.equals(lastResponses) || prevAlliance != alliance) {
             System.out.println("[AutoSelector] Generating new command");
             System.out.println("[AutoSelector] Routine: " + selectedRoutine.name);
             currentResponses.forEach(System.out::println);

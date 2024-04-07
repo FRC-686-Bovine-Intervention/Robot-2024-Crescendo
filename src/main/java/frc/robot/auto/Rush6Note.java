@@ -122,6 +122,7 @@ public class Rush6Note extends AutoRoutine {
                     AutoCommons.autoAim(spikeShot, shooter, pivot, drive.rotationalSubsystem),
                     AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                 )
+                .withTimeout(5)
             );
         }
 
