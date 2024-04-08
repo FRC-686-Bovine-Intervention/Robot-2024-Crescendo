@@ -521,6 +521,7 @@ public class RobotContainer {
 
     public void robotPeriodic() {
         RobotState.getInstance().logOdometry();
+        Logger.recordOutput("NoteVisualizer/Internal Note", NoteVisualizer.logInternal());
         Camera.logCameraOverrides();
         xboxConnect.set(!driveController.isConnected());
         buttonBoardConnect.set(!buttonBoard.isConnected());

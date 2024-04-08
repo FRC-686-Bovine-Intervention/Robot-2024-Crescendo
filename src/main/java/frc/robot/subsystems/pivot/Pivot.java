@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.NoteVisualizer;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.util.LoggedTunableNumber;
 
@@ -58,6 +59,7 @@ public class Pivot extends SubsystemBase {
     pivotIO.updateInputs(inputs);
     Logger.processInputs("Pivot", inputs);
     Logger.recordOutput("Mechanism3d/Shooter", getRobotToPivot());
+    NoteVisualizer.robotToPivot = getRobotToPivot();
     if(increaseRuntimeOffset.getAsBoolean() && !prevInc) {
       runtimeOffset += 0.5;
     }

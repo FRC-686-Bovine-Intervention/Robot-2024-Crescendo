@@ -10,6 +10,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.NoteVisualizer;
+import frc.robot.NoteVisualizer.InternalNote;
+import frc.robot.util.EdgeDetector;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Kicker extends SubsystemBase {
@@ -20,26 +23,30 @@ public class Kicker extends SubsystemBase {
   private final LoggedTunableNumber feedVolts = new LoggedTunableNumber("Kicker/Feed Voltage", 1.5);
   private final LoggedTunableNumber antiDeadzoneVolts = new LoggedTunableNumber("Kicker/Anti Deadzone Voltage", 1.5);
 
-  private boolean prevSensorVal;
-  private boolean sensorFallingEdge;
+  private final EdgeDetector kickerEdgeDetector = new EdgeDetector(() -> inputs.notePresent);
 
   public Kicker(KickerIO kickerIO) {
     System.out.println("[Init Kicker] Instantiating Kicker");
     this.kickerIO = kickerIO;
     System.out.println("[Init Kicker] Kicker IO: " + this.kickerIO.getClass().getSimpleName());
-    SmartDashboard.putData("Subsystems/Kicker", this);   
+    SmartDashboard.putData("Subsystems/Kicker", this);
   }
 
   @Override
   public void periodic() {
     kickerIO.updateInputs(inputs);
     Logger.processInputs("Kicker", inputs);
-    sensorFallingEdge = prevSensorVal && !inputs.notePresent;
-    prevSensorVal = inputs.notePresent;
+    kickerEdgeDetector.update();
+    if(hasNote()) {
+      NoteVisualizer.setInternalNote(InternalNote.Kicker);
+    }
+    if(sensorFallingEdge()) {
+      NoteVisualizer.setInternalNote(null);
+    }
   }
 
   public boolean sensorFallingEdge() {
-    return sensorFallingEdge;
+    return kickerEdgeDetector.fallingEdge();
   }
 
   public Command feedIn() {

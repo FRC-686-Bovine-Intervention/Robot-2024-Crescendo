@@ -16,6 +16,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.NoteVisualizer;
+import frc.robot.NoteVisualizer.InternalNote;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Intake extends SubsystemBase {
@@ -79,6 +81,9 @@ public class Intake extends SubsystemBase {
   public void periodic() {
     intakeIO.updateInputs(inputs);
     Logger.processInputs("Intake", inputs);
+    if(hasNote()) {
+      NoteVisualizer.setInternalNote(InternalNote.Intake);
+    }
   }
 
   public Command feedToKicker(BooleanSupplier kickerSensor) {
