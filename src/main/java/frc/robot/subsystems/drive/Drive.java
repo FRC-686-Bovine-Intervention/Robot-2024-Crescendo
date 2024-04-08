@@ -125,7 +125,7 @@ public class Drive extends VirtualSubsystem {
             AutoBuilder.configureHolonomic(
                 this::getPose,
                 this::setPose,
-                this::getChassisSpeeds,
+                this::getRobotRelativeSpeeds,
                 this::driveVelocity,
                 autoConfigSup.get(),
                 AllianceFlipUtil::shouldFlip,
@@ -625,8 +625,12 @@ public class Drive extends VirtualSubsystem {
         return avgDist / DriveConstants.numDriveModules;
     }
 
-    public ChassisSpeeds getChassisSpeeds() {
+    public ChassisSpeeds getRobotRelativeSpeeds() {
         return kinematics.toChassisSpeeds(lastMeasuredStates);
+    }
+
+    public ChassisSpeeds getFieldRelativeSpeeds() {
+        return ChassisSpeeds.fromRobotRelativeSpeeds(getRobotRelativeSpeeds(), getRotation());
     }
 
     /** Runs forwards at the commanded voltage. */

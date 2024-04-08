@@ -44,6 +44,19 @@ public class Pivot extends SubsystemBase {
       Inches.of(19.01)
     )
   ;
+  public static Transform3d getRobotToPivot(double angle) {
+    return new Transform3d(
+      robotToPivotTranslation,
+      new Rotation3d(
+        0,
+        POS_ZERO-angle,
+        0
+      )
+    );
+  }
+  public Transform3d getRobotToPivot() {
+    return getRobotToPivot(inputs.pivotEncoder.positionRad);
+  }
 
   public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
     System.out.println("[Init Pivot] Instantiating Pivot");
@@ -68,17 +81,6 @@ public class Pivot extends SubsystemBase {
     }
     prevInc = increaseRuntimeOffset.getAsBoolean();
     prevDec = decreaseRuntimeOffset.getAsBoolean();
-  }
-
-  public Transform3d getRobotToPivot() {
-    return new Transform3d(
-      robotToPivotTranslation,
-      new Rotation3d(
-        0,
-        POS_ZERO-inputs.pivotEncoder.positionRad,
-        0
-      )
-    );
   }
 
   private final LoggedTunableNumber manualPivotVolts = new LoggedTunableNumber("Pivot/Manual Arm Volts", 2);

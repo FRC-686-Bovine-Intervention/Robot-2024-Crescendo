@@ -104,14 +104,14 @@ public class AutoCommons {
     }
 
     public static Command followPathFlipped(PathPlannerPath path, Drive drive) {
-        return new FollowPathHolonomic(path, drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem, drive.rotationalSubsystem)
+        return new FollowPathHolonomic(path, drive::getPose, drive::getRobotRelativeSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem, drive.rotationalSubsystem)
         .deadlineWith(Commands.startEnd(
             () -> Logger.recordOutput("Autonomous/Goal Pose", new Pose2d(getLastPoint(path), path.getGoalEndState().getRotation())),
             () -> Logger.recordOutput("Autonomous/Goal Pose", (Pose2d)null)
         ));
     }
     public static Command followPathFlipped(PathPlannerPath path, Drive.Translational drive) {
-        return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive)
+        return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getRobotRelativeSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive)
         .deadlineWith(Commands.startEnd(
             () -> Logger.recordOutput("Autonomous/Goal Pose", new Pose2d(getLastPoint(path), path.getGoalEndState().getRotation())),
             () -> Logger.recordOutput("Autonomous/Goal Pose", (Pose2d)null)
@@ -127,7 +127,7 @@ public class AutoCommons {
             var shooterReady = shooter.readyToShoot();
             var pivotReady = pivot.readyToShoot();
             var poseReady = MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
-            var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.75, 1);
+            var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getRobotRelativeSpeeds(), 0.75, 1);
 
             Logger.recordOutput("DEBUG/Shooter Ready", shooterReady);
             Logger.recordOutput("DEBUG/Pivot Ready", pivotReady);
@@ -191,7 +191,7 @@ public class AutoCommons {
                 .onlyWhile(
                     () -> !noteVision.hasTarget()
                 ),
-                intake.intake(drive::getChassisSpeeds)
+                intake.intake(drive::getRobotRelativeSpeeds)
                 .raceWith(
                     noteVision.autoIntake(() -> 2, drive, intake)
                 )
@@ -328,6 +328,10 @@ public class AutoCommons {
                 }
                 return path;
             }
+        }
+
+        public static String getName(PathPlannerPath path) {
+            return loadedPaths.entrySet().stream().filter((e) -> e.getValue() == path).map((e) -> e.getKey()).findAny().orElse("Unknown Path");
         }
     }
 }

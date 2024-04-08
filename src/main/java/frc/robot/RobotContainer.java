@@ -29,6 +29,7 @@ import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
+import frc.robot.RobotState.AimingParameters;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.MASpikeWiggle;
@@ -242,6 +243,8 @@ public class RobotContainer {
         new Trigger(intake::hasNote).and(() -> !kicker.hasNote()).and(DriverStation::isEnabled).onTrue(intake.feedToKicker(kicker::hasNote))
         .and(() -> kicker.getCurrentCommand() == kicker.getDefaultCommand()).onTrue(kicker.feedIn());
 
+        shooter.setDefaultCommand(shooter.setGoalCommand(Shooter.Goal.IDLE));
+
         pivot.setDefaultCommand(pivot.gotoZero());
 
         climber.setDefaultCommand(climber.windDown());
@@ -299,41 +302,45 @@ public class RobotContainer {
         driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake
-        driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getChassisSpeeds));
-        driveController.b().and(() -> Math.abs(drive.getChassisSpeeds().vxMetersPerSecond) >= 0.5).whileTrue(intake.outtake(drive::getChassisSpeeds).alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
+        driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getRobotRelativeSpeeds));
+        driveController.b().and(() -> Math.abs(drive.getRobotRelativeSpeeds().vxMetersPerSecond) >= 0.25).whileTrue(intake.outtake(drive::getRobotRelativeSpeeds).alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
         
         // Kicker
         driveController.x().whileTrue(kicker.kick());
 
         // Amp
         driveController.y().toggleOnTrue(
-            pivot.gotoAmp().asProxy()
-            .alongWith(
-                shooter.amp().asProxy(),
+            Commands.parallel(
+                pivot.gotoAmp().asProxy(),
+                shooter.setGoalCommand(Shooter.Goal.AMP),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(FieldConstants.amp.getRotation()))
-                .withName("Rotate To Amp")
-                .asProxy()
                 .onlyIf(
                     () -> DriverStation.getMatchType() != MatchType.None
                 )
             )
+            .withName("Amp")
         );
 
         // Shooter
-        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.shootWithTunableNumber());
+        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.setGoalCommand(Shooter.Goal.PASS));
 
         // Auto Aim
-        var subwooferFORR = SuperCommands.autoAimFORR(() -> AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()), ChassisSpeeds::new);
-        driveController.rightBumper().toggleOnTrue(SuperCommands.autoAim(drive.rotationalSubsystem, shooter, kicker, pivot));
-        driveController.leftBumper().toggleOnTrue(
-            shooter.shoot(subwooferFORR, kicker::sensorFallingEdge)
-            .withName("Shoot from Subwoofer")
-            .asProxy()
-            .deadlineWith(
-                pivot.autoAim(subwooferFORR).asProxy()
+        driveController.rightBumper().toggleOnTrue(
+            Commands.parallel(
+                Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds())),
+                shooter.setGoalCommand(Shooter.Goal.SHOOTING),
+                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()))
             )
         );
-        // driveController.leftBumper().toggleOnTrue(pivot.gotoVariable(driveController.povDown(), driveController.povUp()));
+        driveController.leftBumper().toggleOnTrue(
+            Commands.parallel(
+                shooter.setGoalCommand(Shooter.Goal.SHOOTING)
+                
+            )
+            .until(kicker::sensorFallingEdge)
+            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation())))
+            .withName("Shoot From Subwoofer")
+        );
 
         // Auto Intake
         driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
@@ -373,23 +380,19 @@ public class RobotContainer {
         new Trigger(() -> 
             SuperCommands.readyToShoot(shooter, pivot) && 
             MathExtraUtil.isNear(
-                autoAimRotation(),
+                RobotState.getInstance().aimingParameters.drivePose().getRotation(),
                 drive.getRotation(),
                 Units.degreesToRadians(3)
             ) && 
             DriverStation.isTeleopEnabled() &&
             !Optional.ofNullable(shooter.getCurrentCommand()).map((c) -> c.getName().contains("Subwoofer")).orElse(false)
-        ).onTrue(kicker.kick().asProxy().until(() -> shooter.getCurrentCommand() == null));
+        ).onTrue(kicker.kick().asProxy());
         
         // Cancel Auto Drive
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
             .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
             .onTrue(drive.translationSubsystem.getDefaultCommand())
         ;
-    }
-    private Rotation2d autoAimRotation() {
-        var FORR = SuperCommands.autoAimFORR(drive);
-        return new Rotation2d(FORR.get().getX(), FORR.get().getY());
     }
 
     private void configureNotifications() {
@@ -456,9 +459,9 @@ public class RobotContainer {
         SmartDashboard.putData("System Check/Climber/Wind Down", climber.getDefaultCommand());
         SmartDashboard.putData("System Check/Climber/Deploy", climber.deploy());
         SmartDashboard.putData("System Check/Climber/Retract", climber.retract());
-        SmartDashboard.putData("System Check/Intake/Intake", intake.intake(drive::getChassisSpeeds));
+        SmartDashboard.putData("System Check/Intake/Intake", intake.intake(drive::getRobotRelativeSpeeds));
         SmartDashboard.putData("System Check/Kicker/Kick", kicker.kick());
-        SmartDashboard.putData("System Check/Shooter/Amp", shooter.amp());
+        SmartDashboard.putData("System Check/Shooter/Amp", shooter.setGoalCommand(Shooter.Goal.AMP));
         SmartDashboard.putData("System Check/Drive/Spin", 
             new Command() {
                 private final Drive.Rotational rotationalSubsystem = drive.rotationalSubsystem;
@@ -520,7 +523,6 @@ public class RobotContainer {
     private final Alert buttonBoardConnect = new Alert("Button Board (Port 1) not connected", AlertType.WARNING);
 
     public void robotPeriodic() {
-        RobotState.getInstance().logOdometry();
         Logger.recordOutput("NoteVisualizer/Internal Note", NoteVisualizer.logInternal());
         Camera.logCameraOverrides();
         xboxConnect.set(!driveController.isConnected());

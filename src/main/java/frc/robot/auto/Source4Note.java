@@ -144,7 +144,7 @@ public class Source4Note extends AutoRoutine {
                     commands.add(
                         AutoCommons.shootWhenReady(spikeShot, 10, drive, shooter, pivot, kicker)
                         .deadlineWith(
-                            intake.intake(drive::getChassisSpeeds),
+                            intake.intake(drive::getRobotRelativeSpeeds),
                             AutoCommons.autoAim(spikeShot, shooter, pivot, drive.rotationalSubsystem),
                             AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
                         )

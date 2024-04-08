@@ -134,7 +134,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 //     )
                 // )
                 .deadlineWith(
-                    intake.intake(drive::getChassisSpeeds),
+                    intake.intake(drive::getRobotRelativeSpeeds),
                     AutoCommons.autoAim(spike1Shot, shooter, pivot, drive.rotationalSubsystem),
                     AutoCommons.followPathFlipped(startToSpike1, drive.translationSubsystem)
                 )
@@ -165,7 +165,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 //     )
                 // )
                 .deadlineWith(
-                    intake.intake(drive::getChassisSpeeds),
+                    intake.intake(drive::getRobotRelativeSpeeds),
                     AutoCommons.autoAim(spike2Shot, shooter, pivot),
                     AutoCommons.followPathFlipped(spike1ToSpike2, drive.translationSubsystem),
                     drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
@@ -201,7 +201,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 //     )
                 // )
                 .deadlineWith(
-                    intake.intake(drive::getChassisSpeeds),
+                    intake.intake(drive::getRobotRelativeSpeeds),
                     AutoCommons.autoAim(spikeShot3, shooter, pivot),
                     AutoCommons.followPathFlipped(spike2ToSpike3, drive.translationSubsystem),
                     drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)

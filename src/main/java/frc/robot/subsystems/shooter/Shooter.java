@@ -4,18 +4,16 @@
 
 package frc.robot.subsystems.shooter;
 
-import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.ShooterConstants;
+import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.MathExtraUtil;
 
@@ -23,25 +21,58 @@ public class Shooter extends SubsystemBase {
     private final ShooterIO shooterIO;
     private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
-    private static final LoggedTunableNumber tuningMPS = new LoggedTunableNumber("Shooter/Tuning MPS", 30);
-    private static final LoggedTunableNumber ampMPS = new LoggedTunableNumber("Shooter/Amp MPS", 2);
-    private static final LoggedTunableNumber preemtiveMPS = new LoggedTunableNumber("Shooter/Pre-emptive MPS", 30);
-    // private static final LoggedTunableNumber shotDetMPS = new LoggedTunableNumber("Shooter/Shot Detection/MPS", 1);
-    // private static final LoggedTunableNumber shotDetCurrent = new LoggedTunableNumber("Shooter/Shot Detection/Current", 2);
+    public static enum Goal {
+        IDLE(() -> 0, () -> Double.POSITIVE_INFINITY){
+            @Override
+            public void runGoal(ShooterIO shooterIO) {
+                shooterIO.stop();
+            }
+        },
+        SHOOTING(RobotState.getInstance().aimingParameters::targetShooterSpeed, RobotState.getInstance().aimingParameters::minimumShooterSpeed),
+        PREEMPTIVE(new LoggedTunableNumber("Shooter/Target Speed/Pre-emptive", 17), () -> Double.POSITIVE_INFINITY),
+        PASS(new LoggedTunableNumber("Shooter/Target Speed/Pass", 17)),
+        SUPER_PASS(new LoggedTunableNumber("Shooter/Target Speed/Super Pass", 12)),
+        AMP(new LoggedTunableNumber("Shooter/Target Speed/Amp", 2)),
+        CUSTOM(new LoggedTunableNumber("Shooter/Target Speed/Custom", 30)),
+        ;
+        private final DoubleSupplier targetShootingSpeed;
+        private final DoubleSupplier minimumShootingSpeed;
+        private final DoubleSupplier maximumShootingSpeed;
+        Goal(DoubleSupplier targetShootingSpeed) {
+            this(targetShootingSpeed, () -> targetShootingSpeed.getAsDouble() - 1);
+        }
+        Goal(DoubleSupplier targetShootingSpeed, DoubleSupplier minimumShootingSpeed) {
+            this(targetShootingSpeed, minimumShootingSpeed, () -> Double.POSITIVE_INFINITY);
+        }
+        Goal(DoubleSupplier targetShootingSpeed, DoubleSupplier minimumShootingSpeed, DoubleSupplier maximumShootingSpeed) {
+            this.targetShootingSpeed = targetShootingSpeed;
+            this.minimumShootingSpeed = minimumShootingSpeed;
+            this.maximumShootingSpeed = maximumShootingSpeed;
+        }
+        public double getTargetSpeed() {
+            return targetShootingSpeed.getAsDouble();
+        }
+        public double getMinimumSpeed() {
+            return minimumShootingSpeed.getAsDouble();
+        }
+        public double getMaximumSpeed() {
+            return maximumShootingSpeed.getAsDouble();
+        }
+        public void runGoal(ShooterIO shooterIO) {
+            var goalSpeed = getTargetSpeed();
+            shooterIO.setLeftSurfaceSpeed(goalSpeed);
+            shooterIO.setRightSurfaceSpeed(goalSpeed);
+        }
+    }
 
-    // private static final LoggedTunableNumber surfaceSpeedSmoothingFactor = new LoggedTunableNumber("Shooter/Smoothing/MPS", 0.15);
-    // private double smoothedAverageSurfaceSpeed;
-    // private static final LoggedTunableNumber currentSmoothingFactor = new LoggedTunableNumber("Shooter/Smoothing/Current", 0.3);
-    // private double smoothedAverageCurrent;
+    @AutoLogOutput(key = "Shooter/Goal")
+    private Goal goal = Goal.IDLE;
 
     private static final LoggedTunableNumber followUpTime = new LoggedTunableNumber("Shooter/Follow Up Time", 0.25);
     private final Timer followUpTimer = new Timer();
 
-    private boolean readyToShoot;
-    private double targetSpeed;
-
     public Shooter(ShooterIO shooterIO) {
-        System.out.println("[Init Shooter] Instantiating Pivot");
+        System.out.println("[Init Shooter] Instantiating Shooter");
         this.shooterIO = shooterIO;
         System.out.println("[Init Shooter] Shooter IO: " + this.shooterIO.getClass().getSimpleName());
         SmartDashboard.putData("Subsystems/Shooter", this);
@@ -51,27 +82,14 @@ public class Shooter extends SubsystemBase {
     public void periodic() {
         shooterIO.updateInputs(inputs);
         Logger.processInputs("Shooter", inputs);
-        // smoothedAverageSurfaceSpeed = MathUtil.interpolate(smoothedAverageSurfaceSpeed, getAverageSurfaceSpeed(), surfaceSpeedSmoothingFactor.get());
-        // smoothedAverageCurrent = MathUtil.interpolate(smoothedAverageCurrent, getAverageCurrent(), currentSmoothingFactor.get());
-        // if(endingCommand()) {
-        //     followUpTimer.stop();
-        //     followUpTimer.reset();
-        // }
-        // if(shot()) {
-        //     followUpTimer.start();
-        // }
-        Logger.recordOutput("Shooter/Average RPS", getAverageSurfaceSpeed());
-        // Logger.recordOutput("Shooter/Smoothed RPS", smoothedAverageSurfaceSpeed);
-        // Logger.recordOutput("Shooter/Average Current", getAverageCurrent());
-        // Logger.recordOutput("Shooter/Smoothed Current", smoothedAverageCurrent);
+        Logger.recordOutput("Shooter/Average MPS", getAverageSurfaceSpeed());
         Logger.recordOutput("Shooter/Timer", followUpTimer.get());
-        // Logger.recordOutput("Shooter/Shot", shot());
-        // Logger.recordOutput("Shooter/Surface Correct", surfaceSpeedCorrect());
-        // Logger.recordOutput("Shooter/Current Correct", currentCorrect());
+
+        goal.runGoal(shooterIO);
     }
 
     public boolean readyToShoot() {
-        return readyToShoot;
+        return MathExtraUtil.isWithin(getAverageSurfaceSpeed(), goal.getMinimumSpeed(), goal.getMaximumSpeed());
     }
 
     public double getAverageSurfaceSpeed() {
@@ -79,105 +97,96 @@ public class Shooter extends SubsystemBase {
     }
 
     public double getTargetSpeed() {
-        return targetSpeed;
+        return goal.targetShootingSpeed.getAsDouble();
     }
 
-    // private double getAverageCurrent() {
-    //     return MathExtraUtil.average(inputs.leftMotor.currentAmps, inputs.rightMotor.currentAmps);
+    // private Command surfaceSpeed(DoubleSupplier mps) {
+    //     return surfaceSpeed(mps, () -> mps.getAsDouble() - 1);
     // }
 
-    // private boolean surfaceSpeedCorrect() {
-    //     return getAverageSurfaceSpeed() < smoothedAverageSurfaceSpeed - shotDetMPS.get();
+    // private Command surfaceSpeed(DoubleSupplier mps, DoubleSupplier acceptableMPS) {
+    //     var subsystem = this;
+    //     return new Command() {
+    //         {
+    //             addRequirements(subsystem);
+    //             setName("Set Surface Speed");
+    //         }
+    //         @Override
+    //         public void initialize() {
+    //             execute();
+    //         }
+    //         @Override
+    //         public void execute() {
+    //             targetSpeed = mps.getAsDouble();
+    //             shooterIO.setLeftSurfaceSpeed(targetSpeed);
+    //             shooterIO.setRightSurfaceSpeed(targetSpeed);
+    //             readyToShoot = getAverageSurfaceSpeed() >= acceptableMPS.getAsDouble() && getAverageSurfaceSpeed() <= targetSpeed + 2;
+    //         }
+    //         @Override
+    //         public void end(boolean interrupted) {
+    //             followUpTimer.stop();
+    //             followUpTimer.reset();
+    //             shooterIO.stop();
+    //             readyToShoot = false;
+    //         }
+    //     };
     // }
-    // private boolean currentCorrect() {
-    //     return getAverageCurrent() > smoothedAverageCurrent + shotDetCurrent.get();
+
+    // private Command followUp(BooleanSupplier shot) {
+    //     return new Command() {
+    //         {
+    //             setName("Wait for Followup");
+    //         }
+    //         @Override
+    //         public void execute() {
+    //             if(shot.getAsBoolean()) {
+    //                 followUpTimer.start();
+    //             }
+    //         }
+    //         @Override
+    //         public void end(boolean interrupted) {
+    //             followUpTimer.stop();
+    //             followUpTimer.reset();
+    //         }
+    //         @Override
+    //         public boolean isFinished() {
+    //             return followUpTimer.hasElapsed(followUpTime.get());
+    //         }
+    //     };
     // }
-    // public boolean shot() {
-    //     return surfaceSpeedCorrect() && currentCorrect();
+
+    // private Command surfaceSpeedWithFinish(DoubleSupplier mps, BooleanSupplier shot) {
+    //     return surfaceSpeedWithFinish(mps, () -> mps.getAsDouble() - 1, shot);
     // }
-    // public boolean endingCommand() {
-    //     return followUpTimer.hasElapsed(followUpTime.get());
+    // private Command surfaceSpeedWithFinish(DoubleSupplier mps, DoubleSupplier acceptableMPS, BooleanSupplier shot) {
+    //     return followUp(shot).deadlineWith(surfaceSpeed(mps, acceptableMPS)).withName("Set Surface Speed Finish");
     // }
 
-    private Command surfaceSpeed(DoubleSupplier mps) {
-        return surfaceSpeed(mps, () -> mps.getAsDouble() - 1);
-    }
+    // public Command shootWithTunableNumber() {
+    //     return surfaceSpeed(tuningMPS::get).withName("Shoot with tunable number");
+    // }
 
-    private Command surfaceSpeed(DoubleSupplier mps, DoubleSupplier acceptableMPS) {
-        var subsystem = this;
-        return new Command() {
-            {
-                addRequirements(subsystem);
-                setName("Set Surface Speed");
-            }
-            @Override
-            public void initialize() {
-                execute();
-            }
-            @Override
-            public void execute() {
-                targetSpeed = mps.getAsDouble();
-                shooterIO.setLeftSurfaceSpeed(targetSpeed);
-                shooterIO.setRightSurfaceSpeed(targetSpeed);
-                readyToShoot = getAverageSurfaceSpeed() >= acceptableMPS.getAsDouble() && getAverageSurfaceSpeed() <= targetSpeed + 2;
-            }
-            @Override
-            public void end(boolean interrupted) {
-                followUpTimer.stop();
-                followUpTimer.reset();
-                shooterIO.stop();
-                readyToShoot = false;
-            }
-        };
-    }
+    // public Command shoot(Supplier<Translation2d> FORR) {
+    //     return surfaceSpeed(() -> ShooterConstants.targetShooterSpeed.get(FORR.get().getNorm()), () -> ShooterConstants.minimumShooterSpeed.get(FORR.get().getNorm())).withName("Shoot at pos");
+    // }
 
-    private Command followUp(BooleanSupplier shot) {
-        return new Command() {
-            {
-                setName("Wait for Followup");
-            }
-            @Override
-            public void execute() {
-                if(shot.getAsBoolean()) {
-                    followUpTimer.start();
-                }
-            }
-            @Override
-            public void end(boolean interrupted) {
-                followUpTimer.stop();
-                followUpTimer.reset();
-            }
-            @Override
-            public boolean isFinished() {
-                return followUpTimer.hasElapsed(followUpTime.get());
-            }
-        };
-    }
+    // public Command shoot(Supplier<Translation2d> FORR, BooleanSupplier shot) {
+    //     return surfaceSpeedWithFinish(() -> ShooterConstants.targetShooterSpeed.get(FORR.get().getNorm()), () -> ShooterConstants.minimumShooterSpeed.get(FORR.get().getNorm()), shot).withName("Shoot at pos");
+    // }
 
-    private Command surfaceSpeedWithFinish(DoubleSupplier mps, BooleanSupplier shot) {
-        return surfaceSpeedWithFinish(mps, () -> mps.getAsDouble() - 1, shot);
-    }
-    private Command surfaceSpeedWithFinish(DoubleSupplier mps, DoubleSupplier acceptableMPS, BooleanSupplier shot) {
-        return followUp(shot).deadlineWith(surfaceSpeed(mps, acceptableMPS)).withName("Set Surface Speed Finish");
-    }
+    // public Command preemptiveSpinup() {
+    //     return surfaceSpeed(preemtiveMPS::get).withName("Pre-emptive Spinup");
+    // }
 
-    public Command shootWithTunableNumber() {
-        return surfaceSpeed(tuningMPS::get).withName("Shoot with tunable number");
-    }
+    // public Command amp() {
+    //     return surfaceSpeed(ampMPS::get, () -> 500).withName("Amp");
+    // }
 
-    public Command shoot(Supplier<Translation2d> FORR) {
-        return surfaceSpeed(() -> ShooterConstants.targetShooterSpeed.get(FORR.get().getNorm()), () -> ShooterConstants.minimumShooterSpeed.get(FORR.get().getNorm())).withName("Shoot at pos");
-    }
-
-    public Command shoot(Supplier<Translation2d> FORR, BooleanSupplier shot) {
-        return surfaceSpeedWithFinish(() -> ShooterConstants.targetShooterSpeed.get(FORR.get().getNorm()), () -> ShooterConstants.minimumShooterSpeed.get(FORR.get().getNorm()), shot).withName("Shoot at pos");
-    }
-
-    public Command preemptiveSpinup() {
-        return surfaceSpeed(preemtiveMPS::get).withName("Pre-emptive Spinup");
-    }
-
-    public Command amp() {
-        return surfaceSpeed(ampMPS::get, () -> 500).withName("Amp");
+    public Command setGoalCommand(Goal goal) {
+        return startEnd(
+            () -> this.goal = goal,
+            () -> this.goal = Goal.IDLE
+        )
+        .withName("Shooter " + goal.name());
     }
 }
