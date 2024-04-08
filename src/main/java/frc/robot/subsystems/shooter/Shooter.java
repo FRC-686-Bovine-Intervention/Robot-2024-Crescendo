@@ -166,11 +166,11 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command shoot(Supplier<Translation2d> FORR) {
-        return surfaceSpeed(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.surfaceSpeed), () -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.acceptableSurfaceSpeed)).withName("Shoot at pos");
+        return surfaceSpeed(() -> ShooterConstants.targetShooterSpeed.get(FORR.get().getNorm()), () -> ShooterConstants.minimumShooterSpeed.get(FORR.get().getNorm())).withName("Shoot at pos");
     }
 
     public Command shoot(Supplier<Translation2d> FORR, BooleanSupplier shot) {
-        return surfaceSpeedWithFinish(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.surfaceSpeed), () -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.acceptableSurfaceSpeed), shot).withName("Shoot at pos");
+        return surfaceSpeedWithFinish(() -> ShooterConstants.targetShooterSpeed.get(FORR.get().getNorm()), () -> ShooterConstants.minimumShooterSpeed.get(FORR.get().getNorm()), shot).withName("Shoot at pos");
     }
 
     public Command preemptiveSpinup() {

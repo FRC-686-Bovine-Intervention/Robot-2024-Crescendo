@@ -170,7 +170,7 @@ public class Pivot extends SubsystemBase {
   }
 
   public Command autoAim(Supplier<Translation2d> FORR) {
-    return aim(() -> ShooterConstants.distLerp(FORR.get().getNorm(), ShooterConstants.angle)).withName("Auto Aim");
+    return aim(() -> ShooterConstants.pivotAltitude.get(FORR.get().getNorm())).withName("Auto Aim");
   }
 
   public Command recal() {
