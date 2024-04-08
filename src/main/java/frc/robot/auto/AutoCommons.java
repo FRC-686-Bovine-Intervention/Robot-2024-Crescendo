@@ -11,6 +11,7 @@ import org.littletonrobotics.junction.Logger;
 
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.PathPlannerLogging;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -103,10 +104,18 @@ public class AutoCommons {
     }
 
     public static Command followPathFlipped(PathPlannerPath path, Drive drive) {
-        return new FollowPathHolonomic(path, drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem, drive.rotationalSubsystem);
+        return new FollowPathHolonomic(path, drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem, drive.rotationalSubsystem)
+        .deadlineWith(Commands.startEnd(
+            () -> Logger.recordOutput("Autonomous/Goal Pose", new Pose2d(getLastPoint(path), path.getGoalEndState().getRotation())),
+            () -> Logger.recordOutput("Autonomous/Goal Pose", (Pose2d)null)
+        ));
     }
     public static Command followPathFlipped(PathPlannerPath path, Drive.Translational drive) {
-        return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive);
+        return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive)
+        .deadlineWith(Commands.startEnd(
+            () -> Logger.recordOutput("Autonomous/Goal Pose", new Pose2d(getLastPoint(path), path.getGoalEndState().getRotation())),
+            () -> Logger.recordOutput("Autonomous/Goal Pose", (Pose2d)null)
+        ));
     }
 
     public static Command shootWhenReady(Translation2d pos, double angularTolerance, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
@@ -299,6 +308,8 @@ public class AutoCommons {
             loadPath("S4N Source Wing to Center Note5");
             preloading = false;
             System.out.println("[Init AutoPaths] Loaded paths");
+            PathPlannerLogging.setLogActivePathCallback((path) -> Logger.recordOutput("Autonomous/Path", path.toArray(Pose2d[]::new)));
+            PathPlannerLogging.setLogTargetPoseCallback((target) -> Logger.recordOutput("Autonomous/Target Pose", target));
         }
 
         public static PathPlannerPath loadPath(String name) {

@@ -34,9 +34,9 @@ import frc.robot.Constants.PivotConstants;
 import frc.robot.util.LoggedTunableNumber;
 
 public class PivotIOFalcon implements PivotIO {
-    private final TalonFX pivotLeftMotor = new TalonFX(CANDevices.pivotLeftMotorID);
-    private final TalonFX pivotRightMotor = new TalonFX(CANDevices.pivotRightMotorID);
-    private final CANcoder pivotEncoder = new CANcoder(CANDevices.pivotEncoderID);
+    protected final TalonFX pivotLeftMotor = new TalonFX(CANDevices.pivotLeftMotorID);
+    protected final TalonFX pivotRightMotor = new TalonFX(CANDevices.pivotRightMotorID);
+    protected final CANcoder pivotEncoder = new CANcoder(CANDevices.pivotEncoderID);
 
     private final LoggedTunableNumber kP = new LoggedTunableNumber("Pivot/PID/kP", 5);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
@@ -81,7 +81,6 @@ public class PivotIOFalcon implements PivotIO {
             pivotLeftMotor.getVelocity(),
             pivotLeftMotor.getClosedLoopError()
         );
-        pivotLeftMotor.getClosedLoopError().setUpdateFrequency(50);
 
         pivotRightMotor.setControl(new StrictFollower(pivotLeftMotor.getDeviceID()));
     }

@@ -69,7 +69,6 @@ import frc.robot.subsystems.vision.apriltag.ApriltagVision;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.subsystems.vision.note.NoteVisionIO;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
-import frc.robot.subsystems.vision.note.NoteVisionIOSim;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
@@ -137,7 +136,7 @@ public class RobotContainer {
                 kicker = new Kicker(new KickerIOSim(simJoystick.button(3)));
                 shooter = new Shooter(new ShooterIOSim());
                 climber = new Climber(new ClimberIO() {});
-                noteVision = new NoteVision(new NoteVisionIOSim(),leds.getNoteVisionStrip());
+                noteVision = new NoteVision(new NoteVisionIO() {},leds.getNoteVisionStrip());
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(leds.getRightApriltagStrip()));
             break;
             default:
