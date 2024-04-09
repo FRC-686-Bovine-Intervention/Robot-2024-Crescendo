@@ -10,9 +10,9 @@ import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
+import frc.robot.subsystems.rollers.Rollers;
+import frc.robot.subsystems.rollers.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.AllianceFlipUtil;
@@ -21,9 +21,9 @@ public class Disruptor extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{StartPosition.Source});
 
     public Disruptor(RobotContainer robot) {
-        this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
+        this(robot.drive, robot.shooter, robot.pivot, robot.rollers, robot.noteVision);
     }
-    public Disruptor(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
+    public Disruptor(Drive drive, Shooter shooter, Pivot pivot, Rollers rollers, NoteVision noteVision) {
         super(
             "Disruptor",
             List.of(
@@ -33,16 +33,14 @@ public class Disruptor extends AutoRoutine {
         this.drive = drive;
         this.shooter = shooter;
         this.pivot = pivot;
-        this.kicker = kicker;
-        this.intake = intake;
+        this.rollers = rollers;
         this.noteVision = noteVision;
     }
 
     private final Drive drive;
     private final Shooter shooter;
     private final Pivot pivot;
-    private final Kicker kicker;
-    private final Intake intake;
+    private final Rollers rollers;
     private final NoteVision noteVision;
 
     @Override
@@ -55,19 +53,19 @@ public class Disruptor extends AutoRoutine {
 
         return AutoCommons.setOdometryFlipped(startPosition.getResponse().startPose, drive)
             .andThen(
-                AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
+                AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
                 .deadlineWith(
                     AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
                 ),
-                AutoCommons.shootWhenReady(centerShot, 10, drive, shooter, pivot, kicker)
+                AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
                 .deadlineWith(
                     AutoCommons.autoAim(centerShot, shooter, pivot),
                     AutoCommons.followPathFlipped(disruptorPath, drive)
                     .andThen(
                         Commands.runOnce(noteVision::clearMemory),
-                        intake.intake(drive::getRobotRelativeSpeeds)
+                        rollers.setIntakeGoalCommand(Intake.Goal.INTAKE)
                         .deadlineWith(
-                            noteVision.autoIntake(() -> 2, drive, intake)
+                            noteVision.autoIntake(() -> 2, rollers::noNote, drive)
                         ),
                         AutoCommons.autoAim(centerShot, drive.rotationalSubsystem)
                         .alongWith(

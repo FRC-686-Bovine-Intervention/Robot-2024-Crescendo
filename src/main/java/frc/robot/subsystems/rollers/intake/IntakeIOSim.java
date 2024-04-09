@@ -2,9 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.subsystems.intake;
-
-import java.util.function.BooleanSupplier;
+package frc.robot.subsystems.rollers.intake;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -15,14 +13,8 @@ public class IntakeIOSim implements IntakeIO {
     private final DCMotorSim rollerMotor = new DCMotorSim(DCMotor.getNeo550(1), 1, 1);
     private final DCMotorSim beltMotor = new DCMotorSim(DCMotor.getFalcon500(1), 1, 1);;
 
-    private final BooleanSupplier bottomSensor;
-
     private double rollerAppliedVolts = 0;
     private double beltAppliedVolts = 0;
-
-    public IntakeIOSim(BooleanSupplier noteAtBottom) {
-        this.bottomSensor = noteAtBottom;
-    }
 
     @Override
     public void updateInputs(IntakeIOInputs inputs) {
@@ -31,8 +23,6 @@ public class IntakeIOSim implements IntakeIO {
         
         inputs.rollerMotor.updateFrom(rollerMotor, rollerAppliedVolts);
         inputs.beltMotor.updateFrom(beltMotor, beltAppliedVolts);
-        
-        inputs.sensor = bottomSensor.getAsBoolean();
     }
 
     @Override
