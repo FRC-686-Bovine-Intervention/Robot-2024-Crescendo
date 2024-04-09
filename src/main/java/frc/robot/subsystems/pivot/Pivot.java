@@ -8,7 +8,6 @@ import static edu.wpi.first.units.Units.Inches;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -16,17 +15,13 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
 import frc.robot.NoteVisualizer;
 import frc.robot.RobotState;
-import frc.robot.Constants.ShooterConstants;
 import frc.robot.util.EdgeDetector;
 import frc.robot.util.LoggedTunableNumber;
 
@@ -59,16 +54,16 @@ public class Pivot extends SubsystemBase {
 
   public static enum Goal {
     IDLE(new LoggedTunableNumber("Pivot/Angles/Zero", 9)),
-    AIM(RobotState.getInstance().aimingParameters::pivotAltitude),
+    AIM(() -> RobotState.getInstance().aimingParameters.pivotAltitude()),
     AMP(new LoggedTunableNumber("Pivot/Angles/Amp", 109)),
     SUPER_PASS(new LoggedTunableNumber("Pivot/Angles/Super Pass", 50+5.09765625)),
-    RECAL(() -> 0){
-      private final LoggedTunableNumber recalVolts = new LoggedTunableNumber("Pivot/Recal Volts", -1);
-      @Override
-      public void runGoal(PivotIO pivotIO, double runtimeOffsetRads) {
-        pivotIO.setPivotVoltage(recalVolts.get());
-      }
-    }
+    // RECAL(() -> 0){
+    //   private final LoggedTunableNumber recalVolts = new LoggedTunableNumber("Pivot/Recal Volts", -1);
+    //   @Override
+    //   public void runGoal(PivotIO pivotIO) {
+    //     pivotIO.setPivotVoltage(recalVolts.get());
+    //   }
+    // },
     ;
     private final DoubleSupplier altitudeDeg;
     Goal(DoubleSupplier altitudeDeg) {
@@ -77,13 +72,13 @@ public class Pivot extends SubsystemBase {
     public double getRads() {
       return Units.degreesToRadians(altitudeDeg.getAsDouble());
     }
-    public void runGoal(PivotIO pivotIO, double runtimeOffsetRads) {
-      pivotIO.setPivotPos(getRads() + runtimeOffsetRads);
+    public void runGoal(PivotIO pivotIO) {
+      pivotIO.setPivotPos(getRads());
     }
   }
 
   @AutoLogOutput(key = "Pivot/Goal")
-  private Goal goal;
+  private Goal goal = Goal.IDLE;
 
   private final EdgeDetector increaseEdgeDetector;
   private final EdgeDetector decreaseEdgeDetector;
@@ -110,37 +105,48 @@ public class Pivot extends SubsystemBase {
       runtimeOffset -= 0.5;
     }
 
-    goal.runGoal(pivotIO, Units.degreesToRadians(runtimeOffset));
+    if(increaseEdgeDetector.risingEdge() || decreaseEdgeDetector.risingEdge()) {
+      pivotIO.setRotorOffset(Units.degreesToRadians(runtimeOffset));
+    }
+    goal.runGoal(pivotIO);
   }
 
   @AutoLogOutput(key = "Pivot/Runtime Offset")
   private double runtimeOffset = 0;
 
-  public Command recal() {
-    var subsystem = this;
-    return new Command() {
-      {
-        addRequirements(subsystem);
-        setName("Recal");
-      }
-      @Override
-      public void initialize() {
-        pivotIO.enableSoftLimits(false);
-      }
-      @Override
-      public void execute() {
-        pivotIO.setPivotVoltage(-1);
-      }
-      @Override
-      public void end(boolean interrupted) {
-        pivotIO.enableSoftLimits(true);
-        pivotIO.stop();
-      }
-    };
-  }
+  // public Command recal() {
+  //   var subsystem = this;
+  //   return new Command() {
+  //     {
+  //       addRequirements(subsystem);
+  //       setName("Recal");
+  //     }
+  //     @Override
+  //     public void initialize() {
+  //       pivotIO.enableSoftLimits(false);
+  //     }
+  //     @Override
+  //     public void execute() {
+  //       pivotIO.setPivotVoltage(-1);
+  //     }
+  //     @Override
+  //     public void end(boolean interrupted) {
+  //       pivotIO.enableSoftLimits(true);
+  //       pivotIO.stop();
+  //     }
+  //   };
+  // }
+
+  public Command setGoalCommand(Goal goal) {
+    return startEnd(
+        () -> this.goal = goal,
+        () -> this.goal = Goal.IDLE
+    )
+    .withName("Pivot " + goal.name());
+}
 
   public boolean readyToShoot() {
-    return atPos() && outtakeCommand && MathUtil.isNear(targetPos, inputs.pivotEncoder.positionRad, Units.degreesToRadians(toleranceDeg.get()*2));
+    return atPos() && goal != Goal.IDLE;
   }
 
   public boolean atPos() {

@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -58,10 +59,11 @@ public class PivotIOFalcon implements PivotIO {
         motorConfig.Feedback.SensorToMechanismRatio = PivotConstants.encoderToMechanismRatio.ratio();
         motorConfig.Feedback.FeedbackRemoteSensorID = pivotEncoder.getDeviceID();
         motorConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+        motorConfig.Feedback.FeedbackRotorOffset = 0;
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Units.radiansToRotations(Pivot.POS_ZERO);
+        motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0;
         motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Units.radiansToRotations(Pivot.POS_AMP);
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Units.radiansToRotations(Pivot.Goal.AMP.getRads());
         pivotLeftMotor.getConfigurator().apply(motorConfig);
         motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         pivotRightMotor.getConfigurator().apply(motorConfig);
@@ -181,8 +183,18 @@ public class PivotIOFalcon implements PivotIO {
     public void enableSoftLimits(boolean enable) {
         var config = new SoftwareLimitSwitchConfigs();
         pivotLeftMotor.getConfigurator().refresh(config);
+        if(config.ForwardSoftLimitEnable == enable && config.ReverseSoftLimitEnable == enable) return;
         config.ForwardSoftLimitEnable = enable;
         config.ReverseSoftLimitEnable = enable;
+        pivotLeftMotor.getConfigurator().apply(config);
+    }
+
+    public void setRotorOffset(double rads) {
+        var config = new FeedbackConfigs();
+        pivotLeftMotor.getConfigurator().refresh(config);
+        var rots = Units.radiansToRotations(rads);
+        if(MathUtil.isNear(rots, config.FeedbackRotorOffset, 1e-3)) return;
+        config.FeedbackRotorOffset = rots;
         pivotLeftMotor.getConfigurator().apply(config);
     }
 

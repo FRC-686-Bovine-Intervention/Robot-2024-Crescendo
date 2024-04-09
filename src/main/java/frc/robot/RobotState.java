@@ -2,7 +2,7 @@ package frc.robot;
 
 import java.nio.ByteBuffer;
 
-import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -15,7 +15,9 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
+import edu.wpi.first.util.struct.StructSerializable;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -50,7 +52,11 @@ public class RobotState {
         poseEstimator.addVisionMeasurement(pose, timestamp, stdDevs);
     }
 
-    @AutoLogOutput(key = "Odometry/Robot")
+    public void log() {
+        Logger.recordOutput("Odometry/Robot", getPose());
+        Logger.recordOutput("AimingParameters", aimingParameters);
+    }
+
     public Pose2d getPose() {
         return poseEstimator.getEstimatedPosition();
     }
@@ -59,18 +65,17 @@ public class RobotState {
         poseEstimator.resetPosition(rotation, modulePositions, fieldToVehicle);
     }
 
-    @AutoLogOutput(key = "AimingParameters")
-    public AimingParameters aimingParameters;
+    public AimingParameters aimingParameters = AimingParameters.from(new Translation2d());
 
     private static LoggedTunableNumber lookaheadSeconds = new LoggedTunableNumber("Aiming/Lookahead Seconds", 0.35);
 
-    public static record AimingParameters(
+    public static record AimingParameters (
         Pose2d drivePose,
         double effectiveDistance,
         double pivotAltitude,
         double targetShooterSpeed,
         double minimumShooterSpeed
-    ) {
+    ) implements StructSerializable {
         public static AimingParameters from(Drive drive) {
             return from(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds());
         }
@@ -90,7 +95,7 @@ public class RobotState {
             var driveAzimuth = aimPoint.minus(predictedRobotPos).getAngle();
             var predictedDistToAimPoint = aimPoint.getDistance(predictedRobotPos);
             return new AimingParameters(
-                new Pose2d(robotPos, driveAzimuth),
+                new Pose2d(predictedRobotPos, driveAzimuth),
                 predictedDistToAimPoint,
                 ShooterConstants.pivotAltitude.get(predictedDistToAimPoint),
                 ShooterConstants.targetShooterSpeed.get(predictedDistToAimPoint),
@@ -137,7 +142,7 @@ public class RobotState {
                 bb.putDouble(value.pivotAltitude);
                 bb.putDouble(value.targetShooterSpeed);
                 bb.putDouble(value.minimumShooterSpeed);
-                Transform3d.struct.pack(bb, Pivot.getRobotToPivot(value.pivotAltitude));
+                Transform3d.struct.pack(bb, Pivot.getRobotToPivot(Units.degreesToRadians(value.pivotAltitude)));
             }
         }
     }

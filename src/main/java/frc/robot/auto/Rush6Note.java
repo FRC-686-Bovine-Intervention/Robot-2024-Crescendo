@@ -114,15 +114,8 @@ public class Rush6Note extends AutoRoutine {
 
         if(noteCount.asInt >= 2) {
             var startToSpike = AutoPaths.loadPath("R6N Amp Start to Spike");
-            var spikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
             commands.add(
-                AutoCommons.shootWhenReady(spikeShot, 10, drive, shooter, pivot, kicker)
-                .deadlineWith(
-                    intake.intake(drive::getRobotRelativeSpeeds),
-                    AutoCommons.autoAim(spikeShot, shooter, pivot, drive.rotationalSubsystem),
-                    AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
-                )
-                .withTimeout(5)
+                AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, kicker, intake)
             );
         }
 

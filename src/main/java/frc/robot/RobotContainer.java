@@ -158,18 +158,6 @@ public class RobotContainer {
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(leds.getRightApriltagStrip()));
             break;
         }
-        // ledSystem = new Leds(
-        //     () -> false,
-        //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
-        //     () -> intake.getIntakeReversed(),
-        //     () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
-        //     () -> kicker.hasNote()
-        //     // () -> drive.getCurrentCommand() != null && drive.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix),
-        //     // () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.INTAKE)),
-        //     // () -> intake.getIntakeReversed(),
-        //     // () -> intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)),
-        //     // () -> kicker.hasNote()
-        // );
         manualOverrides = new ManualOverrides(pivot::setCoast);
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
@@ -182,36 +170,6 @@ public class RobotContainer {
             // driveController.leftBumper()
         );
         
-        // driveCustomFlick = Drive.Rotational.headingFromJoystick(
-        //     driveController.rightStick.smoothRadialDeadband(0.85),
-        //     () -> {
-        //         var climbingMode = driveController.rightBumper().getAsBoolean();
-        //         if(climbingMode) {
-        //             return new Rotation2d[]{
-        //                 // Center Stage
-        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-        //                 // Up Stage
-        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-        //                 // Down Stage
-        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(60))),
-        //             };
-        //         }
-        //         return new Rotation2d[]{
-        //             // Cardinals
-        //             Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
-        //             Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
-        //             Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-        //             Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
-        //             // Subwoofer
-        //             Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
-        //             Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
-        //             // Source
-        //             Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-        //         };
-        //     },
-        //     () -> (kicker.hasNote() ? RobotConstants.shooterForward : RobotConstants.intakeForward)
-        // );
-
         System.out.println("[Init RobotContainer] Configuring Default Subsystem Commands");
         configureSubsystems();
 
@@ -245,7 +203,7 @@ public class RobotContainer {
 
         shooter.setDefaultCommand(shooter.setGoalCommand(Shooter.Goal.IDLE));
 
-        pivot.setDefaultCommand(pivot.gotoZero());
+        pivot.setDefaultCommand(pivot.setGoalCommand(Pivot.Goal.IDLE));
 
         climber.setDefaultCommand(climber.windDown());
     }
@@ -303,22 +261,34 @@ public class RobotContainer {
 
         // Intake
         driveController.a().and(() -> !(intake.hasNote() || kicker.hasNote())).whileTrue(intake.intake(drive::getRobotRelativeSpeeds));
-        driveController.b().and(() -> Math.abs(drive.getRobotRelativeSpeeds().vxMetersPerSecond) >= 0.25).whileTrue(intake.outtake(drive::getRobotRelativeSpeeds).alongWith(kicker.outtake()).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
+        driveController.b()
+            .and(() -> Math.abs(drive.getRobotRelativeSpeeds().vxMetersPerSecond) >= 0.25)
+            .whileTrue(
+                Commands.parallel(
+                    intake.outtake(drive::getRobotRelativeSpeeds),
+                    kicker.outtake()
+                )
+                .withInterruptBehavior(InterruptionBehavior.kCancelIncoming)
+            )
+        ;
         
         // Kicker
         driveController.x().whileTrue(kicker.kick());
 
         // Amp
         driveController.y().toggleOnTrue(
-            Commands.parallel(
-                pivot.gotoAmp().asProxy(),
-                shooter.setGoalCommand(Shooter.Goal.AMP),
-                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(FieldConstants.amp.getRotation()))
-                .onlyIf(
-                    () -> DriverStation.getMatchType() != MatchType.None
-                )
+            Commands.either(
+                Commands.parallel(
+                    pivot.setGoalCommand(Pivot.Goal.AMP),
+                    shooter.setGoalCommand(Shooter.Goal.AMP),
+                    drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(FieldConstants.amp.getRotation()))
+                ).withName("Amp").asProxy(),
+                Commands.parallel(
+                    pivot.setGoalCommand(Pivot.Goal.AMP),
+                    shooter.setGoalCommand(Shooter.Goal.AMP)
+                ).withName("Amp").asProxy(),
+                () -> DriverStation.getMatchType() != MatchType.None
             )
-            .withName("Amp")
         );
 
         // Shooter
@@ -328,14 +298,19 @@ public class RobotContainer {
         driveController.rightBumper().toggleOnTrue(
             Commands.parallel(
                 Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds())),
+                pivot.setGoalCommand(Pivot.Goal.AIM),
                 shooter.setGoalCommand(Shooter.Goal.SHOOTING),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()))
             )
+            .until(kicker::sensorFallingEdge)
+            .withName("Auto Aim")
         );
+
+        // Aim from Subwoofer
         driveController.leftBumper().toggleOnTrue(
             Commands.parallel(
+                pivot.setGoalCommand(Pivot.Goal.AIM),
                 shooter.setGoalCommand(Shooter.Goal.SHOOTING)
-                
             )
             .until(kicker::sensorFallingEdge)
             .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation())))
@@ -343,9 +318,18 @@ public class RobotContainer {
         );
 
         // Auto Intake
-        driveController.leftTrigger.aboveThreshold(0.25).and(noteVision::hasTarget).whileTrue(noteVision.autoIntake(noteVision.applyDotProduct(joystickTranslational), drive, intake));
+        driveController.leftTrigger.aboveThreshold(0.25)
+            .and(noteVision::hasTarget)
+            .whileTrue(
+                noteVision.autoIntake(
+                    noteVision.applyDotProduct(joystickTranslational),
+                    drive,
+                    intake
+                )
+            )
+        ;
 
-        SmartDashboard.putData("Recal Pivot", pivot.recal());
+        // SmartDashboard.putData("Recal Pivot", pivot.recal());
         SmartDashboard.putData("Reset pos", Commands.runOnce(() -> drive.setPose(new Pose2d(AllianceFlipUtil.apply(FieldConstants.subwooferFront).getTranslation(), drive.getRotation()))));
 
         // Auto Drive
@@ -353,15 +337,11 @@ public class RobotContainer {
         // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
         // driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
 
-
-        // driveController.start().or(driveController.back()).onTrue(Commands.runOnce(() -> {
-        //     var offset = AllianceFlipUtil.apply(FieldConstants.speakerAimPoint);
-        //     var rotation = drive.getRotation();
-        //     var pos = new Translation2d(rotation.getCos(), rotation.getSin()).times(-FieldConstants.subwooferToSpeakerDist);
-        //     drive.setPose(new Pose2d(pos.plus(offset), rotation));
-        // }));
+        // Climber
         driveController.start().toggleOnTrue(climber.deploy());
         driveController.back().toggleOnTrue(climber.retract());
+
+        // Pre-emptive Spinup
         // new Trigger(() -> 
         //     drive.getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.speakerAimPoint)) <= 6 && 
         //     MathUtil.isNear(
@@ -455,7 +435,7 @@ public class RobotContainer {
 
     private void configureSystemCheck() {
         SmartDashboard.putData("System Check/Pivot/Zero", pivot.getDefaultCommand());
-        SmartDashboard.putData("System Check/Pivot/Amp", pivot.gotoAmp());
+        SmartDashboard.putData("System Check/Pivot/Amp", pivot.setGoalCommand(Pivot.Goal.AMP));
         SmartDashboard.putData("System Check/Climber/Wind Down", climber.getDefaultCommand());
         SmartDashboard.putData("System Check/Climber/Deploy", climber.deploy());
         SmartDashboard.putData("System Check/Climber/Retract", climber.retract());
@@ -523,6 +503,7 @@ public class RobotContainer {
     private final Alert buttonBoardConnect = new Alert("Button Board (Port 1) not connected", AlertType.WARNING);
 
     public void robotPeriodic() {
+        RobotState.getInstance().log();
         Logger.recordOutput("NoteVisualizer/Internal Note", NoteVisualizer.logInternal());
         Camera.logCameraOverrides();
         xboxConnect.set(!driveController.isConnected());
