@@ -65,7 +65,7 @@ public class Disruptor extends AutoRoutine {
                     AutoCommons.followPathFlipped(disruptorPath, drive)
                     .andThen(
                         Commands.runOnce(noteVision::clearMemory),
-                        intake.intake(drive::getChassisSpeeds)
+                        intake.intake(drive::getRobotRelativeSpeeds)
                         .deadlineWith(
                             noteVision.autoIntake(() -> 2, drive, intake)
                         ),

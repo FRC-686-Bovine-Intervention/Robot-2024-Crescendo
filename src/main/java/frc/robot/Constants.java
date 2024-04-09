@@ -21,7 +21,6 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.signals.InvertedValue;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -29,6 +28,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
@@ -271,51 +271,25 @@ public final class Constants {
             .wheelRadius(wheelRadius)
         ;
 
-        public static final double[] distance = new double[] {
-            FieldConstants.subwooferToSpeakerDist,
-            FieldConstants.podiumToSpeakerDist,
-            Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters),
-            Centimeters.of(665).plus(RobotConstants.robotLength.divide(2)).in(Meters),
-        };
-        public static final double[] surfaceSpeed = new double[] {
-            15,
-            20,
-            30,
-            12,
-        };
-        public static final double[] acceptableSurfaceSpeed = new double[] {
-            12,
-            18,
-            29.5,
-            9,
-        };
-        public static final double[] angle = new double[] {
-            // Degrees.of(59.39).in(Radians),
-            // Degrees.of(39.2).in(Radians),
-            // Degrees.of(29.7).in(Radians),
-            // Degrees.of(50).in(Radians),
-            // Degrees.of(59.39).in(Radians),
-            // Degrees.of(37.2).in(Radians),
-            // Degrees.of(27.2).in(Radians),
-            // Degrees.of(50).in(Radians),
-            Degrees.of(59.39+5.09765625-4.5+0.5).in(Radians),
-            Degrees.of(37.2+5.09765625-2.5+0.5+1+0.5).in(Radians),
-            Degrees.of(27.2+5.09765625-2.5-0.5-0.5-0.5).in(Radians),
-            Degrees.of(50+5.09765625).in(Radians),
-        };
-        public static double distLerp(double dist, double[] lerpTarget) {
-            int lowerBound = 0;
-            int upperBound = 0;
-            for(int i = 0; i < distance.length; i++) {
-                upperBound = i;
-                if(dist < distance[i]) {
-                    break;
-                }
-                lowerBound = i;
-            }
-            double t = MathUtil.inverseInterpolate(distance[lowerBound], distance[upperBound], dist);
-            double target = MathUtil.interpolate(lerpTarget[lowerBound], lerpTarget[upperBound], t);
-            return target;
+        public static final InterpolatingDoubleTreeMap targetShooterSpeed = new InterpolatingDoubleTreeMap();
+        static {
+            targetShooterSpeed.put(FieldConstants.subwooferToSpeakerDist, 15.0);
+            targetShooterSpeed.put(FieldConstants.podiumToSpeakerDist, 20.0);
+            targetShooterSpeed.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 30.0);
+        }
+
+        public static final InterpolatingDoubleTreeMap minimumShooterSpeed = new InterpolatingDoubleTreeMap();
+        static {
+            minimumShooterSpeed.put(FieldConstants.subwooferToSpeakerDist, 12.0);
+            minimumShooterSpeed.put(FieldConstants.podiumToSpeakerDist, 18.0);
+            minimumShooterSpeed.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 29.5);
+        }
+
+        public static final InterpolatingDoubleTreeMap pivotAltitude = new InterpolatingDoubleTreeMap();
+        static {
+            pivotAltitude.put(FieldConstants.subwooferToSpeakerDist, 59.39+5.09765625-4.5+0.5);
+            pivotAltitude.put(FieldConstants.podiumToSpeakerDist, 37.2+5.09765625-2.5+0.5+1+0.5);
+            pivotAltitude.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 27.2+5.09765625-2.5-0.5-0.5-0.5);
         }
     }
 

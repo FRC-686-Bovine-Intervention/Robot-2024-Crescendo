@@ -72,7 +72,7 @@ public class SneakySource3Note extends AutoRoutine {
                         AutoCommons.followPathFlipped(wingToCenter, drive)
                         .onlyWhile(() -> !noteVision.hasTarget())
                         .andThen(
-                            intake.intake(drive::getChassisSpeeds)
+                            intake.intake(drive::getRobotRelativeSpeeds)
                             .deadlineWith(
                                 noteVision.autoIntake(() -> 2, drive, intake)
                             ),
@@ -91,7 +91,7 @@ public class SneakySource3Note extends AutoRoutine {
                     .andThen(
                         AutoCommons.followPathFlipped(wingToCenter, drive)
                         .onlyWhile(() -> !noteVision.hasTarget()),
-                        intake.intake(drive::getChassisSpeeds)
+                        intake.intake(drive::getRobotRelativeSpeeds)
                         .deadlineWith(
                             noteVision.autoIntake(() -> 2, drive, intake)
                         ),

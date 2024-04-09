@@ -21,6 +21,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.RobotState.AimingParameters;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.intake.Intake;
@@ -104,14 +105,14 @@ public class AutoCommons {
     }
 
     public static Command followPathFlipped(PathPlannerPath path, Drive drive) {
-        return new FollowPathHolonomic(path, drive::getPose, drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem, drive.rotationalSubsystem)
+        return new FollowPathHolonomic(path, drive::getPose, drive::getRobotRelativeSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive.translationSubsystem, drive.rotationalSubsystem)
         .deadlineWith(Commands.startEnd(
             () -> Logger.recordOutput("Autonomous/Goal Pose", new Pose2d(getLastPoint(path), path.getGoalEndState().getRotation())),
             () -> Logger.recordOutput("Autonomous/Goal Pose", (Pose2d)null)
         ));
     }
     public static Command followPathFlipped(PathPlannerPath path, Drive.Translational drive) {
-        return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getChassisSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive)
+        return new FollowPathHolonomic(path, drive.drive::getPose, drive.drive::getRobotRelativeSpeeds, drive::driveVelocity, Drive.autoConfigSup.get(), AllianceFlipUtil::shouldFlip, drive)
         .deadlineWith(Commands.startEnd(
             () -> Logger.recordOutput("Autonomous/Goal Pose", new Pose2d(getLastPoint(path), path.getGoalEndState().getRotation())),
             () -> Logger.recordOutput("Autonomous/Goal Pose", (Pose2d)null)
@@ -127,7 +128,7 @@ public class AutoCommons {
             var shooterReady = shooter.readyToShoot();
             var pivotReady = pivot.readyToShoot();
             var poseReady = MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
-            var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.75, 1);
+            var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getRobotRelativeSpeeds(), 0.75, 1);
 
             Logger.recordOutput("DEBUG/Shooter Ready", shooterReady);
             Logger.recordOutput("DEBUG/Pivot Ready", pivotReady);
@@ -154,10 +155,10 @@ public class AutoCommons {
         return rotation.pidControlledHeading(() -> Optional.of(getFORR(pos)).map((t) -> new Rotation2d(t.getX(), t.getY())));
     }
     public static Command autoAim(Translation2d pos, Shooter shooter) {
-        return shooter.shoot(() -> getFORR(pos)).asProxy();
+        return shooter.setGoalCommand(Shooter.Goal.SHOOTING);
     }
     public static Command autoAim(Translation2d pos, Pivot pivot) {
-        return pivot.autoAim(() -> getFORR(pos)).asProxy();
+        return pivot.setGoalCommand(Pivot.Goal.AIM);
     }
     public static Command autoAim(Translation2d pos, Shooter shooter, Pivot pivot) {
         return autoAim(pos, shooter).alongWith(autoAim(pos, pivot));
@@ -178,6 +179,38 @@ public class AutoCommons {
         return AutoPaths.stagePaths.contains(path);
     }
 
+    public static Command spikeNote(PathPlannerPath toSpike, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake) {
+        var shotPos = getLastPoint(toSpike);
+        return
+            AutoCommons.shootWhenReady(shotPos, 10, drive, shooter, pivot, kicker)
+            .deadlineWith(
+                intake.intake(drive::getRobotRelativeSpeeds),
+                AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem),
+                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
+            )
+            .withTimeout(3)
+            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
+        ;
+    }
+    public static Command spikeNote(PathPlannerPath toSpike, Rotation2d wiggleAngle, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake) {
+        var shotPos = getLastPoint(toSpike);
+        return
+            AutoCommons.shootWhenReady(shotPos, 10, drive, shooter, pivot, kicker)
+            .deadlineWith(
+                intake.intake(drive::getRobotRelativeSpeeds),
+                AutoCommons.autoAim(shotPos, shooter, pivot),
+                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem),
+                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle)))
+                .until(intake::hasNote)
+                .andThen(
+                    AutoCommons.autoAim(shotPos, drive.rotationalSubsystem)
+                )
+            )
+            .withTimeout(4)
+            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
+        ;
+    }
+
     public static Command centerNote(PathPlannerPath toCenterLine, PathPlannerPath defaultReturn, PathPlannerPath altReturn, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
         var defaultShot = getLastPoint(defaultReturn);
         var altShot = getLastPoint(altReturn);
@@ -185,73 +218,48 @@ public class AutoCommons {
         var altStartPoint = getFirstPoint(altReturn);
         BooleanSupplier isDefault = () -> drive.getPose().getTranslation().nearest(List.of(defaultStartPoint, altStartPoint)).equals(defaultStartPoint);
         return
-            Commands.runOnce(noteVision::clearMemory)
-            .andThen(
+            Commands.parallel(
+                Commands.runOnce(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(defaultShot)),
+                Commands.runOnce(noteVision::clearMemory),
+                
                 AutoCommons.followPathFlipped(toCenterLine, drive)
-                .onlyWhile(
-                    () -> !noteVision.hasTarget()
-                ),
-                intake.intake(drive::getChassisSpeeds)
-                .raceWith(
-                    noteVision.autoIntake(() -> 2, drive, intake)
-                )
-                .withTimeout(3)
-            )
-            .deadlineWith(
-                isStagePath(toCenterLine) ? (
-                    AutoCommons.autoAim(defaultShot, shooter)
-                ) : (
-                    AutoCommons.autoAim(defaultShot, shooter, pivot)
-                )
-            )
-            .andThen(
-                Commands.either((
-                    AutoCommons.shootWhenReady(defaultShot, 3, drive, shooter, pivot, kicker)
-                    .deadlineWith(
-                        isStagePath(defaultReturn) ? (
-                            AutoCommons.autoAim(defaultShot, shooter)
-                        ) : (
-                            AutoCommons.autoAim(defaultShot, shooter, pivot)
-                        ),
-                        returnFromCenter(defaultReturn, drive, shooter, pivot, kicker)
+                .until(noteVision::hasTarget)
+                .andThen(
+                    intake.intake(drive::getRobotRelativeSpeeds)
+                    .raceWith(
+                        noteVision.autoIntake(() -> 2, drive, intake)
                     )
-                ),(
-                    AutoCommons.shootWhenReady(altShot, 3, drive, shooter, pivot, kicker)
-                    .deadlineWith(
-                        isStagePath(altReturn) ? (
-                            AutoCommons.autoAim(altShot, shooter)
-                        ) : (
-                            AutoCommons.autoAim(altShot, shooter, pivot)
-                        ),
-                        returnFromCenter(altReturn, drive, shooter, pivot, kicker)
+                    .withTimeout(3)
+                )
+                .until(intake::hasNote)
+                .deadlineWith(
+                    isStagePath(toCenterLine) ? (
+                        AutoCommons.autoAim(defaultShot, shooter)
+                    ) : (
+                        AutoCommons.autoAim(defaultShot, shooter, pivot)
                     )
-                ),
-                isDefault
-            )
-            .onlyIf(intake::hasNote)
+                )
+                .andThen(
+                    Commands.either((
+                        AutoCommons.shootWhenReady(defaultShot, 3, drive, shooter, pivot, kicker)
+                        .deadlineWith(
+                            AutoCommons.autoAim(defaultShot, shooter),
+                            returnFromCenter(defaultReturn, drive, shooter, pivot, kicker)
+                        )
+                    ),(
+                        AutoCommons.shootWhenReady(altShot, 3, drive, shooter, pivot, kicker)
+                        .deadlineWith(
+                            AutoCommons.autoAim(altShot, shooter),
+                            returnFromCenter(altReturn, drive, shooter, pivot, kicker)
+                        )
+                        .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(altShot))
+                    ),
+                    isDefault
+                )
+                .onlyIf(intake::hasNote)
+                )
             )
         ;
-        // return 
-        //     AutoCommons.shootWhenReady(centerShot1, 3, drive, shooter, pivot, kicker)
-        //     .deadlineWith(
-        //         AutoCommons.autoAim(centerShot1, shooter, kicker, pivot),
-        //         Commands.runOnce(noteVision::clearMemory)
-        //         .andThen(
-        //             AutoCommons.followPathFlipped(spikeToCenter, drive)
-        //             .onlyWhile(() -> !noteVision.hasTarget())
-        //             .andThen(
-        //                 intake.intake(drive::getChassisSpeeds)
-        //                 .deadlineWith(
-        //                     noteVision.autoIntake(() -> 2, drive, intake)
-        //                 ),
-        //                 AutoCommons.autoAim(centerShot1, drive.rotationalSubsystem)
-        //                 .alongWith(
-        //                     AutoCommons.followPathFlipped(centerToWing, drive.translationSubsystem)
-        //                 )
-        //             )
-        //         )
-        //     )
-        // ;
     }
 
     private static Command returnFromCenter(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
@@ -328,6 +336,10 @@ public class AutoCommons {
                 }
                 return path;
             }
+        }
+
+        public static String getName(PathPlannerPath path) {
+            return loadedPaths.entrySet().stream().filter((e) -> e.getValue() == path).map((e) -> e.getKey()).findAny().orElse("Unknown Path");
         }
     }
 }

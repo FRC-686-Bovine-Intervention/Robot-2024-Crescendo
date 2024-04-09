@@ -2,7 +2,6 @@ package frc.robot.auto;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -91,13 +90,12 @@ public class MASpikeWiggle extends AutoRoutine {
         var firstCenterNote = MASpikeWiggle.firstCenterNote.getResponse();
         var secondCenterNote = MASpikeWiggle.secondCenterNote.getResponse();
 
-        var wiggleAngle = Optional.of(AllianceFlipUtil.apply(Rotation2d.fromDegrees(
+        var wiggleAngle = Rotation2d.fromDegrees(
             switch(startPosition) {
                 case Amp, SubwooferAmp -> 135;
-                case Podium, SubwooferSource -> -135;
-                default -> 0;
+                default -> -135;
             }
-        )));
+        );
         
         var commands = new ArrayList<Command>();
 
@@ -115,30 +113,11 @@ public class MASpikeWiggle extends AutoRoutine {
             var startToSpike1 = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "Amp Start to Spike";
-                    case Podium, SubwooferSource -> "Podium Start to Spike";
-                    default -> "";
+                    default -> "Podium Start to Spike";
                 }
             );
-            var spike1Shot = AllianceFlipUtil.apply(startToSpike1.getPoint(startToSpike1.numPoints() - 1).position);
             commands.add(
-                AutoCommons.shootWhenReady(spike1Shot, 10, drive, shooter, pivot, kicker)
-                // .raceWith(
-                //     Commands.waitSeconds(2.5)
-                //     .andThen(
-                //         Commands.waitUntil(() -> 
-                //             !(
-                //                 intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)) || 
-                //                 kicker.hasNote()
-                //             )
-                //         )
-                //     )
-                // )
-                .deadlineWith(
-                    intake.intake(drive::getChassisSpeeds),
-                    AutoCommons.autoAim(spike1Shot, shooter, pivot, drive.rotationalSubsystem),
-                    AutoCommons.followPathFlipped(startToSpike1, drive.translationSubsystem)
-                )
-                .withTimeout(3)
+                AutoCommons.spikeNote(startToSpike1, drive, shooter, pivot, kicker, intake)
             );
         }
 
@@ -146,35 +125,11 @@ public class MASpikeWiggle extends AutoRoutine {
             var spike1ToSpike2 = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "MASW Amp Spike to Center Spike";
-                    case Podium, SubwooferSource -> "MASW Podium Spike to Center Spike";
-                    default -> "";
+                    default -> "MASW Podium Spike to Center Spike";
                 }
             );
-            var spike2Shot = AllianceFlipUtil.apply(spike1ToSpike2.getPoint(spike1ToSpike2.numPoints() - 1).position);
             commands.add(
-                AutoCommons.shootWhenReady(spike2Shot, 10, drive, shooter, pivot, kicker)
-                // .raceWith(
-                //     Commands.waitSeconds(2.5)
-                //     .andThen(
-                //         Commands.waitUntil(() -> 
-                //             !(
-                //                 intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)) || 
-                //                 kicker.hasNote()
-                //             )
-                //         )
-                //     )
-                // )
-                .deadlineWith(
-                    intake.intake(drive::getChassisSpeeds),
-                    AutoCommons.autoAim(spike2Shot, shooter, pivot),
-                    AutoCommons.followPathFlipped(spike1ToSpike2, drive.translationSubsystem),
-                    drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
-                    .until(intake::hasNote)
-                    .andThen(
-                        AutoCommons.autoAim(spike2Shot, drive.rotationalSubsystem)
-                    )
-                )
-                .withTimeout(4)
+                AutoCommons.spikeNote(spike1ToSpike2, wiggleAngle, drive, shooter, pivot, kicker, intake)
             );
         }
 
@@ -182,35 +137,11 @@ public class MASpikeWiggle extends AutoRoutine {
             var spike2ToSpike3 = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "MASW Center Spike to Podium Spike";
-                    case Podium, SubwooferSource -> "MASW Center Spike to Amp Spike";
-                    default -> "";
+                    default -> "MASW Center Spike to Amp Spike";
                 }
             );
-            var spikeShot3 = AllianceFlipUtil.apply(spike2ToSpike3.getPoint(spike2ToSpike3.numPoints() - 1).position);
             commands.add(
-                AutoCommons.shootWhenReady(spikeShot3, 10, drive, shooter, pivot, kicker)
-                // .raceWith(
-                //     Commands.waitSeconds(2.5)
-                //     .andThen(
-                //         Commands.waitUntil(() -> 
-                //             !(
-                //                 intake.getIntakeCommand().equals(Optional.of(IntakeCommand.FEED_TO_KICKER)) || 
-                //                 kicker.hasNote()
-                //             )
-                //         )
-                //     )
-                // )
-                .deadlineWith(
-                    intake.intake(drive::getChassisSpeeds),
-                    AutoCommons.autoAim(spikeShot3, shooter, pivot),
-                    AutoCommons.followPathFlipped(spike2ToSpike3, drive.translationSubsystem),
-                    drive.rotationalSubsystem.pidControlledHeading(() -> wiggleAngle)
-                    .until(intake::hasNote)
-                    .andThen(
-                        AutoCommons.autoAim(spikeShot3, drive.rotationalSubsystem)
-                    )
-                )
-                .withTimeout(4)
+                AutoCommons.spikeNote(spike2ToSpike3, wiggleAngle, drive, shooter, pivot, kicker, intake)
             );
         }
         
@@ -218,8 +149,7 @@ public class MASpikeWiggle extends AutoRoutine {
             var spikeToCenter = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "MASW Podium Spike to Center " + firstCenterNote.name();
-                    case Podium, SubwooferSource -> "R6N Amp Spike to Center " + firstCenterNote.name();
-                    default -> "";
+                    default -> "R6N Amp Spike to Center " + firstCenterNote.name();
                 }
             );
             var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");

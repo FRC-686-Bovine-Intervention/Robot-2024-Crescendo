@@ -38,4 +38,8 @@ public class MathExtraUtil {
         var bol = isNear(new Translation2d(expected.vxMetersPerSecond, expected.vyMetersPerSecond), new Translation2d(actual.vxMetersPerSecond, actual.vyMetersPerSecond), linearTolerance) && MathUtil.isNear(expected.omegaRadiansPerSecond, actual.omegaRadiansPerSecond, angularTolerance);
         return bol;
     }
+
+    public static boolean isWithin(double value, double min, double max) {
+        return MathUtil.isNear(MathUtil.clamp(value, min, max), value, 1e-3);
+    }
 }

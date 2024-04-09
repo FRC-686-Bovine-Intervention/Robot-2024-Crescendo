@@ -140,15 +140,8 @@ public class Source4Note extends AutoRoutine {
             case Podium:
                 if(noteCount.asInt >= 2) {
                     var startToSpike = AutoPaths.loadPath("Podium Start to Spike");
-                    var spikeShot = AllianceFlipUtil.apply(startToSpike.getPoint(startToSpike.numPoints() - 1).position);
                     commands.add(
-                        AutoCommons.shootWhenReady(spikeShot, 10, drive, shooter, pivot, kicker)
-                        .deadlineWith(
-                            intake.intake(drive::getChassisSpeeds),
-                            AutoCommons.autoAim(spikeShot, shooter, pivot, drive.rotationalSubsystem),
-                            AutoCommons.followPathFlipped(startToSpike, drive.translationSubsystem)
-                        )
-                        .withTimeout(3)
+                        AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, kicker, intake)
                     );
                 }
 

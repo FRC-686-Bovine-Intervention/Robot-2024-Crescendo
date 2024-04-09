@@ -30,5 +30,7 @@ public interface PivotIO {
 
     public default void enableSoftLimits(boolean enable) {}
 
+    public default void setRotorOffset(double rads) {}
+
     public default void zeroEncoder() {}
 }
