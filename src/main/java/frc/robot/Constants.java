@@ -276,7 +276,6 @@ public final class Constants {
             targetShooterSpeed.put(FieldConstants.subwooferToSpeakerDist, 15.0);
             targetShooterSpeed.put(FieldConstants.podiumToSpeakerDist, 20.0);
             targetShooterSpeed.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 30.0);
-            targetShooterSpeed.put(Centimeters.of(665).plus(RobotConstants.robotLength.divide(2)).in(Meters), 12.0);
         }
 
         public static final InterpolatingDoubleTreeMap minimumShooterSpeed = new InterpolatingDoubleTreeMap();
@@ -284,15 +283,13 @@ public final class Constants {
             minimumShooterSpeed.put(FieldConstants.subwooferToSpeakerDist, 12.0);
             minimumShooterSpeed.put(FieldConstants.podiumToSpeakerDist, 18.0);
             minimumShooterSpeed.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 29.5);
-            minimumShooterSpeed.put(Centimeters.of(665).plus(RobotConstants.robotLength.divide(2)).in(Meters), 9.0);
         }
 
         public static final InterpolatingDoubleTreeMap pivotAltitude = new InterpolatingDoubleTreeMap();
         static {
-            pivotAltitude.put(FieldConstants.subwooferToSpeakerDist, Degrees.of(59.39+5.09765625-4.5+0.5).in(Radians));
-            pivotAltitude.put(FieldConstants.podiumToSpeakerDist, Degrees.of(37.2+5.09765625-2.5+0.5+1+0.5).in(Radians));
-            pivotAltitude.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), Degrees.of(27.2+5.09765625-2.5-0.5-0.5-0.5).in(Radians));
-            pivotAltitude.put(Centimeters.of(665).plus(RobotConstants.robotLength.divide(2)).in(Meters), Degrees.of(50+5.09765625).in(Radians));
+            pivotAltitude.put(FieldConstants.subwooferToSpeakerDist, 59.39+5.09765625-4.5+0.5);
+            pivotAltitude.put(FieldConstants.podiumToSpeakerDist, 37.2+5.09765625-2.5+0.5+1+0.5);
+            pivotAltitude.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 27.2+5.09765625-2.5-0.5-0.5-0.5);
         }
     }
 

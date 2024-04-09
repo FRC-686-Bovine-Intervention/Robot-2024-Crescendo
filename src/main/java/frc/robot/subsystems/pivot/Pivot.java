@@ -25,7 +25,9 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.NoteVisualizer;
+import frc.robot.RobotState;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.util.EdgeDetector;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Pivot extends SubsystemBase {
@@ -33,9 +35,6 @@ public class Pivot extends SubsystemBase {
   private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
   public static final LoggedTunableNumber toleranceDeg = new LoggedTunableNumber("Pivot/PID/Position Tolerance Deg", 1);
-
-  public static final double POS_ZERO = Units.degreesToRadians(9);
-  public static final double POS_AMP = Units.degreesToRadians(109/* .193359375 */);
 
   private static final Translation3d robotToPivotTranslation = 
     new Translation3d(
@@ -49,7 +48,7 @@ public class Pivot extends SubsystemBase {
       robotToPivotTranslation,
       new Rotation3d(
         0,
-        POS_ZERO-angle,
+        Goal.IDLE.getRads()-angle,
         0
       )
     );
@@ -58,13 +57,44 @@ public class Pivot extends SubsystemBase {
     return getRobotToPivot(inputs.pivotEncoder.positionRad);
   }
 
+  public static enum Goal {
+    IDLE(new LoggedTunableNumber("Pivot/Angles/Zero", 9)),
+    AIM(RobotState.getInstance().aimingParameters::pivotAltitude),
+    AMP(new LoggedTunableNumber("Pivot/Angles/Amp", 109)),
+    SUPER_PASS(new LoggedTunableNumber("Pivot/Angles/Super Pass", 50+5.09765625)),
+    RECAL(() -> 0){
+      private final LoggedTunableNumber recalVolts = new LoggedTunableNumber("Pivot/Recal Volts", -1);
+      @Override
+      public void runGoal(PivotIO pivotIO, double runtimeOffsetRads) {
+        pivotIO.setPivotVoltage(recalVolts.get());
+      }
+    }
+    ;
+    private final DoubleSupplier altitudeDeg;
+    Goal(DoubleSupplier altitudeDeg) {
+      this.altitudeDeg = altitudeDeg;
+    }
+    public double getRads() {
+      return Units.degreesToRadians(altitudeDeg.getAsDouble());
+    }
+    public void runGoal(PivotIO pivotIO, double runtimeOffsetRads) {
+      pivotIO.setPivotPos(getRads() + runtimeOffsetRads);
+    }
+  }
+
+  @AutoLogOutput(key = "Pivot/Goal")
+  private Goal goal;
+
+  private final EdgeDetector increaseEdgeDetector;
+  private final EdgeDetector decreaseEdgeDetector;
+
   public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
     System.out.println("[Init Pivot] Instantiating Pivot");
     this.pivotIO = pivotIO;
     System.out.println("[Init Pivot] Pivot IO: " + this.pivotIO.getClass().getSimpleName());
-    this.increaseRuntimeOffset = increaseRuntimeOffset;
-    this.decreaseRuntimeOffset = decreaseRuntimeOffset;
     SmartDashboard.putData("Subsystems/Pivot", this);
+    this.increaseEdgeDetector = new EdgeDetector(increaseRuntimeOffset);
+    this.decreaseEdgeDetector = new EdgeDetector(decreaseRuntimeOffset);
   }
 
   @Override
@@ -73,107 +103,18 @@ public class Pivot extends SubsystemBase {
     Logger.processInputs("Pivot", inputs);
     Logger.recordOutput("Mechanism3d/Shooter", getRobotToPivot());
     NoteVisualizer.robotToPivot = getRobotToPivot();
-    if(increaseRuntimeOffset.getAsBoolean() && !prevInc) {
+    if(increaseEdgeDetector.risingEdge()) {
       runtimeOffset += 0.5;
     }
-    if(decreaseRuntimeOffset.getAsBoolean() && !prevDec) {
+    if(decreaseEdgeDetector.risingEdge()) {
       runtimeOffset -= 0.5;
     }
-    prevInc = increaseRuntimeOffset.getAsBoolean();
-    prevDec = decreaseRuntimeOffset.getAsBoolean();
-  }
 
-  private final LoggedTunableNumber manualPivotVolts = new LoggedTunableNumber("Pivot/Manual Arm Volts", 2);
-  public Command movePivotManually(double dir) {
-    return new StartEndCommand(
-        () -> pivotIO.setPivotVoltage(manualPivotVolts.get() * dir),
-        () -> pivotIO.setPivotVoltage(0),
-        this
-    ).withName("Manual");
+    goal.runGoal(pivotIO, Units.degreesToRadians(runtimeOffset));
   }
 
   @AutoLogOutput(key = "Pivot/Runtime Offset")
   private double runtimeOffset = 0;
-
-  private boolean prevInc;
-  private final BooleanSupplier increaseRuntimeOffset;
-  private boolean prevDec;
-  private final BooleanSupplier decreaseRuntimeOffset;
-
-  private double targetPos;
-  private boolean outtakeCommand;
-
-  private Command go(DoubleSupplier pos) {
-    var subsystem = this;
-    return new Command() {
-      {
-        addRequirements(subsystem);
-      }
-      @Override
-      public void initialize() {
-        execute();
-      }
-      @Override
-      public void execute() {
-        targetPos = pos.getAsDouble() + Units.degreesToRadians(runtimeOffset);
-        pivotIO.setPivotPos(targetPos);
-      }
-      @Override
-      public void end(boolean interrupted) {
-        pivotIO.stop();
-      }
-    };
-  }
-
-  private Command aim(DoubleSupplier pos) {
-    var subsystem = this;
-    return new Command() {
-      {
-        addRequirements(subsystem);
-      }
-      @Override
-      public void initialize() {
-        execute();
-      }
-      @Override
-      public void execute() {
-        outtakeCommand = true;
-        targetPos = pos.getAsDouble() + Units.degreesToRadians(runtimeOffset);
-        pivotIO.setPivotPos(targetPos);
-      }
-      @Override
-      public void end(boolean interrupted) {
-        outtakeCommand = false;
-        pivotIO.stop();
-      }
-    };
-  }
-
-  public Command gotoAmp() {
-    return aim(() -> POS_AMP).withName("Go to Amp");
-  }
-
-  public Command gotoZero() {
-    return go(() -> POS_ZERO).withName("Go to Zero");
-  }
-
-  private static final LoggedTunableNumber variableRate = new LoggedTunableNumber("Pivot/variableRate", 5);
-  private double variable = 0;
-  public Command gotoVariable(BooleanSupplier decrease, BooleanSupplier increase) {
-    return go(() -> {
-      if(decrease.getAsBoolean()) {
-        variable -= Units.degreesToRadians(variableRate.get()) * Constants.dtSeconds;
-      }
-      if(increase.getAsBoolean()) {
-        variable += Units.degreesToRadians(variableRate.get()) * Constants.dtSeconds;
-      }
-      return variable;
-    }).withName("Go to Tunable");
-  }
-
-  public Command autoAim(Supplier<Translation2d> FORR) {
-    return aim(() -> ShooterConstants.pivotAltitude.get(FORR.get().getNorm())).withName("Auto Aim");
-  }
 
   public Command recal() {
     var subsystem = this;

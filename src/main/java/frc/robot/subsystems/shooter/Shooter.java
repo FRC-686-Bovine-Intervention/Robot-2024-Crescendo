@@ -31,7 +31,11 @@ public class Shooter extends SubsystemBase {
         SHOOTING(RobotState.getInstance().aimingParameters::targetShooterSpeed, RobotState.getInstance().aimingParameters::minimumShooterSpeed),
         PREEMPTIVE(new LoggedTunableNumber("Shooter/Target Speed/Pre-emptive", 17), () -> Double.POSITIVE_INFINITY),
         PASS(new LoggedTunableNumber("Shooter/Target Speed/Pass", 17)),
-        SUPER_PASS(new LoggedTunableNumber("Shooter/Target Speed/Super Pass", 12)),
+        SUPER_PASS(
+            new LoggedTunableNumber("Shooter/Target Speed/Super Pass", 12),
+            new LoggedTunableNumber("Shooter/Minimum Speed/Super Pass", 9),
+            new LoggedTunableNumber("Shooter/Maximum Speed/Super Pass", 13)
+        ),
         AMP(new LoggedTunableNumber("Shooter/Target Speed/Amp", 2)),
         CUSTOM(new LoggedTunableNumber("Shooter/Target Speed/Custom", 30)),
         ;
