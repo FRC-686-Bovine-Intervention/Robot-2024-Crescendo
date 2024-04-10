@@ -6,22 +6,22 @@ import java.util.Optional;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.NoteVisualizer;
 import frc.robot.subsystems.rollers.intake.Intake;
 import frc.robot.subsystems.rollers.kicker.Kicker;
 import frc.robot.util.EdgeDetector;
+import frc.robot.util.VirtualSubsystem;
 
-public class Rollers extends SubsystemBase {
+public class Rollers extends VirtualSubsystem {
     private final RollerSensorsIO sensorsIO;
     private final RollerSensorsIOInputsAutoLogged inputs = new RollerSensorsIOInputsAutoLogged();
 
     private final EdgeDetector kickerEdgeDetector = new EdgeDetector(() -> inputs.kickerSensor);
 
-    private final Intake intake;
-    private final Kicker kicker;
+    public final Intake intake;
+    public final Kicker kicker;
 
     public Rollers(Intake intake, Kicker kicker, RollerSensorsIO sensorsIO) {
         System.out.println("[Init Rollers] Instantiating Rollers");
@@ -29,7 +29,6 @@ public class Rollers extends SubsystemBase {
         System.out.println("[Init Rollers] Sensors IO: " + this.sensorsIO.getClass().getSimpleName());
         this.intake = intake;
         this.kicker = kicker;
-        SmartDashboard.putData("Subsystems/Rollers", this);
     }
 
     public static enum Goal {
@@ -102,9 +101,6 @@ public class Rollers extends SubsystemBase {
         }
     }
 
-    @AutoLogOutput(key = "Rollers/Goal")
-    public Goal goal = Goal.IDLE;
-
     public static enum GamePieceState {
         INTAKE,
         KICKER,
@@ -120,6 +116,9 @@ public class Rollers extends SubsystemBase {
     }
     public boolean noteInKicker() {
         return gamePiece.equals(Optional.of(GamePieceState.KICKER));
+    }
+    public boolean kickerFallingEdge() {
+        return kickerEdgeDetector.fallingEdge();
     }
 
     @Override
@@ -137,22 +136,21 @@ public class Rollers extends SubsystemBase {
             gamePiece = Optional.empty();
         }
         NoteVisualizer.internalNote = gamePiece;
-        goal.runGoal(intake, kicker);
         intake.periodic();
         kicker.periodic();
     }
 
     public Command setGoalCommand(Goal goal) {
-        return startEnd(
-            () -> this.goal = goal,
-            () -> this.goal = Goal.IDLE
+        return Commands.parallel(
+            setIntakeGoalCommand(goal.intakeGoal),
+            setKickerGoalCommand(goal.kickerGoal)
         )
         .withName("Rollers " + goal.name());
     }
     public Command setIntakeGoalCommand(Intake.Goal goal) {
-        return defer(() -> setGoalCommand(Goal.from(goal, this.goal.kickerGoal)));
+        return intake.setGoalCommand(goal);
     }
     public Command setKickerGoalCommand(Kicker.Goal goal) {
-        return defer(() -> setGoalCommand(Goal.from(goal, this.goal.intakeGoal)));
+        return kicker.setGoalCommand(goal);
     }
 }

@@ -11,9 +11,12 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LoggedTunableNumber;
 
-public class Intake {
+public class Intake extends SubsystemBase {
   private final IntakeIO intakeIO;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
 
@@ -24,6 +27,7 @@ public class Intake {
     System.out.println("[Init Intake] Instantiating Intake");
     this.intakeIO = intakeIO;
     System.out.println("[Init Intake] Intake IO: " + this.intakeIO.getClass().getSimpleName());
+    SmartDashboard.putData("Subsystems/Intake", this);
     forwardSpeedSupplier = () -> robotRelativeSpeeds.get().vxMetersPerSecond * (intakeReversed ? -1 : 1);
   }
 
@@ -82,10 +86,19 @@ public class Intake {
 
   private boolean intakeReversed;
 
+  @Override
   public void periodic() {
     intakeIO.updateInputs(inputs);
     Logger.processInputs("Intake", inputs);
     goal.runGoal(this);
+  }
+
+  public Command setGoalCommand(Goal goal) {
+    return startEnd(
+        () -> this.goal = goal,
+        () -> this.goal = Goal.IDLE
+    )
+    .withName("Intake " + goal.name());
   }
 
   public boolean getIntakeReversed() {

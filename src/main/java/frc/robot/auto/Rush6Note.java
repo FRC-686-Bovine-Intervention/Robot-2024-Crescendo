@@ -16,7 +16,6 @@ import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.rollers.Rollers;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
-import frc.robot.util.AllianceFlipUtil;
 
 public class Rush6Note extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
@@ -100,12 +99,8 @@ public class Rush6Note extends AutoRoutine {
         var commands = new ArrayList<Command>();
 
         if(noteCount.asInt >= 1) {
-            var preloadShot = AllianceFlipUtil.apply(startPosition.startPose.getTranslation());
             commands.add(
-                AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
-                .deadlineWith(
-                    AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
-                )
+                AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
             );
         }
 

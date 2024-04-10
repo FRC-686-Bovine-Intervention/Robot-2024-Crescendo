@@ -9,9 +9,11 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LoggedTunableNumber;
 
-public class Kicker {
+public class Kicker extends SubsystemBase {
   private final KickerIO kickerIO;
   private final KickerIOInputsAutoLogged inputs = new KickerIOInputsAutoLogged();
 
@@ -55,9 +57,18 @@ public class Kicker {
     System.out.println("[Init Kicker] Kicker IO: " + this.kickerIO.getClass().getSimpleName());
   }
 
+  @Override
   public void periodic() {
     kickerIO.updateInputs(inputs);
     Logger.processInputs("Kicker", inputs);
     goal.runGoal(kickerIO);
+  }
+
+  public Command setGoalCommand(Goal goal) {
+    return startEnd(
+        () -> this.goal = goal,
+        () -> this.goal = Goal.IDLE
+    )
+    .withName("Kicker " + goal.name());
   }
 }

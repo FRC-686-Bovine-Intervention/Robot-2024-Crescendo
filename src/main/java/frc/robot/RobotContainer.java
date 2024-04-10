@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -35,7 +34,6 @@ import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
-import frc.robot.auto.SneakySource3Note;
 import frc.robot.auto.Source4Note;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
@@ -209,29 +207,20 @@ public class RobotContainer {
             drive.translationSubsystem.fieldRelative(joystickTranslational).withName("Driver Control Field Relative")
         );
 
-        rollers.setDefaultCommand(rollers.setGoalCommand(Rollers.Goal.ANTI_DEADZONE));
+        rollers.intake.setDefaultCommand(rollers.setIntakeGoalCommand(Intake.Goal.ANTI_DEADZONE));
+        rollers.kicker.setDefaultCommand(rollers.setKickerGoalCommand(Kicker.Goal.ANTI_DEADZONE));
 
         new Trigger(rollers::noNote)
-        .onTrue(rollers.getDefaultCommand());
+        .onTrue(rollers.setGoalCommand(Rollers.Goal.ANTI_DEADZONE));
 
         new Trigger(rollers::noteInIntake)
         .and(DriverStation::isEnabled)
         .whileTrue(rollers.setGoalCommand(Rollers.Goal.FEED));
 
         new Trigger(rollers::noteInKicker)
+        .and(() -> rollers.kicker.getGoal() != Kicker.Goal.KICK)
         .onTrue(
-            Commands.select(
-                Map.of(
-                    Rollers.Goal.FEED, rollers.setGoalCommand(Rollers.Goal.IDLE).asProxy(),
-                    Rollers.Goal.IDLE, rollers.setGoalCommand(Rollers.Goal.IDLE).asProxy(),
-                    Rollers.Goal.ANTI_DEADZONE, rollers.setGoalCommand(Rollers.Goal.IDLE).asProxy(),
-                    Rollers.Goal.INTAKE, rollers.setGoalCommand(Rollers.Goal.IDLE).asProxy(),
-                    Rollers.Goal.KICK, rollers.setGoalCommand(Rollers.Goal.KICK).asProxy(),
-                    Rollers.Goal.IN_N_OUT, rollers.setGoalCommand(Rollers.Goal.KICK).asProxy(),
-                    Rollers.Goal.EJECT, rollers.setGoalCommand(Rollers.Goal.EJECT).asProxy()
-                ),
-                () -> rollers.goal
-            )
+            rollers.setGoalCommand(Rollers.Goal.IDLE)
         );
 
         shooter.setDefaultCommand(shooter.setGoalCommand(Shooter.Goal.IDLE));
@@ -293,7 +282,7 @@ public class RobotContainer {
         // driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake
-        driveController.a().and(rollers::noNote).whileTrue(rollers.setIntakeGoalCommand(Intake.Goal.INTAKE));
+        driveController.a().and(() -> !rollers.noteInKicker()).whileTrue(rollers.setIntakeGoalCommand(Intake.Goal.INTAKE));
         driveController.b()
             .and(() -> Math.abs(drive.getRobotRelativeSpeeds().vxMetersPerSecond) >= 0.25)
             .whileTrue(
@@ -456,8 +445,6 @@ public class RobotContainer {
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new Source4Note(this));
-        autoSelector.addRoutine(new SneakySource3Note(this));
-        // autoSelector.addRoutine(new Disruptor(this));
     }
 
     private void configureSystemCheck() {
@@ -466,8 +453,8 @@ public class RobotContainer {
         SmartDashboard.putData("System Check/Climber/Wind Down", climber.getDefaultCommand());
         SmartDashboard.putData("System Check/Climber/Deploy", climber.deploy());
         SmartDashboard.putData("System Check/Climber/Retract", climber.retract());
-        SmartDashboard.putData("System Check/Rollers/Intake", rollers.setGoalCommand(Rollers.Goal.INTAKE));
-        SmartDashboard.putData("System Check/Rollers/Kick", rollers.setGoalCommand(Rollers.Goal.KICK));
+        SmartDashboard.putData("System Check/Intake/Intake", rollers.setIntakeGoalCommand(Intake.Goal.INTAKE));
+        SmartDashboard.putData("System Check/Kicker/Kick", rollers.setKickerGoalCommand(Kicker.Goal.KICK));
         SmartDashboard.putData("System Check/Shooter/Amp", shooter.setGoalCommand(Shooter.Goal.AMP));
         SmartDashboard.putData("System Check/Drive/Spin", 
             new Command() {

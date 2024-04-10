@@ -134,7 +134,7 @@ public class AutoCommons {
 
             return shooterReady && pivotReady && poseReady && speedReady;
         };
-        return rollers.setKickerGoalCommand(Kicker.Goal.KICK).onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::noNote);
+        return rollers.setKickerGoalCommand(Kicker.Goal.KICK).onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::kickerFallingEdge);
     }
 
     private static Translation2d getFORR(Translation2d pos) {
@@ -166,6 +166,17 @@ public class AutoCommons {
 
     public static boolean isStagePath(PathPlannerPath path) {
         return AutoPaths.stagePaths.contains(path);
+    }
+
+    public static Command preload(Translation2d startPos, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
+        var shotPos = AllianceFlipUtil.apply(startPos);
+        return 
+            AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
+            .deadlineWith(
+                AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem)
+            )
+            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
+        ;
     }
 
     public static Command spikeNote(PathPlannerPath toSpike, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
