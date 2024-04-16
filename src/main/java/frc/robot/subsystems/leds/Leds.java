@@ -1,7 +1,9 @@
 package frc.robot.subsystems.leds;
 
 import java.util.Optional;
+import java.util.function.DoubleFunction;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
@@ -13,8 +15,10 @@ import frc.robot.Constants;
 import frc.robot.GameState;
 import frc.robot.RobotType;
 import frc.robot.RobotType.Mode;
+import frc.robot.subsystems.climber.Climber;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.led.functions.Gradient.InterpolationStyle;
+import frc.robot.util.led.functions.Gradient;
 import frc.robot.util.led.functions.TilingFunction;
 import frc.robot.util.led.strips.LEDStrip;
 import frc.robot.util.led.strips.hardware.AddressableStrip;
@@ -169,6 +173,34 @@ public class Leds extends VirtualSubsystem {
 
         if(visionLocked.get() && DriverStation.isAutonomousEnabled()) {
             sideStripTips.apply(Color.kPurple);
+        }
+
+        if(climbingMode.get()) {
+            fullSideStrips.apply(
+                InterpolationStyle.Linear.gradient(Color.kBlack, Color.kCyan)
+                .apply(
+                    TilingFunction.Sinusoidal.tile(
+                        Timer.getFPGATimestamp()*2
+                    )
+                )
+            );
+        }
+
+        if(climbing.get()) {
+            if(climberPos >= MathUtil.interpolate(Climber.POS_ZERO, Climber.POS_DEPLOY, 0.1)) {
+                DoubleFunction<Color> bar = (pos) -> {
+                    var barPos = 1 - (climberPos / Climber.POS_DEPLOY);
+                    return (pos <= barPos ? Color.kCyan : Color.kBlack);
+                };
+                sideStrips.apply(bar);
+                backMirroredStrip.apply(bar);
+            } else {
+                fullSideStrips.apply((pos) -> 
+                    Gradient.rainbow.apply(
+                        pos - Timer.getFPGATimestamp()
+                    )
+                );
+            }
         }
 
         if(defenseSpin.get()) {
