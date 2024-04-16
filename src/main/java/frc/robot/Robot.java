@@ -18,15 +18,19 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.subsystems.leds.Leds;
+import frc.robot.util.EdgeDetector;
 import frc.robot.util.VirtualSubsystem;
 
 public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
+  private final EdgeDetector autoScheduledDetector = new EdgeDetector(() -> m_autonomousCommand != null && m_autonomousCommand.isScheduled());
 
   private RobotContainer robotContainer;
 
   @Override
   public void robotInit() {
+    Leds.getInstance();
     System.out.println("[Init Robot] Recording AdvantageKit Metadata");
     Logger.recordMetadata("Robot", RobotType.getRobot().name());
     Logger.recordMetadata("Mode", RobotType.getMode().name());
@@ -113,6 +117,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
+    GameState.getInstance().periodic();
     VirtualSubsystem.periodicAll();
     CommandScheduler.getInstance().run();
     robotContainer.robotPeriodic();
@@ -133,11 +138,18 @@ public class Robot extends LoggedRobot {
 
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
+      autoScheduledDetector.reset();
+      GameState.Timestamp.AUTONOMOUS_COMMAND_FINISH.clear();
     }
   }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    autoScheduledDetector.update();
+    if(autoScheduledDetector.fallingEdge()) {
+      GameState.Timestamp.AUTONOMOUS_COMMAND_FINISH.set();
+    }
+  }
 
   @Override
   public void autonomousExit() {}

@@ -29,6 +29,7 @@ import frc.robot.Constants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.VirtualSubsystem;
@@ -54,7 +55,7 @@ public class NoteVision extends VirtualSubsystem {
     private Optional<TrackedNote> optIntakeTarget = Optional.empty();
     private boolean intakeTargetLocked = false;
 
-    public NoteVision(NoteVisionIO noteVisionIO, LEDStrip connectedStrip) {
+    public NoteVision(NoteVisionIO noteVisionIO) {
         System.out.println("[Init NoteVision] Instantiating NoteVision");
         this.noteVisionIO = noteVisionIO;
         System.out.println("[Init NoteVision] NoteVision IO: " + this.noteVisionIO.getClass().getSimpleName());
@@ -71,8 +72,6 @@ public class NoteVision extends VirtualSubsystem {
         //     // optIntakeTarget.ifPresent((target) -> noteMemories.remove(target));
         //     optIntakeTarget = Optional.empty();
         // }});
-        
-        new Trigger(DriverStation::isDisabled).debounce(1).whileTrue(new FillAnimation(2, () -> (inputs.connected ? Color.kGreen : Color.kOrange), connectedStrip));
     }
 
     @Override
@@ -121,6 +120,9 @@ public class NoteVision extends VirtualSubsystem {
         if(optIntakeTarget.isEmpty() || !intakeTargetLocked) {
             optIntakeTarget = noteMemories.stream().filter((target) -> target.getPriority() >= acquireConfidenceThreshold.get()).sorted((a,b) -> (int)Math.signum(b.getPriority() - a.getPriority())).findFirst();
         }
+        
+        Leds.getInstance().visionAcquired.set(hasTarget());
+        Leds.getInstance().visionLocked.set(targetLocked());
         
         // Logger.recordOutput("Vision/Note/Photon Frame Targets", frameTargets.stream().map(NoteVision::targetToPose).toArray(Pose3d[]::new));
         Logger.recordOutput("Vision/Note/Note Memories", noteMemories.stream().map(TrackedNote::toASPose).toArray(Pose3d[]::new));

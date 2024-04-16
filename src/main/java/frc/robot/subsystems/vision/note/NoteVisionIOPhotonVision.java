@@ -12,8 +12,8 @@ import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.RobotState;
 import frc.robot.subsystems.vision.note.NoteVision.TrackedNote;
 import frc.robot.util.Alert;
-import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.Alert.AlertType;
+import frc.robot.util.LoggedTunableNumber;
 
 public class NoteVisionIOPhotonVision implements NoteVisionIO {
     private final PhotonCamera cam;
@@ -33,6 +33,7 @@ public class NoteVisionIOPhotonVision implements NoteVisionIO {
     public void updateInputs(NoteVisionIOInputs inputs) {
         inputs.connected = cam.isConnected();
         notConnectedAlert.set(!inputs.connected);
+        camMeta.connectedConsumer.accept(inputs.connected);
         inputs.trackedNotes = new TrackedNote[0];
         if(!inputs.connected) return;
         inputs.trackedNotes = 

@@ -89,7 +89,6 @@ public class RobotContainer {
     public final NoteVision noteVision;
     public final ApriltagVision apriltagVision;
     public final ManualOverrides manualOverrides;
-    public final Leds leds;
 
     private final AutoSelector autoSelector = new AutoSelector("AutoSelector");
 
@@ -105,7 +104,6 @@ public class RobotContainer {
 
     public RobotContainer() {
         System.out.println("[Init RobotContainer] Creating " + RobotType.getMode().name() + " " + RobotType.getRobot().name());
-        leds = new Leds();
         switch(RobotType.getMode()) {
             case REAL:
                 drive = new Drive(
@@ -124,8 +122,8 @@ public class RobotContainer {
                 climber = new Climber(new ClimberIOFalcon());
                 pivot = new Pivot(new PivotIOFalcon(), buttonBoard.povUp(), buttonBoard.povDown());
                 // pivot = new Pivot(new PivotIOFalcon(), ()->false,()->false);
-                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision), leds.getNoteVisionStrip());
-                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new, leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new, leds.getRightApriltagStrip()));
+                noteVision = new NoteVision(new NoteVisionIOPhotonVision(Camera.NoteVision));
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new), Camera.RightApriltag.toApriltagCamera(ApriltagCameraIOPhotonVision::new));
             break;
             case SIM:
                 drive = new Drive(
@@ -146,8 +144,8 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIOSim(), ()->false,()->false);
                 shooter = new Shooter(new ShooterIOSim());
                 climber = new Climber(new ClimberIO() {});
-                noteVision = new NoteVision(new NoteVisionIO() {},leds.getNoteVisionStrip());
-                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(leds.getRightApriltagStrip()));
+                noteVision = new NoteVision(new NoteVisionIO() {});
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
             default:
             case REPLAY:
@@ -166,8 +164,8 @@ public class RobotContainer {
                 pivot = new Pivot(new PivotIO() {}, ()->false,()->false);
                 shooter = new Shooter(new ShooterIO() {});
                 climber = new Climber(new ClimberIO() {});
-                noteVision = new NoteVision(new NoteVisionIO() {},leds.getNoteVisionStrip());
-                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(leds.getLeftApriltagStrip()), Camera.RightApriltag.toApriltagCamera(leds.getRightApriltagStrip()));
+                noteVision = new NoteVision(new NoteVisionIO() {});
+                apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
         }
         manualOverrides = new ManualOverrides(pivot::setCoast);
@@ -398,35 +396,12 @@ public class RobotContainer {
     private void configureNotifications() {
         // Intake Notification
         new Trigger(rollers::noteInIntake)
-        .onTrue(leds.noteAcquired())
+        .onTrue(Leds.getInstance().noteAcquired.setCommand().withTimeout(1))
         .and(DriverStation::isTeleopEnabled)
         .whileTrue(driveController.rumble(RumbleType.kBothRumble, 0.4));
         
-        // Kicker Notification
-        new Trigger(rollers::noteInKicker).whileTrue(leds.noteSecured());
-        
-        // Note Vision Notification
-        new Trigger(noteVision::hasTarget).whileTrue(leds.visionAcquired());
-        new Trigger(noteVision::targetLocked).whileTrue(leds.visionLocked());
-        
-        // Shooter Notification
-        new Trigger(() -> shooter.getCurrentCommand() != null).whileTrue(
-            leds.shooterBarGraph(
-                shooter::getAverageSurfaceSpeed,
-                shooter::getTargetSpeed,
-                shooter::readyToShoot
-            )
-        );
-
-        // Climber Notification
-        new Trigger(() -> Optional.ofNullable(climber.getCurrentCommand()).map((c) -> c.getName().contains("Deploy")).orElse(false)).whileTrue(leds.climbingModeActivated());
-        new Trigger(() -> Optional.ofNullable(climber.getCurrentCommand()).map((c) -> c.getName().contains("Retract")).orElse(false)).whileTrue(leds.climbing(climber::getClimberPos));
-
-        // Defense Notification
-        new Trigger(() -> Optional.ofNullable(drive.rotationalSubsystem.getCurrentCommand()).map((c) -> c.getName().contains("Defense")).orElse(false)).whileTrue(leds.defenseSpinActivated());
-
         // Human Player Notification
-        driveController.leftStickButton().onTrue(leds.humanPlayerFlash());
+        driveController.leftStickButton().onTrue(Leds.getInstance().humanPlayerFlash.setCommand().withTimeout(1));
     }
 
     private void configureAutos() {

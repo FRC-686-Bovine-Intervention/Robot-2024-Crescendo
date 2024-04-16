@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.NoteVisualizer;
+import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.rollers.intake.Intake;
 import frc.robot.subsystems.rollers.kicker.Kicker;
 import frc.robot.util.EdgeDetector;
@@ -138,6 +139,7 @@ public class Rollers extends VirtualSubsystem {
         NoteVisualizer.internalNote = gamePiece;
         intake.periodic();
         kicker.periodic();
+        Leds.getInstance().noteSecured.set(noteInKicker());
     }
 
     public Command setGoalCommand(Goal goal) {

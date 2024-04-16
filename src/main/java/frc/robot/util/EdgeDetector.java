@@ -14,6 +14,11 @@ public class EdgeDetector {
     private boolean risingEdge;
     private boolean fallingEdge;
 
+    public void reset() {
+        prevVal = source.getAsBoolean();
+        update();
+    }
+
     public void update() {
         val = source.getAsBoolean();
         risingEdge = val && !prevVal;
