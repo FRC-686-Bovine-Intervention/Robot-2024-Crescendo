@@ -32,12 +32,42 @@ public class GameState {
             return Arrays.stream(values()).filter((m) -> m.isMode.getAsBoolean()).findAny();
         }
     }
+
+    public final Timestamp BEGIN_ENABLE = new Timestamp();
+    public final Timestamp LAST_ENABLE = new Timestamp();
+    public final Timestamp AUTONOMOUS_COMMAND_FINISH = new Timestamp();
     
-    public static enum Timestamp {
-        BEGIN_ENABLE,
-        LAST_ENABLE,
-        AUTONOMOUS_COMMAND_FINISH,
-        ;
+    public final EdgeDetector enabled = new EdgeDetector(DriverStation::isEnabled);
+    public Optional<EnabledMode> currentEnabledMode = Optional.empty();
+    public EnabledMode lastEnabledMode = EnabledMode.TELEOP;
+
+    public void periodic() {
+        currentEnabledMode = EnabledMode.getSelectedMode().filter((m) -> DriverStation.isEnabled());
+        currentEnabledMode.ifPresent((m) -> lastEnabledMode = m);
+        enabled.update();
+
+        if(enabled.risingEdge()) {
+            BEGIN_ENABLE.set();
+        }
+        if(enabled.fallingEdge()) {
+            LAST_ENABLE.set();
+        }
+
+        BEGIN_ENABLE.timestamp.ifPresent((timestamp) -> 
+            Logger.recordOutput("GameState/Timestamps/Begin Enable", timestamp)
+        );
+        LAST_ENABLE.timestamp.ifPresent((timestamp) -> 
+            Logger.recordOutput("GameState/Timestamps/Last Enable", timestamp)
+        );
+        AUTONOMOUS_COMMAND_FINISH.timestamp.ifPresent((timestamp) -> 
+            Logger.recordOutput("GameState/Timestamps/Autonomous Command Finish", timestamp)
+        );
+        
+        Logger.recordOutput("GameState/Current Enabled", currentEnabledMode.map(Enum::name).orElse("DISABLED"));
+        Logger.recordOutput("GameState/Last Enabled", lastEnabledMode);
+    }
+
+    public static class Timestamp {
         public OptionalDouble timestamp = OptionalDouble.empty();
         public double getTimeSince() {
             return getTimeSince(Timer.getFPGATimestamp());
@@ -61,35 +91,5 @@ public class GameState {
         public boolean isSet() {
             return timestamp.isPresent();
         }
-    }
-
-    public final EdgeDetector enabled = new EdgeDetector(DriverStation::isEnabled);
-    public Optional<EnabledMode> currentEnabledMode = Optional.empty();
-    public EnabledMode lastEnabledMode = EnabledMode.TELEOP;
-
-    public void periodic() {
-        currentEnabledMode = EnabledMode.getSelectedMode().filter((m) -> DriverStation.isEnabled());
-        currentEnabledMode.ifPresent((m) -> lastEnabledMode = m);
-        enabled.update();
-
-        if(enabled.risingEdge()) {
-            Timestamp.BEGIN_ENABLE.set();
-        }
-        if(enabled.fallingEdge()) {
-            Timestamp.LAST_ENABLE.set();
-        }
-
-        Timestamp.BEGIN_ENABLE.timestamp.ifPresent((timestamp) -> 
-            Logger.recordOutput("GameState/Timestamps/Begin Enable", timestamp)
-        );
-        Timestamp.LAST_ENABLE.timestamp.ifPresent((timestamp) -> 
-            Logger.recordOutput("GameState/Timestamps/Last Enable", timestamp)
-        );
-        Timestamp.AUTONOMOUS_COMMAND_FINISH.timestamp.ifPresent((timestamp) -> 
-            Logger.recordOutput("GameState/Timestamps/Autonomous Command Finish", timestamp)
-        );
-        
-        Logger.recordOutput("GameState/Current Enabled", currentEnabledMode.map(Enum::name).orElse("DISABLED"));
-        Logger.recordOutput("GameState/Last Enabled", lastEnabledMode);
     }
 }

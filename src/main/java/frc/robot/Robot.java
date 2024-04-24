@@ -139,7 +139,7 @@ public class Robot extends LoggedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
       autoScheduledDetector.reset();
-      GameState.Timestamp.AUTONOMOUS_COMMAND_FINISH.clear();
+      GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.clear();
     }
   }
 
@@ -147,7 +147,7 @@ public class Robot extends LoggedRobot {
   public void autonomousPeriodic() {
     autoScheduledDetector.update();
     if(autoScheduledDetector.fallingEdge()) {
-      GameState.Timestamp.AUTONOMOUS_COMMAND_FINISH.set();
+      GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.set();
     }
   }
 

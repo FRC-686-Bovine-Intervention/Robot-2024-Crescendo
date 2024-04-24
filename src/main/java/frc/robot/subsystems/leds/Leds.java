@@ -242,7 +242,9 @@ public class Leds extends VirtualSubsystem {
             );
         }
 
-        Logger.recordOutput("Autonomous overrun", autonomousOverrun.get());
+        Logger.recordOutput("DEBUG/Autonomous overrun", autonomousOverrun.get());
+        Logger.recordOutput("DEBUG/Autonomous set", GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.isSet());
+        Logger.recordOutput("DEBUG/Autonomous finish", GameState.getInstance().lastEnabledMode.isAutonomous() && GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.isSet());
         if(autonomousOverrun.get()) {
             if(!DriverStation.isFMSAttached()) {
                 hardwareStrip.apply(
@@ -252,15 +254,19 @@ public class Leds extends VirtualSubsystem {
                     )
                     .apply(
                         TilingFunction.Modulo.tile(
-                            GameState.Timestamp.LAST_ENABLE.getTimeSince()
+                            GameState.getInstance().LAST_ENABLE.getTimeSince()
                         )
                     )
                 );
             }
-        } else if(GameState.getInstance().lastEnabledMode.isAutonomous() && GameState.Timestamp.AUTONOMOUS_COMMAND_FINISH.isSet()) {
+        } else if(
+            GameState.getInstance().lastEnabledMode.isAutonomous() && 
+            GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.isSet() && 
+            !GameState.getInstance().BEGIN_ENABLE.hasBeenSince(15.3)
+        ) {
             sideStrips.apply((pos) -> {
-                var timeLeft = 15.3-(GameState.Timestamp.AUTONOMOUS_COMMAND_FINISH.getTimeSince() - GameState.Timestamp.BEGIN_ENABLE.getTimeSince());
-                var a = GameState.Timestamp.AUTONOMOUS_COMMAND_FINISH.getTimeSince() / timeLeft;
+                var timeLeft = 15.3-(GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.getTimeSince() - GameState.getInstance().BEGIN_ENABLE.getTimeSince());
+                var a = GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.getTimeSince() / timeLeft;
                 var barPos = 1-a;
                 return (pos <= barPos ? Color.kGreen : Color.kBlack);
             });
