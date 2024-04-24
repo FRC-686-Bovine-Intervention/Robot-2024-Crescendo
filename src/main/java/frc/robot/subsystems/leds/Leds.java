@@ -3,6 +3,8 @@ package frc.robot.subsystems.leds;
 import java.util.Optional;
 import java.util.function.DoubleFunction;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -98,7 +100,11 @@ public class Leds extends VirtualSubsystem {
                         Color.kBlack,
                         Color.kDimGray
                     )
-                    .apply(System.currentTimeMillis() / 1000.0)
+                    .apply(
+                        TilingFunction.Sinusoidal.tile(
+                            System.currentTimeMillis() / 1000.0
+                        )
+                    )
                 );
                 hardwareStrip.refresh();
             }
@@ -197,7 +203,7 @@ public class Leds extends VirtualSubsystem {
             } else {
                 fullSideStrips.apply((pos) -> 
                     Gradient.rainbow.apply(
-                        pos - Timer.getFPGATimestamp()
+                        pos*2 - Timer.getFPGATimestamp()/2
                     )
                 );
             }
@@ -236,6 +242,7 @@ public class Leds extends VirtualSubsystem {
             );
         }
 
+        Logger.recordOutput("Autonomous overrun", autonomousOverrun.get());
         if(autonomousOverrun.get()) {
             if(!DriverStation.isFMSAttached()) {
                 hardwareStrip.apply(
@@ -259,7 +266,7 @@ public class Leds extends VirtualSubsystem {
             });
         }
 
-        if(estopped.get()) {
+        if(estopped.get() || DriverStation.isEStopped()) {
             hardwareStrip.apply(Color.kRed);
         }
 

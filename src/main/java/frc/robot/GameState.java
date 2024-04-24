@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.function.BooleanSupplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.EdgeDetector;
@@ -36,7 +38,7 @@ public class GameState {
         LAST_ENABLE,
         AUTONOMOUS_COMMAND_FINISH,
         ;
-        public OptionalDouble timestamp;
+        public OptionalDouble timestamp = OptionalDouble.empty();
         public double getTimeSince() {
             return getTimeSince(Timer.getFPGATimestamp());
         }
@@ -76,5 +78,18 @@ public class GameState {
         if(enabled.fallingEdge()) {
             Timestamp.LAST_ENABLE.set();
         }
+
+        Timestamp.BEGIN_ENABLE.timestamp.ifPresent((timestamp) -> 
+            Logger.recordOutput("GameState/Timestamps/Begin Enable", timestamp)
+        );
+        Timestamp.LAST_ENABLE.timestamp.ifPresent((timestamp) -> 
+            Logger.recordOutput("GameState/Timestamps/Last Enable", timestamp)
+        );
+        Timestamp.AUTONOMOUS_COMMAND_FINISH.timestamp.ifPresent((timestamp) -> 
+            Logger.recordOutput("GameState/Timestamps/Autonomous Command Finish", timestamp)
+        );
+        
+        Logger.recordOutput("GameState/Current Enabled", currentEnabledMode.map(Enum::name).orElse("DISABLED"));
+        Logger.recordOutput("GameState/Last Enabled", lastEnabledMode);
     }
 }
