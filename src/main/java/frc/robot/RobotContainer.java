@@ -227,6 +227,7 @@ public class RobotContainer {
     }
 
     private void configureControls() {
+        DriverStation.silenceJoystickConnectionWarning(true);
         // Rotation
         new Trigger(() -> driveController.rightStick.magnitude() > 0.85 && drive.rotationalSubsystem.getCurrentCommand() == null).onTrue(
             Commands.either(

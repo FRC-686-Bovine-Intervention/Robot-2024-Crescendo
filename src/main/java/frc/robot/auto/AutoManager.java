@@ -35,13 +35,13 @@ public class AutoManager extends VirtualSubsystem {
                         GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.set();
                         var autoTime = GameState.getInstance().BEGIN_ENABLE.getTimeSince();
                         if(autoTime > AutoConstants.allottedAutoTime) {
-                            System.out.println(String.format("[AutoManager] Autonomous overran the allotted %3d seconds!", AutoConstants.allottedAutoTime));
+                            System.out.println(String.format("[AutoManager] Autonomous overran the allotted %.1f seconds!", AutoConstants.allottedAutoTime));
                             Leds.getInstance().autonomousOverrun.setCommand().withTimeout(1.5).schedule();
                         }
                         if(interrupted) {
-                            System.out.println(String.format("[AutoManager] Autonomous interrupted after %3d seconds", autoTime));
+                            System.out.println(String.format("[AutoManager] Autonomous interrupted after %.2f seconds", autoTime));
                         } else {
-                            System.out.println(String.format("[AutoManager] Autonomous finished in %3d seconds", autoTime));
+                            System.out.println(String.format("[AutoManager] Autonomous finished in %.2f seconds", autoTime));
                         }
                     }
                 )
