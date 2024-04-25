@@ -454,6 +454,8 @@ public final class Constants {
     }
 
     public static final class AutoConstants {
+        public static final double allottedAutoTime = 15.3;
+
         public static final double maxVel = 3;
         public static final double maxAccel = 3;
 

@@ -1,0 +1,52 @@
+package frc.robot.auto;
+
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.AutoConstants;
+import frc.robot.GameState;
+import frc.robot.subsystems.leds.Leds;
+import frc.robot.util.EdgeDetector;
+import frc.robot.util.VirtualSubsystem;
+
+public class AutoManager extends VirtualSubsystem {
+    private final AutoSelector selector;
+
+    private Command autonomousCommand;
+    private final EdgeDetector autoEnabled = new EdgeDetector(DriverStation::isAutonomousEnabled);
+    private final EdgeDetector autoScheduled = new EdgeDetector(() -> autonomousCommand != null && autonomousCommand.isScheduled());
+
+    public AutoManager(AutoSelector selector) {
+        this.selector = selector;
+    }
+
+    @Override
+    public void periodic() {
+        autoEnabled.update();
+        autoScheduled.update();
+        if(autoEnabled.risingEdge()) {
+            autonomousCommand = selector.getSelectedAutoCommand();
+            if(autonomousCommand != null) {
+                autonomousCommand.asProxy()
+                .beforeStarting(
+                    () -> GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.clear()
+                )
+                .finallyDo(
+                    (interrupted) -> {
+                        GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.set();
+                        var autoTime = GameState.getInstance().BEGIN_ENABLE.getTimeSince();
+                        if(autoTime > AutoConstants.allottedAutoTime) {
+                            System.out.println(String.format("[AutoManager] Autonomous overran the allotted %3d seconds!", AutoConstants.allottedAutoTime));
+                            Leds.getInstance().autonomousOverrun.setCommand().withTimeout(1.5).schedule();
+                        }
+                        if(interrupted) {
+                            System.out.println(String.format("[AutoManager] Autonomous interrupted after %3d seconds", autoTime));
+                        } else {
+                            System.out.println(String.format("[AutoManager] Autonomous finished in %3d seconds", autoTime));
+                        }
+                    }
+                )
+                .schedule();
+            }
+        }
+    }
+}

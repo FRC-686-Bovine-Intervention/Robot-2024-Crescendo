@@ -216,6 +216,7 @@ public class RobotContainer {
         .whileTrue(rollers.setGoalCommand(Rollers.Goal.FEED));
 
         new Trigger(rollers::noteInKicker)
+        .and(DriverStation::isEnabled)
         .and(() -> rollers.kicker.getGoal() != Kicker.Goal.KICK)
         .onTrue(
             rollers.setGoalCommand(Rollers.Goal.IDLE)

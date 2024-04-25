@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants;
 import frc.robot.GameState;
 import frc.robot.RobotType;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.RobotType.Mode;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.util.VirtualSubsystem;
@@ -242,9 +243,6 @@ public class Leds extends VirtualSubsystem {
             );
         }
 
-        Logger.recordOutput("DEBUG/Autonomous overrun", autonomousOverrun.get());
-        Logger.recordOutput("DEBUG/Autonomous set", GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.isSet());
-        Logger.recordOutput("DEBUG/Autonomous finish", GameState.getInstance().lastEnabledMode.isAutonomous() && GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.isSet());
         if(autonomousOverrun.get()) {
             if(!DriverStation.isFMSAttached()) {
                 hardwareStrip.apply(
@@ -265,7 +263,7 @@ public class Leds extends VirtualSubsystem {
             !GameState.getInstance().BEGIN_ENABLE.hasBeenSince(15.3)
         ) {
             sideStrips.apply((pos) -> {
-                var timeLeft = 15.3-(GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.getTimeSince() - GameState.getInstance().BEGIN_ENABLE.getTimeSince());
+                var timeLeft = AutoConstants.allottedAutoTime - (GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.getTimeSince() - GameState.getInstance().BEGIN_ENABLE.getTimeSince());
                 var a = GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.getTimeSince() / timeLeft;
                 var barPos = 1-a;
                 return (pos <= barPos ? Color.kGreen : Color.kBlack);
