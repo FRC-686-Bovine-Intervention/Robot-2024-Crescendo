@@ -48,5 +48,8 @@ public class AutoManager extends VirtualSubsystem {
                 .schedule();
             }
         }
+        if(autoEnabled.fallingEdge() && autonomousCommand != null) {
+            autonomousCommand.cancel();
+        }
     }
 }

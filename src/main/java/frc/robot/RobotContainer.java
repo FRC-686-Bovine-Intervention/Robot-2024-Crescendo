@@ -31,6 +31,7 @@ import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
 import frc.robot.RobotState.AimingParameters;
 import frc.robot.auto.AutoCommons.AutoPaths;
+import frc.robot.auto.AutoManager;
 import frc.robot.auto.AutoSelector;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
@@ -89,10 +90,6 @@ public class RobotContainer {
     public final NoteVision noteVision;
     public final ApriltagVision apriltagVision;
     public final ManualOverrides manualOverrides;
-
-    private final AutoSelector autoSelector = new AutoSelector("AutoSelector");
-
-    // private final Mechanism2d robotSideProfile = new Mechanism2d(3, 2, new Color8Bit(Color.kBlack));
 
     // Controller
     private final XboxController driveController = new XboxController(0);
@@ -407,6 +404,7 @@ public class RobotContainer {
 
     private void configureAutos() {
         AutoPaths.preload();
+        var autoSelector = new AutoSelector("AutoSelector");
         // autoSelector.addRoutine(new AutoRoutine(
         //     "Drive Characterization",
         //     new ArrayList<>(0),
@@ -421,6 +419,8 @@ public class RobotContainer {
         autoSelector.addDefaultRoutine(new MASpikeWiggle(this));
         autoSelector.addRoutine(new Rush6Note(this));
         autoSelector.addRoutine(new Source4Note(this));
+
+        new AutoManager(autoSelector);
     }
 
     private void configureSystemCheck() {
@@ -478,15 +478,6 @@ public class RobotContainer {
                 }
             }
         );
-    }
-
-    /**
-     * Use this to pass the autonomous command to the main {@link Robot} class.
-     *
-     * @return the command to run in autonomous
-     */
-    public Command getAutonomousCommand() {
-        return autoSelector.getSelectedAutoCommand();
     }
 
     private final Alert xboxConnect = new Alert("Xbox Controller (Port 0) not connected", AlertType.ERROR);

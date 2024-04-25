@@ -19,13 +19,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.subsystems.leds.Leds;
-import frc.robot.util.EdgeDetector;
 import frc.robot.util.VirtualSubsystem;
 
 public class Robot extends LoggedRobot {
-  private Command m_autonomousCommand;
-  private final EdgeDetector autoScheduledDetector = new EdgeDetector(() -> m_autonomousCommand != null && m_autonomousCommand.isScheduled());
-
   private RobotContainer robotContainer;
 
   @Override
@@ -133,33 +129,16 @@ public class Robot extends LoggedRobot {
   public void disabledExit() {}
 
   @Override
-  public void autonomousInit() {
-    m_autonomousCommand = robotContainer.getAutonomousCommand();
-
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
-      autoScheduledDetector.reset();
-      GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.clear();
-    }
-  }
+  public void autonomousInit() {}
 
   @Override
-  public void autonomousPeriodic() {
-    autoScheduledDetector.update();
-    if(autoScheduledDetector.fallingEdge()) {
-      GameState.getInstance().AUTONOMOUS_COMMAND_FINISH.set();
-    }
-  }
+  public void autonomousPeriodic() {}
 
   @Override
   public void autonomousExit() {}
 
   @Override
-  public void teleopInit() {
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.cancel();
-    }
-  }
+  public void teleopInit() {}
 
   @Override
   public void teleopPeriodic() {}
