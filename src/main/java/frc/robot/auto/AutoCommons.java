@@ -24,9 +24,10 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.RobotState.AimingParameters;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
+import frc.robot.subsystems.rollers.Rollers;
+import frc.robot.subsystems.rollers.intake.Intake;
+import frc.robot.subsystems.rollers.kicker.Kicker;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.Alert;
@@ -119,15 +120,11 @@ public class AutoCommons {
         ));
     }
 
-    public static Command shootWhenReady(Translation2d pos, double angularTolerance, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
-        var FORR = getFORR(pos);
-        // var dist = FORR.getNorm();
-        var shootPos = new Pose2d(pos, new Rotation2d(FORR.getX(), FORR.getY()));
-        Logger.recordOutput("DEBUG/Shoot from pose", shootPos);
+    public static Command shootWhenReady(double angularTolerance, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
         BooleanSupplier condition = () -> {
             var shooterReady = shooter.readyToShoot();
             var pivotReady = pivot.readyToShoot();
-            var poseReady = MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
+            var poseReady = MathExtraUtil.isNear(RobotState.getInstance().aimingParameters.drivePose(), drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
             var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getRobotRelativeSpeeds(), 0.75, 1);
 
             Logger.recordOutput("DEBUG/Shooter Ready", shooterReady);
@@ -137,15 +134,7 @@ public class AutoCommons {
 
             return shooterReady && pivotReady && poseReady && speedReady;
         };
-        return kicker.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(kicker::sensorFallingEdge);
-        // return Commands.waitUntil(() -> 
-        //     // kicker.hasNote() && 
-        //     shooter.readyToShoot() && 
-        //     pivot.isAtAngle(ShooterConstants.distLerp(dist, ShooterConstants.angle)) && 
-        //     MathExtraUtil.isNear(shootPos, drive.getPose(), 0.75, Units.degreesToRadians(3)) && 
-        //     MathExtraUtil.isNear(new ChassisSpeeds(), drive.getChassisSpeeds(), 0.5, 0.2)
-        // )
-        // .andThen(kicker.kick().asProxy());
+        return rollers.setKickerGoalCommand(Kicker.Goal.KICK).onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::kickerFallingEdge);
     }
 
     private static Translation2d getFORR(Translation2d pos) {
@@ -179,12 +168,23 @@ public class AutoCommons {
         return AutoPaths.stagePaths.contains(path);
     }
 
-    public static Command spikeNote(PathPlannerPath toSpike, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake) {
+    public static Command preload(Translation2d startPos, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
+        var shotPos = AllianceFlipUtil.apply(startPos);
+        return 
+            AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
+            .deadlineWith(
+                AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem)
+            )
+            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
+        ;
+    }
+
+    public static Command spikeNote(PathPlannerPath toSpike, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
         var shotPos = getLastPoint(toSpike);
         return
-            AutoCommons.shootWhenReady(shotPos, 10, drive, shooter, pivot, kicker)
+            AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                intake.intake(drive::getRobotRelativeSpeeds),
+                rollers.setIntakeGoalCommand(Intake.Goal.INTAKE),
                 AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
             )
@@ -192,16 +192,16 @@ public class AutoCommons {
             .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
         ;
     }
-    public static Command spikeNote(PathPlannerPath toSpike, Rotation2d wiggleAngle, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake) {
+    public static Command spikeNote(PathPlannerPath toSpike, Rotation2d wiggleAngle, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
         var shotPos = getLastPoint(toSpike);
         return
-            AutoCommons.shootWhenReady(shotPos, 10, drive, shooter, pivot, kicker)
+            AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                intake.intake(drive::getRobotRelativeSpeeds),
+                rollers.setIntakeGoalCommand(Intake.Goal.INTAKE),
                 AutoCommons.autoAim(shotPos, shooter, pivot),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle)))
-                .until(intake::hasNote)
+                .onlyWhile(rollers::noNote)
                 .andThen(
                     AutoCommons.autoAim(shotPos, drive.rotationalSubsystem)
                 )
@@ -211,7 +211,7 @@ public class AutoCommons {
         ;
     }
 
-    public static Command centerNote(PathPlannerPath toCenterLine, PathPlannerPath defaultReturn, PathPlannerPath altReturn, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
+    public static Command centerNote(PathPlannerPath toCenterLine, PathPlannerPath defaultReturn, PathPlannerPath altReturn, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers, NoteVision noteVision) {
         var defaultShot = getLastPoint(defaultReturn);
         var altShot = getLastPoint(altReturn);
         var defaultStartPoint = getFirstPoint(defaultReturn);
@@ -225,13 +225,13 @@ public class AutoCommons {
                 AutoCommons.followPathFlipped(toCenterLine, drive)
                 .until(noteVision::hasTarget)
                 .andThen(
-                    intake.intake(drive::getRobotRelativeSpeeds)
+                    rollers.setIntakeGoalCommand(Intake.Goal.INTAKE)
                     .raceWith(
-                        noteVision.autoIntake(() -> 2, drive, intake)
+                        noteVision.autoIntake(() -> 2, rollers::noNote, drive)
                     )
                     .withTimeout(3)
                 )
-                .until(intake::hasNote)
+                .onlyWhile(rollers::noNote)
                 .deadlineWith(
                     isStagePath(toCenterLine) ? (
                         AutoCommons.autoAim(defaultShot, shooter)
@@ -241,28 +241,28 @@ public class AutoCommons {
                 )
                 .andThen(
                     Commands.either((
-                        AutoCommons.shootWhenReady(defaultShot, 3, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(3, drive, shooter, pivot, rollers)
                         .deadlineWith(
                             AutoCommons.autoAim(defaultShot, shooter),
-                            returnFromCenter(defaultReturn, drive, shooter, pivot, kicker)
+                            returnFromCenter(defaultReturn, drive, shooter, pivot)
                         )
                     ),(
-                        AutoCommons.shootWhenReady(altShot, 3, drive, shooter, pivot, kicker)
+                        AutoCommons.shootWhenReady(3, drive, shooter, pivot, rollers)
                         .deadlineWith(
                             AutoCommons.autoAim(altShot, shooter),
-                            returnFromCenter(altReturn, drive, shooter, pivot, kicker)
+                            returnFromCenter(altReturn, drive, shooter, pivot)
                         )
                         .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(altShot))
                     ),
                     isDefault
                 )
-                .onlyIf(intake::hasNote)
+                .onlyIf(() -> !rollers.noNote())
                 )
             )
         ;
     }
 
-    private static Command returnFromCenter(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot, Kicker kicker) {
+    private static Command returnFromCenter(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot) {
         var shotPos = getLastPoint(path);
         return
             AutoCommons.autoAim(shotPos, drive.rotationalSubsystem)

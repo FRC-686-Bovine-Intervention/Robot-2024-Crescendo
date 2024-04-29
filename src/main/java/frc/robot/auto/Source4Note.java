@@ -15,12 +15,10 @@ import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
+import frc.robot.subsystems.rollers.Rollers;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
-import frc.robot.util.AllianceFlipUtil;
 
 public class Source4Note extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
@@ -85,9 +83,6 @@ public class Source4Note extends AutoRoutine {
     );
 
     public Source4Note(RobotContainer robot) {
-        this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
-    }
-    public Source4Note(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
         super(
             "Source 4 Note",
             List.of(
@@ -99,19 +94,17 @@ public class Source4Note extends AutoRoutine {
                 thirdCenterNote
             )
         );
-        this.drive = drive;
-        this.shooter = shooter;
-        this.pivot = pivot;
-        this.kicker = kicker;
-        this.intake = intake;
-        this.noteVision = noteVision;
+        this.drive = robot.drive;
+        this.shooter = robot.shooter;
+        this.pivot = robot.pivot;
+        this.rollers = robot.rollers;
+        this.noteVision = robot.noteVision;
     }
 
     private final Drive drive;
     private final Shooter shooter;
     private final Pivot pivot;
-    private final Kicker kicker;
-    private final Intake intake;
+    private final Rollers rollers;
     private final NoteVision noteVision;
 
     @Override
@@ -126,12 +119,8 @@ public class Source4Note extends AutoRoutine {
         var commands = new ArrayList<Command>();
 
         if(noteCount.asInt >= 1 && !skipPreload.asBoolean) {
-            var preloadShot = AllianceFlipUtil.apply(startPosition.startPose.getTranslation());
             commands.add(
-                AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
-                .deadlineWith(
-                    AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
-                )
+                AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
             );
         }
 
@@ -141,7 +130,7 @@ public class Source4Note extends AutoRoutine {
                 if(noteCount.asInt >= 2) {
                     var startToSpike = AutoPaths.loadPath("Podium Start to Spike");
                     commands.add(
-                        AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, kicker, intake)
+                        AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, rollers)
                     );
                 }
 
@@ -154,9 +143,9 @@ public class Source4Note extends AutoRoutine {
                     var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
                     commands.add(
                         firstCenterNote.equals(CenterNote.Note3) ? (
-                            AutoCommons.centerNote(spikeToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, kicker, intake, noteVision)
+                            AutoCommons.centerNote(spikeToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, rollers, noteVision)
                         ) : (
-                            AutoCommons.centerNote(spikeToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                            AutoCommons.centerNote(spikeToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, rollers, noteVision)
                         )
                     );
                 }
@@ -171,11 +160,11 @@ public class Source4Note extends AutoRoutine {
                     BooleanSupplier isAmpWing = () -> drive.getPose().getTranslation().nearest(List.of(toAmpWingStartPoint, toSourceWingStartPoint)).equals(toAmpWingStartPoint);
                     commands.add(
                         Commands.either(
-                            AutoCommons.centerNote(ampWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, kicker, intake, noteVision), 
+                            AutoCommons.centerNote(ampWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, rollers, noteVision), 
                             secondCenterNote.equals(CenterNote.Note3) ? (
-                                AutoCommons.centerNote(sourceWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, kicker, intake, noteVision)
+                                AutoCommons.centerNote(sourceWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, rollers, noteVision)
                             ) : (
-                                AutoCommons.centerNote(sourceWingToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                                AutoCommons.centerNote(sourceWingToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, rollers, noteVision)
                             ), 
                             isAmpWing
                         )
@@ -189,9 +178,9 @@ public class Source4Note extends AutoRoutine {
                     var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
                     commands.add(
                         firstCenterNote.equals(CenterNote.Note3) ? (
-                            AutoCommons.centerNote(wingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, kicker, intake, noteVision)
+                            AutoCommons.centerNote(wingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, rollers, noteVision)
                         ) : (
-                            AutoCommons.centerNote(wingToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                            AutoCommons.centerNote(wingToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, rollers, noteVision)
                         )
                     );
                 }
@@ -206,11 +195,11 @@ public class Source4Note extends AutoRoutine {
                     BooleanSupplier isAmpWing = () -> drive.getPose().getTranslation().nearest(List.of(toAmpWingStartPoint, toSourceWingStartPoint)).equals(toAmpWingStartPoint);
                     commands.add(
                         Commands.either(
-                            AutoCommons.centerNote(ampWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, kicker, intake, noteVision), 
+                            AutoCommons.centerNote(ampWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, rollers, noteVision), 
                             secondCenterNote.equals(CenterNote.Note3) ? (
-                                AutoCommons.centerNote(sourceWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, kicker, intake, noteVision)
+                                AutoCommons.centerNote(sourceWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, rollers, noteVision)
                             ) : (
-                                AutoCommons.centerNote(sourceWingToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                                AutoCommons.centerNote(sourceWingToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, rollers, noteVision)
                             ), 
                             isAmpWing
                         )
@@ -227,11 +216,11 @@ public class Source4Note extends AutoRoutine {
                     BooleanSupplier isAmpWing = () -> drive.getPose().getTranslation().nearest(List.of(toAmpWingStartPoint, toSourceWingStartPoint)).equals(toAmpWingStartPoint);
                     commands.add(
                         Commands.either(
-                            AutoCommons.centerNote(ampWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, kicker, intake, noteVision), 
+                            AutoCommons.centerNote(ampWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, rollers, noteVision), 
                             thirdCenterNote.equals(CenterNote.Note3) ? (
-                                AutoCommons.centerNote(sourceWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, kicker, intake, noteVision)
+                                AutoCommons.centerNote(sourceWingToCenter, centerNote3ToAmpWing, centerNote5ToSourceWing, drive, shooter, pivot, rollers, noteVision)
                             ) : (
-                                AutoCommons.centerNote(sourceWingToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                                AutoCommons.centerNote(sourceWingToCenter, centerNote5ToSourceWing, centerNote3ToAmpWing, drive, shooter, pivot, rollers, noteVision)
                             ), 
                             isAmpWing
                         )
@@ -239,24 +228,6 @@ public class Source4Note extends AutoRoutine {
                 }
             break;
         }
-
-        // if(noteCount.asInt >= 3) {
-        //     var spikeToCenter = AutoPaths.loadPath("R6N Amp Spike to Center " + firstCenterNote.name());
-        //     var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
-        //     var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
-        //     commands.add(
-        //         AutoCommons.centerNote(spikeToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
-        //     );
-        // }
-
-        // if(noteCount.asInt >= 4) {
-        //     var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center " + secondCenterNote.name());
-        //     var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
-        //     var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
-        //     commands.add(
-        //         AutoCommons.centerNote(wingToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
-        //     );
-        // }
         
         return AutoCommons.setOdometryFlipped(startPosition.startPose, drive).andThen(commands.toArray(Command[]::new));
     }

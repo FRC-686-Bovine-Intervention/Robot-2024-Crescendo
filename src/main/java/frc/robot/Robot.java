@@ -18,15 +18,15 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.VirtualSubsystem;
 
 public class Robot extends LoggedRobot {
-  private Command m_autonomousCommand;
-
   private RobotContainer robotContainer;
 
   @Override
   public void robotInit() {
+    Leds.getInstance();
     System.out.println("[Init Robot] Recording AdvantageKit Metadata");
     Logger.recordMetadata("Robot", RobotType.getRobot().name());
     Logger.recordMetadata("Mode", RobotType.getMode().name());
@@ -35,17 +35,13 @@ public class Robot extends LoggedRobot {
     Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
     Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
     Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
-    switch (BuildConstants.DIRTY) {
-      case 0:
-        Logger.recordMetadata("GitDirty", "All changes committed");
-      break;
-      case 1:
-        Logger.recordMetadata("GitDirty", "Uncomitted changes");
-      break;
-      default:
-        Logger.recordMetadata("GitDirty", "Unknown");
-      break;
-    }
+    Logger.recordMetadata("GitDirty", 
+      switch(BuildConstants.DIRTY) {
+        case 0 -> "All changes committed";
+        case 1 -> "Uncomitted changes";
+        default -> "Unknown";
+      }
+    );
 
     // Set up data receivers & replay source
     System.out.println("[Init Robot] Configuring AdvantageKit for " + RobotType.getMode().name() + " " + RobotType.getRobot().name());
@@ -117,6 +113,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
+    GameState.getInstance().periodic();
     VirtualSubsystem.periodicAll();
     CommandScheduler.getInstance().run();
     robotContainer.robotPeriodic();
@@ -132,13 +129,7 @@ public class Robot extends LoggedRobot {
   public void disabledExit() {}
 
   @Override
-  public void autonomousInit() {
-    m_autonomousCommand = robotContainer.getAutonomousCommand();
-
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
-    }
-  }
+  public void autonomousInit() {}
 
   @Override
   public void autonomousPeriodic() {}
@@ -147,11 +138,7 @@ public class Robot extends LoggedRobot {
   public void autonomousExit() {}
 
   @Override
-  public void teleopInit() {
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.cancel();
-    }
-  }
+  public void teleopInit() {}
 
   @Override
   public void teleopPeriodic() {}

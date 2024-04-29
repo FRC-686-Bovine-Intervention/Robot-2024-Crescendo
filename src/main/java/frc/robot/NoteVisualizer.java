@@ -3,16 +3,21 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import frc.robot.subsystems.rollers.Rollers.GamePieceState;
 
 public class NoteVisualizer {
-    public enum InternalNote {
-        Intake(
+    private final static Map<GamePieceState, Transform3d> toNoteMap = new HashMap<>();
+    static {
+        toNoteMap.put(
+            GamePieceState.INTAKE,
             new Transform3d(
                 new Translation3d(
                     -0.25,
@@ -25,8 +30,9 @@ public class NoteVisualizer {
                     +0
                 )
             )
-        ),
-        Kicker(
+        );
+        toNoteMap.put(
+            GamePieceState.KICKER,
             new Transform3d(
                 new Translation3d(
                     Meters.of(0.2),
@@ -39,29 +45,20 @@ public class NoteVisualizer {
                     +0
                 )
             )
-        ),
-        ;
-        private Transform3d robotToNote;
-        InternalNote(Transform3d robotToNote) {
-            this.robotToNote = robotToNote;
-        }
+        );
     }
 
-    public static Optional<InternalNote> internalNote = Optional.empty();
+    public static Optional<GamePieceState> internalNote = Optional.empty();
     public static Transform3d robotToPivot = new Transform3d();
     
     public static Pose3d[] logInternal() {
         return internalNote.map((note) -> new Pose3d[]{
             new Pose3d(RobotState.getInstance().getPose()).transformBy(
                 switch(note) {
-                    default -> note.robotToNote;
-                    case Kicker -> robotToPivot.plus(note.robotToNote);
+                    default -> toNoteMap.get(note);
+                    case KICKER -> robotToPivot.plus(toNoteMap.get(note));
                 }
             )
         }).orElse(new Pose3d[]{});
-    }
-
-    public static void setInternalNote(InternalNote note) {
-        internalNote = Optional.ofNullable(note);
     }
 }

@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotState;
+import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.MathExtraUtil;
 
@@ -26,6 +27,7 @@ public class Shooter extends SubsystemBase {
             @Override
             public void runGoal(ShooterIO shooterIO) {
                 shooterIO.stop();
+                Leds.getInstance().shooterBarGraph.set(false);
             }
         },
         SHOOTING(
@@ -33,22 +35,32 @@ public class Shooter extends SubsystemBase {
             () -> RobotState.getInstance().aimingParameters.minimumShooterSpeed()
         ),
         PREEMPTIVE(
-            new LoggedTunableNumber("Shooter/Target Speed/Pre-emptive", 17),
+            new LoggedTunableNumber("Shooter/Pre-emptive/Target Speed", 17),
             () -> Double.POSITIVE_INFINITY
-        ),
+        ){
+            @Override
+            public void runGoal(ShooterIO shooterIO) {
+                super.runGoal(shooterIO);
+                Leds.getInstance().shooterBarGraph.set(false);
+            }
+        },
         PASS(
-            new LoggedTunableNumber("Shooter/Target Speed/Pass", 17)
+            new LoggedTunableNumber("Shooter/Pass/Target Speed", 17)
         ),
         SUPER_PASS(
-            new LoggedTunableNumber("Shooter/Target Speed/Super Pass", 12),
-            new LoggedTunableNumber("Shooter/Minimum Speed/Super Pass", 9),
-            new LoggedTunableNumber("Shooter/Maximum Speed/Super Pass", 13)
+            new LoggedTunableNumber("Shooter/Super Pass/Target Speed", 12),
+            new LoggedTunableNumber("Shooter/Super Pass/Minimum Speed", 9),
+            new LoggedTunableNumber("Shooter/Super Pass/Maximum Speed", 13)
         ),
         AMP(
-            new LoggedTunableNumber("Shooter/Target Speed/Amp", 2)
+            new LoggedTunableNumber("Shooter/Amp/Target Speed", 2),
+            new LoggedTunableNumber("Shooter/Amp/Minimum Speed", 1.5),
+            new LoggedTunableNumber("Shooter/Amp/Maximum Speed", 3)
         ),
         CUSTOM(
-            new LoggedTunableNumber("Shooter/Target Speed/Custom", 30)
+            new LoggedTunableNumber("Shooter/Custom/Target Speed", 10),
+            new LoggedTunableNumber("Shooter/Custom/Minimum Speed", 50),
+            new LoggedTunableNumber("Shooter/Custom/Maximum Speed", 50)
         ),
         ;
         private final DoubleSupplier targetShootingSpeed;
@@ -78,6 +90,7 @@ public class Shooter extends SubsystemBase {
             var goalSpeed = getTargetSpeed();
             shooterIO.setLeftSurfaceSpeed(goalSpeed);
             shooterIO.setRightSurfaceSpeed(goalSpeed);
+            Leds.getInstance().shooterBarGraph.set(true);
         }
     }
 
@@ -100,6 +113,10 @@ public class Shooter extends SubsystemBase {
         Logger.processInputs("Shooter", inputs);
         Logger.recordOutput("Shooter/Average MPS", getAverageSurfaceSpeed());
         Logger.recordOutput("Shooter/Timer", followUpTimer.get());
+
+        Leds.getInstance().shooterReady = readyToShoot();
+        Leds.getInstance().shooterSpeed = getAverageSurfaceSpeed();
+        Leds.getInstance().shooterTarget = getTargetSpeed();
 
         goal.runGoal(shooterIO);
     }

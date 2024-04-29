@@ -90,6 +90,7 @@ public class AutoSelector extends VirtualSubsystem {
             currentResponses.forEach(System.out::println);
             lastCommand = selectedRoutine.generateCommand().withName("AUTO " + selectedRoutine.name);
         }
+        prevAlliance = alliance;
         lastResponses = currentResponses;
     }
 

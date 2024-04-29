@@ -12,12 +12,10 @@ import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.pivot.Pivot;
+import frc.robot.subsystems.rollers.Rollers;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
-import frc.robot.util.AllianceFlipUtil;
 
 public class Rush6Note extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
@@ -64,9 +62,9 @@ public class Rush6Note extends AutoRoutine {
     );
 
     public Rush6Note(RobotContainer robot) {
-        this(robot.drive, robot.shooter, robot.pivot, robot.kicker, robot.intake, robot.noteVision);
+        this(robot.drive, robot.shooter, robot.pivot, robot.rollers, robot.noteVision);
     }
-    public Rush6Note(Drive drive, Shooter shooter, Pivot pivot, Kicker kicker, Intake intake, NoteVision noteVision) {
+    public Rush6Note(Drive drive, Shooter shooter, Pivot pivot, Rollers rollers, NoteVision noteVision) {
         super(
             "Rush 6 Note",
             List.of(
@@ -80,16 +78,14 @@ public class Rush6Note extends AutoRoutine {
         this.drive = drive;
         this.shooter = shooter;
         this.pivot = pivot;
-        this.kicker = kicker;
-        this.intake = intake;
+        this.rollers = rollers;
         this.noteVision = noteVision;
     }
 
     private final Drive drive;
     private final Shooter shooter;
     private final Pivot pivot;
-    private final Kicker kicker;
-    private final Intake intake;
+    private final Rollers rollers;
     private final NoteVision noteVision;
 
     @Override
@@ -103,19 +99,15 @@ public class Rush6Note extends AutoRoutine {
         var commands = new ArrayList<Command>();
 
         if(noteCount.asInt >= 1) {
-            var preloadShot = AllianceFlipUtil.apply(startPosition.startPose.getTranslation());
             commands.add(
-                AutoCommons.shootWhenReady(preloadShot, 10, drive, shooter, pivot, kicker)
-                .deadlineWith(
-                    AutoCommons.autoAim(preloadShot, shooter, pivot, drive.rotationalSubsystem)
-                )
+                AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
             );
         }
 
         if(noteCount.asInt >= 2) {
             var startToSpike = AutoPaths.loadPath("R6N Amp Start to Spike");
             commands.add(
-                AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, kicker, intake)
+                AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, rollers)
             );
         }
 
@@ -124,7 +116,7 @@ public class Rush6Note extends AutoRoutine {
             var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
             var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
             commands.add(
-                AutoCommons.centerNote(spikeToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                AutoCommons.centerNote(spikeToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, rollers, noteVision)
             );
         }
 
@@ -133,7 +125,7 @@ public class Rush6Note extends AutoRoutine {
             var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
             var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
             commands.add(
-                AutoCommons.centerNote(wingToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                AutoCommons.centerNote(wingToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, rollers, noteVision)
             );
         }
 
@@ -143,9 +135,9 @@ public class Rush6Note extends AutoRoutine {
             var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
             commands.add(
                 thirdCenterNote.equals(CenterNote.Note3) ? (
-                    AutoCommons.centerNote(wingToCenter, centerNote3ToAmpWing, centerNote1ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                    AutoCommons.centerNote(wingToCenter, centerNote3ToAmpWing, centerNote1ToAmpWing, drive, shooter, pivot, rollers, noteVision)
                 ) : (
-                    AutoCommons.centerNote(wingToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, kicker, intake, noteVision)
+                    AutoCommons.centerNote(wingToCenter, centerNote1ToAmpWing, centerNote3ToAmpWing, drive, shooter, pivot, rollers, noteVision)
                 )
             );
         }

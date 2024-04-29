@@ -53,6 +53,7 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.commands.FieldOrientedDrive.SpectatorType;
+import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.LazyOptional;
@@ -341,10 +342,6 @@ public class Drive extends VirtualSubsystem {
                     addRequirements(subsystem);
                     setName("Defense Spin");
                 }
-                @Override
-                public void initialize() {
-                    
-                }
                 private static final Matrix<N2, N2> perpendicularMatrix = 
                     MatBuilder.fill(
                         Nat.N2(), Nat.N2(), 
@@ -354,6 +351,7 @@ public class Drive extends VirtualSubsystem {
                 ;
                 @Override
                 public void execute() {
+                    Leds.getInstance().defenseSpin.set(true);
                     var joyVec = SpectatorType.getCurrentType().toField(joystick.toVector());
                     var desiredLinear = VecBuilder.fill(drive.setpoint.vxMetersPerSecond, drive.setpoint.vyMetersPerSecond);
                     var fieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.setpoint, drive.getRotation());
@@ -390,6 +388,7 @@ public class Drive extends VirtualSubsystem {
                 public void end(boolean interrupted) {
                     stop();
                     drive.setCenterOfRotation(new Translation2d());
+                    Leds.getInstance().defenseSpin.set(false);
                 }
             };
         }

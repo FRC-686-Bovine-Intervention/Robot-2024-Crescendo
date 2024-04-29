@@ -32,11 +32,12 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.util.function.BooleanConsumer;
+import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
 import frc.robot.util.GearRatio.Wheel;
-import frc.robot.util.led.strips.LEDStrip;
 
 public final class Constants {
 
@@ -318,7 +319,10 @@ public final class Constants {
                         Units.degreesToRadians(-12.348-5),
                         Units.degreesToRadians(+0)
                     )
-                )
+                ),
+                (connected) -> {
+                    Leds.getInstance().lAprilConnected = connected;
+                }
                 // robotToCameraFromCalibTag(
                 //     new Transform3d(
                 //         new Translation3d(
@@ -367,7 +371,10 @@ public final class Constants {
                     //     Units.degreesToRadians(-32.414),
                     //     Units.degreesToRadians(-9.707)
                     // )
-                )
+                ),
+                (connected) -> {
+                    Leds.getInstance().rAprilConnected = connected;
+                }
             ),
             NoteVision(
                 "Note Cam",
@@ -384,19 +391,24 @@ public final class Constants {
                         Degrees.of(15).in(Radians),
                         Math.PI
                     )
-                )
+                ),
+                (connected) -> {
+                    Leds.getInstance().nVisionConnected = connected;
+                }
             ),
             ;
             public final String hardwareName;
             private final Transform3d intermediateToCamera;
             public final double cameraStdCoef;
             public final double trustDistance;
+            public final BooleanConsumer connectedConsumer;
             private Supplier<Transform3d> robotToIntermediate;
-            Camera(String hardwareName, double cameraStdCoef, double trustDistance, Transform3d finalToCamera) {
+            Camera(String hardwareName, double cameraStdCoef, double trustDistance, Transform3d finalToCamera, BooleanConsumer connectedConsumer) {
                 this.hardwareName = hardwareName;
                 this.cameraStdCoef = cameraStdCoef;
                 this.trustDistance = trustDistance;
                 this.intermediateToCamera = finalToCamera;
+                this.connectedConsumer = connectedConsumer;
                 this.robotToIntermediate = Transform3d::new;
             }
             @SuppressWarnings("unused")
@@ -412,11 +424,11 @@ public final class Constants {
                 return robotToIntermediate.get().plus(intermediateToCamera);
             }
 
-            public ApriltagCamera toApriltagCamera(LEDStrip connectedStrip) {
-                return new ApriltagCamera(this, new ApriltagCameraIO(){}, connectedStrip);
+            public ApriltagCamera toApriltagCamera() {
+                return new ApriltagCamera(this, new ApriltagCameraIO(){});
             }
-            public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function, LEDStrip connectedStrip) {
-                return new ApriltagCamera(this, function.apply(this), connectedStrip);
+            public ApriltagCamera toApriltagCamera(Function<Camera, ? extends ApriltagCameraIO> function) {
+                return new ApriltagCamera(this, function.apply(this));
             }
 
             public static void logCameraOverrides() {
@@ -442,6 +454,8 @@ public final class Constants {
     }
 
     public static final class AutoConstants {
+        public static final double allottedAutoTime = 15.3;
+
         public static final double maxVel = 3;
         public static final double maxAccel = 3;
 
