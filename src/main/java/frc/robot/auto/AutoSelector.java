@@ -75,10 +75,8 @@ public class AutoSelector extends VirtualSubsystem {
                 questionPublishers.get(i).set(questions.get(i).name);
                 responseChoosers.get(i).setOptions(questions.get(i).getOptionNames());
                 var response = responseChoosers.get(i).get();
-                currentResponses.add(response);
-                if(response != null) {
-                    questions.get(i).setResponse(response);
-                }
+                currentResponses.add(response.orElse(SwitchableChooser.placeholder));
+                response.ifPresent(questions.get(i)::setResponse);
             } else {
                 questionPublishers.get(i).set(questionPlaceHolder);
                 responseChoosers.get(i).setOptions(new String[] {});
