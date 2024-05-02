@@ -57,6 +57,10 @@ public class SwitchableChooser implements LoggedDashboardInput, LazyOptional<Str
     setActive(Optional.empty());
   }
 
+  public String[] getOptions() {
+    return options;
+  }
+
   /** Returns the selected option. */
   @Override
   public Optional<String> get() {

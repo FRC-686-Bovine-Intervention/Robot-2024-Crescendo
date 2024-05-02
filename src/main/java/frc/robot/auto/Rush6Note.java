@@ -2,12 +2,12 @@ package frc.robot.auto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.CenterNote;
-import frc.robot.auto.AutoCommons.Count;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
 import frc.robot.auto.AutoSelector.AutoRoutine;
@@ -18,48 +18,66 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 
 public class Rush6Note extends AutoRoutine {
-    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
-        StartPosition.Amp,
-        StartPosition.SubwooferAmp,
+    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
+        var amp = StartPosition.Amp.toEntry();
+
+        return new AutoQuestion.Settings<StartPosition>(Map.ofEntries(amp), amp.getValue());
     });
 
-    private static final AutoQuestion<Count> noteCount = new AutoQuestion<>("Note Count", () -> new Count[]{
-        Count.k5,
-        Count.k4,
-        Count.k3,
-        Count.k2,
-        Count.k1,
+    private static final AutoQuestion<Integer> noteCount = new AutoQuestion<Integer>("Note Count", () -> {
+        var k1 = Map.entry("1", 1);
+        var k2 = Map.entry("2", 2);
+        var k3 = Map.entry("3", 3);
+        var k4 = Map.entry("4", 4);
+        var k5 = Map.entry("5", 5);
+
+        return new AutoQuestion.Settings<Integer>(Map.ofEntries(k1,k2,k3,k4,k5), k5.getValue());
     });
 
-    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> 
-        noteCount.getResponse().asInt >= 3 ?
-        new CenterNote[] {
-            CenterNote.Note1,
-            CenterNote.Note2,
-            CenterNote.Note3,
-        } :
-        new CenterNote[]{}
-    );
+    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
+        var c1 = CenterNote.Note1.toEntry();
+        var c2 = CenterNote.Note2.toEntry();
+        var c3 = CenterNote.Note3.toEntry();
 
-    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> 
-        noteCount.getResponse().asInt >= 4 ?
-        new CenterNote[] {
-            CenterNote.Note2,
-            CenterNote.Note1,
-            CenterNote.Note3,
-        } :
-        new CenterNote[]{}
-    );
+        return (noteCount.getResponse() >= 3) ? (
+            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(c1,c2,c3), c1.getValue())
+        ) : (
+            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+        );
+    });
 
-    private static final AutoQuestion<CenterNote> thirdCenterNote = new AutoQuestion<>("Third Center Note", () -> 
-        noteCount.getResponse().asInt >= 5 ?
-        new CenterNote[] {
-            CenterNote.Note3,
-            CenterNote.Note2,
-            CenterNote.Note1,
-        } :
-        new CenterNote[]{}
-    );
+    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> {
+        var c1 = CenterNote.Note1.toEntry();
+        var c2 = CenterNote.Note2.toEntry();
+        var c3 = CenterNote.Note3.toEntry();
+
+        return (noteCount.getResponse() >= 4) ? (
+            new AutoQuestion.Settings<CenterNote>(
+                Map.ofEntries(c1,c2,c3), 
+                switch(firstCenterNote.getResponse()) {
+                    default -> c2.getValue();
+                    case Note2 -> c3.getValue();
+                }
+            )
+        ) : (
+            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+        );
+    });
+
+    private static final AutoQuestion<CenterNote> thirdCenterNote = new AutoQuestion<>("Second Center Note", () -> {
+        var c1 = CenterNote.Note1.toEntry();
+        var c2 = CenterNote.Note2.toEntry();
+        var c3 = CenterNote.Note3.toEntry();
+
+        return (noteCount.getResponse() >= 5) ? (
+            new AutoQuestion.Settings<CenterNote>(
+                Map.ofEntries(c1,c2,c3), 
+                c3.getValue()
+            )
+        ) : (
+            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+        );
+    });
 
     public Rush6Note(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.rollers, robot.noteVision);
@@ -98,20 +116,20 @@ public class Rush6Note extends AutoRoutine {
 
         var commands = new ArrayList<Command>();
 
-        if(noteCount.asInt >= 1) {
+        if(noteCount >= 1) {
             commands.add(
                 AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
             );
         }
 
-        if(noteCount.asInt >= 2) {
+        if(noteCount >= 2) {
             var startToSpike = AutoPaths.loadPath("R6N Amp Start to Spike");
             commands.add(
                 AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, rollers)
             );
         }
 
-        if(noteCount.asInt >= 3) {
+        if(noteCount >= 3) {
             var spikeToCenter = AutoPaths.loadPath("R6N Amp Spike to Center " + firstCenterNote.name());
             var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
             var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
@@ -120,7 +138,7 @@ public class Rush6Note extends AutoRoutine {
             );
         }
 
-        if(noteCount.asInt >= 4) {
+        if(noteCount >= 4) {
             var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center " + secondCenterNote.name());
             var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
             var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
@@ -129,7 +147,7 @@ public class Rush6Note extends AutoRoutine {
             );
         }
 
-        if(noteCount.asInt >= 5) {
+        if(noteCount >= 5) {
             var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center " + thirdCenterNote.name());
             var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
             var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");

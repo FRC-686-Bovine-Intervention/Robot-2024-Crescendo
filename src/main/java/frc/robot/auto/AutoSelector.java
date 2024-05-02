@@ -2,6 +2,8 @@ package frc.robot.auto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -72,14 +74,17 @@ public class AutoSelector extends VirtualSubsystem {
         List<String> currentResponses = new ArrayList<>();
         for (int i = 0; i < responseChoosers.size(); i++) {
             if(i < questions.size()) {
-                questionPublishers.get(i).set(questions.get(i).name);
-                responseChoosers.get(i).setOptions(questions.get(i).getOptionNames());
-                var response = responseChoosers.get(i).get();
+                var question = questions.get(i);
+                questionPublishers.get(i).set(question.name);
+                
+                var chooser = responseChoosers.get(i);
+                chooser.setOptions(question.getOptionNames());
+                var response = chooser.get();
                 currentResponses.add(response.orElse(SwitchableChooser.placeholder));
-                response.ifPresent(questions.get(i)::setResponse);
+                question.setResponse(response);
             } else {
                 questionPublishers.get(i).set(questionPlaceHolder);
-                responseChoosers.get(i).setOptions(new String[] {});
+                responseChoosers.get(i).setOptions();
             }
         }
         if(!currentResponses.equals(lastResponses) || prevAlliance != alliance) {
@@ -96,32 +101,32 @@ public class AutoSelector extends VirtualSubsystem {
         return lastCommand;
     }
 
-    public static class AutoQuestion<T extends Enum<T>> {
+    public static class AutoQuestion<T> {
         public final String name;
-        private final Supplier<T[]> optionSupplier;
+        private final Supplier<Settings<T>> settingsSupplier;
         private T response;
 
-        public AutoQuestion(String name, Supplier<T[]> optionSupplier) {
+        public static record Settings<T>(Map<String, T> options, T defaultOption) {}
+
+        public AutoQuestion(String name, Supplier<Settings<T>> settingsSupplier) {
             this.name = name;
-            this.optionSupplier = optionSupplier;
-            this.response = this.optionSupplier.get()[0];
+            this.settingsSupplier = settingsSupplier;
+            this.response = this.settingsSupplier.get().defaultOption();
         }
 
         public T getResponse() {
             return response;
         }
 
-        public void setResponse(String newResponse) {
-            response = Enum.valueOf(response.getDeclaringClass(), newResponse);
+        public void setResponse(Optional<String> newResponse) {
+            response = newResponse
+                .map((newR) -> settingsSupplier.get().options().get(newR))
+                .orElseGet(() -> settingsSupplier.get().defaultOption())
+            ;
         }
 
         public String[] getOptionNames() {
-            var options = optionSupplier.get();
-            var optionNames = new String[options.length];
-            for(int i = 0; i < optionNames.length; i++) {
-                optionNames[i] = options[i].name();
-            }
-            return optionNames;
+            return settingsSupplier.get().options().keySet().toArray(String[]::new);
         }
     }
 
