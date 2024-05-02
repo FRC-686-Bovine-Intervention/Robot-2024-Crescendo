@@ -10,6 +10,7 @@ import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.CenterNote;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
+import frc.robot.auto.AutoSelector.AutoQuestion.Settings;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
@@ -21,17 +22,17 @@ public class Rush6Note extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
         var amp = StartPosition.Amp.toEntry();
 
-        return new AutoQuestion.Settings<StartPosition>(Map.ofEntries(amp), amp.getValue());
+        return Settings.from(amp.getValue(), amp);
     });
 
-    private static final AutoQuestion<Integer> noteCount = new AutoQuestion<Integer>("Note Count", () -> {
+    private static final AutoQuestion<Integer> noteCount = new AutoQuestion<>("Note Count", () -> {
         var k1 = Map.entry("1", 1);
         var k2 = Map.entry("2", 2);
         var k3 = Map.entry("3", 3);
         var k4 = Map.entry("4", 4);
         var k5 = Map.entry("5", 5);
 
-        return new AutoQuestion.Settings<Integer>(Map.ofEntries(k1,k2,k3,k4,k5), k5.getValue());
+        return Settings.from(k5.getValue(), k5,k4,k3,k2,k1);
     });
 
     private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
@@ -40,9 +41,9 @@ public class Rush6Note extends AutoRoutine {
         var c3 = CenterNote.Note3.toEntry();
 
         return (noteCount.getResponse() >= 3) ? (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(c1,c2,c3), c1.getValue())
+            Settings.from(c1.getValue(), c1,c2,c3)
         ) : (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+            Settings.empty()
         );
     });
 
@@ -52,15 +53,15 @@ public class Rush6Note extends AutoRoutine {
         var c3 = CenterNote.Note3.toEntry();
 
         return (noteCount.getResponse() >= 4) ? (
-            new AutoQuestion.Settings<CenterNote>(
-                Map.ofEntries(c1,c2,c3), 
+            Settings.from(
                 switch(firstCenterNote.getResponse()) {
                     default -> c2.getValue();
                     case Note2 -> c3.getValue();
-                }
+                },
+                c1,c2,c3
             )
         ) : (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+            Settings.empty()
         );
     });
 
@@ -70,12 +71,12 @@ public class Rush6Note extends AutoRoutine {
         var c3 = CenterNote.Note3.toEntry();
 
         return (noteCount.getResponse() >= 5) ? (
-            new AutoQuestion.Settings<CenterNote>(
-                Map.ofEntries(c1,c2,c3), 
-                c3.getValue()
+            Settings.from(
+                c3.getValue(),
+                c1,c2,c3
             )
         ) : (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+            Settings.empty()
         );
     });
 

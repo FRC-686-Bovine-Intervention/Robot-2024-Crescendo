@@ -1,6 +1,7 @@
 package frc.robot.auto;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,7 +77,7 @@ public class AutoSelector extends VirtualSubsystem {
             if(i < questions.size()) {
                 var question = questions.get(i);
                 questionPublishers.get(i).set(question.name);
-                
+
                 var chooser = responseChoosers.get(i);
                 chooser.setOptions(question.getOptionNames());
                 var response = chooser.get();
@@ -106,7 +107,20 @@ public class AutoSelector extends VirtualSubsystem {
         private final Supplier<Settings<T>> settingsSupplier;
         private T response;
 
-        public static record Settings<T>(Map<String, T> options, T defaultOption) {}
+        public static record Settings<T>(Map<String, T> options, T defaultOption) {
+            @SafeVarargs
+            public static <T> Settings<T> from(T defaultOption, Map.Entry<String,T>... options) {
+                var map = new LinkedHashMap<String, T>();
+                for(var option : options) {
+                    map.put(option.getKey(), option.getValue());
+                }
+                return new Settings<T>(map, defaultOption);
+            }
+
+            public static <T> Settings<T> empty() {
+                return new Settings<T>(Map.of(), null);
+            }
+        }
 
         public AutoQuestion(String name, Supplier<Settings<T>> settingsSupplier) {
             this.name = name;
@@ -126,7 +140,7 @@ public class AutoSelector extends VirtualSubsystem {
         }
 
         public String[] getOptionNames() {
-            return settingsSupplier.get().options().keySet().toArray(String[]::new);
+            return settingsSupplier.get().options().keySet().stream().toArray(String[]::new);
         }
     }
 

@@ -11,6 +11,7 @@ import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.CenterNote;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
+import frc.robot.auto.AutoSelector.AutoQuestion.Settings;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
@@ -23,7 +24,7 @@ public class MASpikeWiggle extends AutoRoutine {
         var podium = StartPosition.Podium.toEntry();
         var amp = StartPosition.Amp.toEntry();
 
-        return new AutoQuestion.Settings<StartPosition>(Map.ofEntries(podium, amp), podium.getValue());
+        return Settings.from(podium.getValue(), podium, amp);
     });
 
     private static final AutoQuestion<Integer> noteCount = new AutoQuestion<Integer>("Note Count", () -> {
@@ -34,7 +35,7 @@ public class MASpikeWiggle extends AutoRoutine {
         var k5 = Map.entry("5", 5);
         var k6 = Map.entry("6", 6);
 
-        return new AutoQuestion.Settings<Integer>(Map.ofEntries(k1,k2,k3,k4,k5,k6), k6.getValue());
+        return Settings.from(k6.getValue(), k6,k5,k4,k3,k2,k1);
     });
 
     private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
@@ -43,9 +44,9 @@ public class MASpikeWiggle extends AutoRoutine {
         var c3 = CenterNote.Note3.toEntry();
 
         return (noteCount.getResponse() >= 5) ? (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(c1,c2,c3), c1.getValue())
+            Settings.from(c1.getValue(), c1,c2,c3)
         ) : (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+            Settings.empty()
         );
     });
 
@@ -55,15 +56,15 @@ public class MASpikeWiggle extends AutoRoutine {
         var c3 = CenterNote.Note3.toEntry();
 
         return (noteCount.getResponse() >= 6) ? (
-            new AutoQuestion.Settings<CenterNote>(
-                Map.ofEntries(c1,c2,c3), 
+            Settings.from(
                 switch(firstCenterNote.getResponse()) {
                     default -> c2.getValue();
                     case Note2 -> c3.getValue();
-                }
+                },
+                c1,c2,c3
             )
         ) : (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+            Settings.empty()
         );
     });
 

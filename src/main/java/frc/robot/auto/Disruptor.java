@@ -1,7 +1,6 @@
 package frc.robot.auto;
 
 import java.util.List;
-import java.util.Map;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -9,6 +8,7 @@ import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
+import frc.robot.auto.AutoSelector.AutoQuestion.Settings;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
@@ -22,7 +22,7 @@ public class Disruptor extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
         var source = StartPosition.Source.toEntry();
 
-        return new AutoQuestion.Settings<StartPosition>(Map.ofEntries(source), source.getValue());
+        return Settings.from(source.getValue(), source);
     });
 
     public Disruptor(RobotContainer robot) {

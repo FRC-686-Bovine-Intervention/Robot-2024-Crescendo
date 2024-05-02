@@ -12,6 +12,7 @@ import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.CenterNote;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
+import frc.robot.auto.AutoSelector.AutoQuestion.Settings;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
@@ -21,26 +22,27 @@ import frc.robot.subsystems.vision.note.NoteVision;
 
 public class Source4Note extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
-        var amp = StartPosition.Amp.toEntry();
+        var podium = StartPosition.Podium.toEntry();
+        var source = StartPosition.Source.toEntry();
 
-        return new AutoQuestion.Settings<StartPosition>(Map.ofEntries(amp), amp.getValue());
+        return Settings.from(podium.getValue(), podium, source);
     });
 
-    private static final AutoQuestion<Integer> noteCount = new AutoQuestion<Integer>("Note Count", () -> {
+    private static final AutoQuestion<Integer> noteCount = new AutoQuestion<>("Note Count", () -> {
         var k1 = Map.entry("1", 1);
         var k2 = Map.entry("2", 2);
         var k3 = Map.entry("3", 3);
         var k4 = Map.entry("4", 4);
         var k5 = Map.entry("5", 5);
 
-        return new AutoQuestion.Settings<Integer>(Map.ofEntries(k1,k2,k3,k4,k5), k5.getValue());
+        return Settings.from(k5.getValue(), k5,k4,k3,k2,k1);
     });
 
     private static final AutoQuestion<Boolean> skipPreload = new AutoQuestion<>("Skip Preload", () -> {
         var no = Map.entry("No", false);
         var yes = Map.entry("Yes", true);
 
-        return new AutoQuestion.Settings<Boolean>(Map.ofEntries(no,yes), no.getValue());
+        return Settings.from(no.getValue(), no, yes);
     });
 
     private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
@@ -53,9 +55,9 @@ public class Source4Note extends AutoRoutine {
             case Source -> 2;
             default -> 5;
         }) ? (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(c3,c4,c5), c5.getValue())
+            Settings.from(c5.getValue(), c3,c4,c5)
         ) : (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+            Settings.empty()
         );
     });
 
@@ -69,15 +71,15 @@ public class Source4Note extends AutoRoutine {
             case Source -> 3;
             default -> 5;
         }) ? (
-            new AutoQuestion.Settings<CenterNote>(
-                Map.ofEntries(c3,c4,c5), 
+            Settings.from(
                 switch(firstCenterNote.getResponse()) {
                     default -> c4.getValue();
                     case Note4 -> c3.getValue();
-                }
+                },
+                c3,c4,c5
             )
         ) : (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+            Settings.empty()
         );
     });
 
@@ -91,12 +93,12 @@ public class Source4Note extends AutoRoutine {
             case Source -> 4;
             default -> 5;
         }) ? (
-            new AutoQuestion.Settings<CenterNote>(
-                Map.ofEntries(c3,c4,c5), 
-                c3.getValue()
+            Settings.from(
+                c3.getValue(),
+                c3,c4,c5
             )
         ) : (
-            new AutoQuestion.Settings<CenterNote>(Map.ofEntries(), null)
+            Settings.empty()
         );
     });
 
