@@ -8,6 +8,7 @@ import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
+import frc.robot.auto.AutoSelector.AutoQuestion.Settings;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
@@ -18,7 +19,11 @@ import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.AllianceFlipUtil;
 
 public class Disruptor extends AutoRoutine {
-    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{StartPosition.Source});
+    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
+        var source = StartPosition.Source.toEntry();
+
+        return Settings.from(source, source);
+    });
 
     public Disruptor(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.rollers, robot.noteVision);

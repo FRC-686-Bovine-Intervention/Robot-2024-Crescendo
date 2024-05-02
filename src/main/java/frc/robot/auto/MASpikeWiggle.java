@@ -2,15 +2,16 @@ package frc.robot.auto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoCommons.CenterNote;
-import frc.robot.auto.AutoCommons.Count;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
+import frc.robot.auto.AutoSelector.AutoQuestion.Settings;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
@@ -19,39 +20,53 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 
 public class MASpikeWiggle extends AutoRoutine {
-    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
-        StartPosition.Podium,
-        StartPosition.Amp,
+    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
+        var podium = StartPosition.Podium.toEntry();
+        var amp = StartPosition.Amp.toEntry();
+
+        return Settings.from(podium, podium, amp);
     });
 
-    private static final AutoQuestion<Count> noteCount = new AutoQuestion<>("Note Count", () -> new Count[]{
-        Count.k6,
-        Count.k5,
-        Count.k4,
-        Count.k3,
-        Count.k2,
-        Count.k1,
+    private static final AutoQuestion<Integer> noteCount = new AutoQuestion<Integer>("Note Count", () -> {
+        var k1 = Map.entry("1", 1);
+        var k2 = Map.entry("2", 2);
+        var k3 = Map.entry("3", 3);
+        var k4 = Map.entry("4", 4);
+        var k5 = Map.entry("5", 5);
+        var k6 = Map.entry("6", 6);
+
+        return Settings.from(k6, k6,k5,k4,k3,k2,k1);
     });
 
-    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> 
-        noteCount.getResponse().asInt >= 5 ?
-        new CenterNote[] {
-            CenterNote.Note1,
-            CenterNote.Note2,
-            CenterNote.Note3,
-        } :
-        new CenterNote[]{}
-    );
+    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
+        var c1 = CenterNote.Note1.toEntry();
+        var c2 = CenterNote.Note2.toEntry();
+        var c3 = CenterNote.Note3.toEntry();
 
-    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> 
-        noteCount.getResponse().asInt >= 6 ?
-        new CenterNote[] {
-            CenterNote.Note2,
-            CenterNote.Note1,
-            CenterNote.Note3,
-        } :
-        new CenterNote[]{}
-    );
+        return (noteCount.getResponse() >= 5) ? (
+            Settings.from(c1, c1,c2,c3)
+        ) : (
+            Settings.empty()
+        );
+    });
+
+    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> {
+        var c1 = CenterNote.Note1.toEntry();
+        var c2 = CenterNote.Note2.toEntry();
+        var c3 = CenterNote.Note3.toEntry();
+
+        return (noteCount.getResponse() >= 6) ? (
+            Settings.from(
+                switch(firstCenterNote.getResponse()) {
+                    default -> c3;
+                    case Note1 -> c2;
+                },
+                c1,c2,c3
+            )
+        ) : (
+            Settings.empty()
+        );
+    });
 
     public MASpikeWiggle(RobotContainer robot) {
         this(robot.drive, robot.shooter, robot.pivot, robot.rollers, robot.noteVision);
@@ -95,13 +110,13 @@ public class MASpikeWiggle extends AutoRoutine {
         
         var commands = new ArrayList<Command>();
 
-        if(noteCount.asInt >= 1) {
+        if(noteCount >= 1) {
             commands.add(
                 AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
             );
         }
 
-        if(noteCount.asInt >= 2) {
+        if(noteCount >= 2) {
             var startToSpike1 = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "Amp Start to Spike";
@@ -113,7 +128,7 @@ public class MASpikeWiggle extends AutoRoutine {
             );
         }
 
-        if(noteCount.asInt >= 3) {
+        if(noteCount >= 3) {
             var spike1ToSpike2 = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "MASW Amp Spike to Center Spike";
@@ -125,7 +140,7 @@ public class MASpikeWiggle extends AutoRoutine {
             );
         }
 
-        if(noteCount.asInt >= 4) {
+        if(noteCount >= 4) {
             var spike2ToSpike3 = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "MASW Center Spike to Podium Spike";
@@ -137,7 +152,7 @@ public class MASpikeWiggle extends AutoRoutine {
             );
         }
         
-        if(noteCount.asInt >= 5) {
+        if(noteCount >= 5) {
             var spikeToCenter = AutoPaths.loadPath(
                 switch(startPosition) {
                     case Amp, SubwooferAmp -> "MASW Podium Spike to Center " + firstCenterNote.name();
@@ -155,7 +170,7 @@ public class MASpikeWiggle extends AutoRoutine {
             );
         }
 
-        if(noteCount.asInt >= 6) {
+        if(noteCount >= 6) {
             var wingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center " + secondCenterNote.name());
             var centerNote1ToAmpWing = AutoPaths.loadPath("R6N Center Note1 to Amp Wing");
             var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");

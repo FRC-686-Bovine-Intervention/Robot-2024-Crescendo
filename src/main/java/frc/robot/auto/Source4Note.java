@@ -2,17 +2,17 @@ package frc.robot.auto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
 import frc.robot.auto.AutoCommons.AutoPaths;
-import frc.robot.auto.AutoCommons.Bool;
 import frc.robot.auto.AutoCommons.CenterNote;
-import frc.robot.auto.AutoCommons.Count;
 import frc.robot.auto.AutoCommons.StartPosition;
 import frc.robot.auto.AutoSelector.AutoQuestion;
+import frc.robot.auto.AutoSelector.AutoQuestion.Settings;
 import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
@@ -21,66 +21,86 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 
 public class Source4Note extends AutoRoutine {
-    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> new StartPosition[]{
-        StartPosition.Podium,
-        StartPosition.Source,
-    });
-    
-    private static final AutoQuestion<Count> noteCount = new AutoQuestion<>("Note Count", () -> new Count[] {
-        Count.k4,
-        Count.k3,
-        Count.k2,
-        Count.k1,
+    private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
+        var podium = StartPosition.Podium.toEntry();
+        var source = StartPosition.Source.toEntry();
+
+        return Settings.from(podium, podium, source);
     });
 
-    private static final AutoQuestion<Bool> skipPreload = new AutoQuestion<>("Skip Preload", () -> new Bool[] {
-        Bool.No,
-        Bool.Yes
+    private static final AutoQuestion<Integer> noteCount = new AutoQuestion<>("Note Count", () -> {
+        var k1 = Map.entry("1", 1);
+        var k2 = Map.entry("2", 2);
+        var k3 = Map.entry("3", 3);
+        var k4 = Map.entry("4", 4);
+        var k5 = Map.entry("5", 5);
+
+        return Settings.from(k5, k5,k4,k3,k2,k1);
     });
 
-    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> 
-        noteCount.getResponse().asInt >= switch(startPosition.getResponse()) {
+    private static final AutoQuestion<Boolean> skipPreload = new AutoQuestion<>("Skip Preload", () -> {
+        var no = Map.entry("No", false);
+        var yes = Map.entry("Yes", true);
+
+        return Settings.from(no, no, yes);
+    });
+
+    private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
+        var c3 = CenterNote.Note3.toEntry();
+        var c4 = CenterNote.Note4.toEntry();
+        var c5 = CenterNote.Note5.toEntry();
+
+        return (noteCount.getResponse() >= switch(startPosition.getResponse()) {
             case Podium -> 3;
             case Source -> 2;
             default -> 5;
-        } ?
-        new CenterNote[] {
-            CenterNote.Note5,
-            CenterNote.Note4,
-            CenterNote.Note3,
-        } :
-        new CenterNote[]{}
-    );
+        }) ? (
+            Settings.from(c5, c3,c4,c5)
+        ) : (
+            Settings.empty()
+        );
+    });
 
-    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> 
-        noteCount.getResponse().asInt >= switch(startPosition.getResponse()) {
+    private static final AutoQuestion<CenterNote> secondCenterNote = new AutoQuestion<>("Second Center Note", () -> {
+        var c3 = CenterNote.Note3.toEntry();
+        var c4 = CenterNote.Note4.toEntry();
+        var c5 = CenterNote.Note5.toEntry();
+
+        return (noteCount.getResponse() >= switch(startPosition.getResponse()) {
             case Podium -> 4;
             case Source -> 3;
             default -> 5;
-        } ?
-        new CenterNote[] {
-            CenterNote.Note5,
-            CenterNote.Note4,
-            CenterNote.Note3,
-        } :
-        new CenterNote[]{}
-    );
+        }) ? (
+            Settings.from(
+                switch(firstCenterNote.getResponse()) {
+                    default -> c3;
+                    case Note5 -> c4;
+                },
+                c3,c4,c5
+            )
+        ) : (
+            Settings.empty()
+        );
+    });
 
-    private static final AutoQuestion<CenterNote> thirdCenterNote = new AutoQuestion<>("Third Center Note", () -> 
-        noteCount.getResponse().asInt >= switch(startPosition.getResponse()) {
+    private static final AutoQuestion<CenterNote> thirdCenterNote = new AutoQuestion<>("Second Center Note", () -> {
+        var c3 = CenterNote.Note3.toEntry();
+        var c4 = CenterNote.Note4.toEntry();
+        var c5 = CenterNote.Note5.toEntry();
+
+        return (noteCount.getResponse() >= switch(startPosition.getResponse()) {
             case Podium -> 5;
             case Source -> 4;
             default -> 5;
-        } ?
-        new CenterNote[] {
-            CenterNote.Note5,
-            CenterNote.Note4,
-            CenterNote.Note3,
-        } :
-        new CenterNote[]{
-            CenterNote.Note5
-        }
-    );
+        }) ? (
+            Settings.from(
+                c3,
+                c3,c4,c5
+            )
+        ) : (
+            Settings.empty()
+        );
+    });
 
     public Source4Note(RobotContainer robot) {
         super(
@@ -118,7 +138,7 @@ public class Source4Note extends AutoRoutine {
 
         var commands = new ArrayList<Command>();
 
-        if(noteCount.asInt >= 1 && !skipPreload.asBoolean) {
+        if(noteCount >= 1 && !skipPreload) {
             commands.add(
                 AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
             );
@@ -127,14 +147,14 @@ public class Source4Note extends AutoRoutine {
         switch(startPosition) {
             default:
             case Podium:
-                if(noteCount.asInt >= 2) {
+                if(noteCount >= 2) {
                     var startToSpike = AutoPaths.loadPath("Podium Start to Spike");
                     commands.add(
                         AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, rollers)
                     );
                 }
 
-                if(noteCount.asInt >= 3) {
+                if(noteCount >= 3) {
                     var spikeToCenter = switch(firstCenterNote) {
                         default -> AutoPaths.loadPath("S4N Podium Spike to Center " + firstCenterNote.name());
                         case Note3 -> AutoPaths.loadPath("MASW Podium Spike to Center Note3");
@@ -150,7 +170,7 @@ public class Source4Note extends AutoRoutine {
                     );
                 }
 
-                if(noteCount.asInt >= 4) {
+                if(noteCount >= 4) {
                     var sourceWingToCenter = AutoPaths.loadPath("S4N Source Wing to Center " + secondCenterNote.name());
                     var ampWingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center Note3");
                     var centerNote5ToSourceWing = AutoPaths.loadPath("S4N Center Note5 to Source Wing");
@@ -172,7 +192,7 @@ public class Source4Note extends AutoRoutine {
                 }
             break;
             case Source:
-                if(noteCount.asInt >= 2) {
+                if(noteCount >= 2) {
                     var wingToCenter = AutoPaths.loadPath("S4N Source Wing to Center " + firstCenterNote.name());
                     var centerNote5ToSourceWing = AutoPaths.loadPath("S4N Center Note5 to Source Wing");
                     var centerNote3ToAmpWing = AutoPaths.loadPath("S4N Center Note3 to Amp Wing");
@@ -185,7 +205,7 @@ public class Source4Note extends AutoRoutine {
                     );
                 }
 
-                if(noteCount.asInt >= 3) {
+                if(noteCount >= 3) {
                     var sourceWingToCenter = AutoPaths.loadPath("S4N Source Wing to Center " + secondCenterNote.name());
                     var ampWingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center Note3");
                     var centerNote5ToSourceWing = AutoPaths.loadPath("S4N Center Note5 to Source Wing");
@@ -206,7 +226,7 @@ public class Source4Note extends AutoRoutine {
                     );
                 }
 
-                if(noteCount.asInt >= 4) {
+                if(noteCount >= 4) {
                     var sourceWingToCenter = AutoPaths.loadPath("S4N Source Wing to Center " + thirdCenterNote.name());
                     var ampWingToCenter = AutoPaths.loadPath("R6N Amp Wing to Center Note3");
                     var centerNote5ToSourceWing = AutoPaths.loadPath("S4N Center Note5 to Source Wing");

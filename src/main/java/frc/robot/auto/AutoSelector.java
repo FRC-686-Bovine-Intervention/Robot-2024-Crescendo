@@ -1,7 +1,10 @@
 package frc.robot.auto;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -17,6 +20,7 @@ import frc.robot.util.VirtualSubsystem;
 
 public class AutoSelector extends VirtualSubsystem {
     private final LoggedDashboardChooser<AutoRoutine> routineChooser;
+    private final StringPublisher configPublisher;
     private final List<StringPublisher> questionPublishers;
     private final List<SwitchableChooser> responseChoosers;
     private final String key;
@@ -29,7 +33,7 @@ public class AutoSelector extends VirtualSubsystem {
     private final String questionPlaceHolder = "NA"; 
 
     private Command lastCommand;
-    private List<String> lastResponses;
+    private AutoConfiguration lastConfiguration;
 
     public AutoSelector(String key) {
         this.key = key;
@@ -37,6 +41,7 @@ public class AutoSelector extends VirtualSubsystem {
         routineChooser.addDefaultOption(defaultRoutine.name, defaultRoutine);
         questionPublishers = new ArrayList<>();
         responseChoosers = new ArrayList<>();
+        configPublisher = NetworkTableInstance.getDefault().getTable("SmartDashboard").getSubTable(key).getStringTopic("Configuration").publish();
     }
 
     private void populateQuestions(AutoRoutine routine) {
@@ -61,69 +66,120 @@ public class AutoSelector extends VirtualSubsystem {
         routineChooser.addDefaultOption(routine.name, routine);
     }
 
-    private Alliance prevAlliance = Alliance.Blue;
     @Override
     public void periodic() {
-        var alliance = DriverStation.getAlliance().orElse(null);
+        var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
         if(DriverStation.isEnabled()) return;
         var selectedRoutine = routineChooser.get();
         if(selectedRoutine == null) return;
+        var config = new AutoConfiguration(alliance, selectedRoutine.name);
+
         var questions = selectedRoutine.questions;
-        List<String> currentResponses = new ArrayList<>();
         for (int i = 0; i < responseChoosers.size(); i++) {
             if(i < questions.size()) {
-                questionPublishers.get(i).set(questions.get(i).name);
-                responseChoosers.get(i).setOptions(questions.get(i).getOptionNames());
-                var response = responseChoosers.get(i).get();
-                currentResponses.add(response);
-                if(response != null) {
-                    questions.get(i).setResponse(response);
+                var question = questions.get(i);
+                questionPublishers.get(i).set(question.name);
+
+                var chooser = responseChoosers.get(i);
+                chooser.setOptions(question.getOptionNames());
+                var setOption = Optional.ofNullable(question.settingsSupplier.get().defaultOption()).map(Map.Entry::getKey);
+                chooser.setDefault(setOption);
+                if(lastConfiguration == null || config.routine() != lastConfiguration.routine()) {
+                    chooser.setActive(setOption);
                 }
+
+                var response = chooser.get();
+                config.addQuestion(question.name, response.orElse(SwitchableChooser.placeholder));
+                question.setResponse(response);
             } else {
                 questionPublishers.get(i).set(questionPlaceHolder);
-                responseChoosers.get(i).setOptions(new String[] {});
+                responseChoosers.get(i).setOptions();
             }
         }
-        if(!currentResponses.equals(lastResponses) || prevAlliance != alliance) {
-            System.out.println("[AutoSelector] Generating new command");
-            System.out.println("[AutoSelector] Routine: " + selectedRoutine.name);
-            currentResponses.forEach(System.out::println);
+        if(!config.equals(lastConfiguration)) {
+            System.out.println("[AutoSelector] Generating new command\n" + config);
             lastCommand = selectedRoutine.generateCommand().withName("AUTO " + selectedRoutine.name);
         }
-        prevAlliance = alliance;
-        lastResponses = currentResponses;
+        lastConfiguration = config;
+        configPublisher.set(lastConfiguration.toString());
     }
 
     public Command getSelectedAutoCommand() {
         return lastCommand;
     }
 
-    public static class AutoQuestion<T extends Enum<T>> {
+    public static record AutoConfiguration(
+        Alliance alliance,
+        String routine,
+        Map<String, String> questions
+    ) {
+        public AutoConfiguration(Alliance alliance, String routine) {
+            this(alliance, routine, new LinkedHashMap<>());
+        }
+        public void addQuestion(String question, String response) {
+            questions.put(question, response);
+        }
+
+        public String toString() {
+            var builder = new StringBuilder()
+                .append("\t").append("Alliance: ").append(alliance).append("\n")
+                .append("\t").append("Routine: ").append(routine)
+            ;
+            questions.entrySet().stream().forEach((e) -> {
+                builder.append("\n\t").append(e.getKey()).append(": ").append(e.getValue());
+            });
+            return builder.toString();
+        }
+    }
+
+    public static class AutoQuestion<T> {
         public final String name;
-        private final Supplier<T[]> optionSupplier;
+        private final Supplier<Settings<T>> settingsSupplier;
         private T response;
 
-        public AutoQuestion(String name, Supplier<T[]> optionSupplier) {
+        public static record Settings<T>(Map<String, T> options, Map.Entry<String,T> defaultOption) {
+            @SafeVarargs
+            public static <T> Settings<T> from(Map.Entry<String,T> defaultOption, Map.Entry<String,T>... options) {
+                var map = new LinkedHashMap<String, T>();
+                for(var option : options) {
+                    map.put(option.getKey(), option.getValue());
+                }
+                return new Settings<T>(map, defaultOption);
+            }
+
+            public static <T> Settings<T> empty() {
+                return new Settings<T>(Map.of(), null);
+            }
+        }
+
+        public AutoQuestion(String name, Supplier<Settings<T>> settingsSupplier) {
             this.name = name;
-            this.optionSupplier = optionSupplier;
-            this.response = this.optionSupplier.get()[0];
+            this.settingsSupplier = settingsSupplier;
+            this.response = this.settingsSupplier.get().defaultOption().getValue();
         }
 
         public T getResponse() {
             return response;
         }
 
-        public void setResponse(String newResponse) {
-            response = Enum.valueOf(response.getDeclaringClass(), newResponse);
+        public void setResponse(Optional<String> newResponse) {
+            newResponse
+                .map((newR) -> 
+                    Optional.ofNullable(
+                        settingsSupplier.get().options().get(newR)
+                    )
+                )
+                .orElseGet(() -> 
+                    Optional.ofNullable(
+                        settingsSupplier.get().defaultOption()
+                    ).map(Map.Entry::getValue)
+                )
+                .ifPresent((r) -> response = r);
+            ;
         }
 
         public String[] getOptionNames() {
-            var options = optionSupplier.get();
-            var optionNames = new String[options.length];
-            for(int i = 0; i < optionNames.length; i++) {
-                optionNames[i] = options[i].name();
-            }
-            return optionNames;
+            return settingsSupplier.get().options().keySet().stream().toArray(String[]::new);
         }
     }
 

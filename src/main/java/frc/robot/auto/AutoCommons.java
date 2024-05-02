@@ -66,19 +66,8 @@ public class AutoCommons {
         StartPosition(Pose2d startPose) {
             this.startPose = startPose;
         }
-    }
-
-    public static enum Count {
-        k1(1),
-        k2(2),
-        k3(3),
-        k4(4),
-        k5(5),
-        k6(6),
-        ;
-        public final int asInt;
-        Count(int asInt) {
-            this.asInt = asInt;
+        public Map.Entry<String, StartPosition> toEntry() {
+            return Map.entry(this.name(), this);
         }
     }
 
@@ -89,15 +78,8 @@ public class AutoCommons {
         Note4,
         Note5,
         ;
-    }
-
-    public static enum Bool {
-        Yes(true),
-        No(false),
-        ;
-        public final boolean asBoolean;
-        Bool(boolean asBoolean) {
-            this.asBoolean = asBoolean;
+        public Map.Entry<String, CenterNote> toEntry() {
+            return Map.entry(this.name(), this);
         }
     }
 
