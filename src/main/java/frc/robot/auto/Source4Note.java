@@ -25,7 +25,7 @@ public class Source4Note extends AutoRoutine {
         var podium = StartPosition.Podium.toEntry();
         var source = StartPosition.Source.toEntry();
 
-        return Settings.from(podium.getValue(), podium, source);
+        return Settings.from(podium, podium, source);
     });
 
     private static final AutoQuestion<Integer> noteCount = new AutoQuestion<>("Note Count", () -> {
@@ -35,14 +35,14 @@ public class Source4Note extends AutoRoutine {
         var k4 = Map.entry("4", 4);
         var k5 = Map.entry("5", 5);
 
-        return Settings.from(k5.getValue(), k5,k4,k3,k2,k1);
+        return Settings.from(k5, k5,k4,k3,k2,k1);
     });
 
     private static final AutoQuestion<Boolean> skipPreload = new AutoQuestion<>("Skip Preload", () -> {
         var no = Map.entry("No", false);
         var yes = Map.entry("Yes", true);
 
-        return Settings.from(no.getValue(), no, yes);
+        return Settings.from(no, no, yes);
     });
 
     private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
@@ -55,7 +55,7 @@ public class Source4Note extends AutoRoutine {
             case Source -> 2;
             default -> 5;
         }) ? (
-            Settings.from(c5.getValue(), c3,c4,c5)
+            Settings.from(c5, c3,c4,c5)
         ) : (
             Settings.empty()
         );
@@ -73,8 +73,8 @@ public class Source4Note extends AutoRoutine {
         }) ? (
             Settings.from(
                 switch(firstCenterNote.getResponse()) {
-                    default -> c4.getValue();
-                    case Note4 -> c3.getValue();
+                    default -> c3;
+                    case Note5 -> c4;
                 },
                 c3,c4,c5
             )
@@ -94,7 +94,7 @@ public class Source4Note extends AutoRoutine {
             default -> 5;
         }) ? (
             Settings.from(
-                c3.getValue(),
+                c3,
                 c3,c4,c5
             )
         ) : (

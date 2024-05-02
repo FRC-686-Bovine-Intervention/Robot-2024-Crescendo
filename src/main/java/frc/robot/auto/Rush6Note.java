@@ -22,7 +22,7 @@ public class Rush6Note extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
         var amp = StartPosition.Amp.toEntry();
 
-        return Settings.from(amp.getValue(), amp);
+        return Settings.from(amp, amp);
     });
 
     private static final AutoQuestion<Integer> noteCount = new AutoQuestion<>("Note Count", () -> {
@@ -32,7 +32,7 @@ public class Rush6Note extends AutoRoutine {
         var k4 = Map.entry("4", 4);
         var k5 = Map.entry("5", 5);
 
-        return Settings.from(k5.getValue(), k5,k4,k3,k2,k1);
+        return Settings.from(k5, k5,k4,k3,k2,k1);
     });
 
     private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
@@ -41,7 +41,7 @@ public class Rush6Note extends AutoRoutine {
         var c3 = CenterNote.Note3.toEntry();
 
         return (noteCount.getResponse() >= 3) ? (
-            Settings.from(c1.getValue(), c1,c2,c3)
+            Settings.from(c1, c1,c2,c3)
         ) : (
             Settings.empty()
         );
@@ -55,8 +55,8 @@ public class Rush6Note extends AutoRoutine {
         return (noteCount.getResponse() >= 4) ? (
             Settings.from(
                 switch(firstCenterNote.getResponse()) {
-                    default -> c2.getValue();
-                    case Note2 -> c3.getValue();
+                    default -> c3;
+                    case Note1 -> c2;
                 },
                 c1,c2,c3
             )
@@ -72,7 +72,7 @@ public class Rush6Note extends AutoRoutine {
 
         return (noteCount.getResponse() >= 5) ? (
             Settings.from(
-                c3.getValue(),
+                c3,
                 c1,c2,c3
             )
         ) : (

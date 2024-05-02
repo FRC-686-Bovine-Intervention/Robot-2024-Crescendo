@@ -24,7 +24,7 @@ public class MASpikeWiggle extends AutoRoutine {
         var podium = StartPosition.Podium.toEntry();
         var amp = StartPosition.Amp.toEntry();
 
-        return Settings.from(podium.getValue(), podium, amp);
+        return Settings.from(podium, podium, amp);
     });
 
     private static final AutoQuestion<Integer> noteCount = new AutoQuestion<Integer>("Note Count", () -> {
@@ -35,7 +35,7 @@ public class MASpikeWiggle extends AutoRoutine {
         var k5 = Map.entry("5", 5);
         var k6 = Map.entry("6", 6);
 
-        return Settings.from(k6.getValue(), k6,k5,k4,k3,k2,k1);
+        return Settings.from(k6, k6,k5,k4,k3,k2,k1);
     });
 
     private static final AutoQuestion<CenterNote> firstCenterNote = new AutoQuestion<>("First Center Note", () -> {
@@ -44,7 +44,7 @@ public class MASpikeWiggle extends AutoRoutine {
         var c3 = CenterNote.Note3.toEntry();
 
         return (noteCount.getResponse() >= 5) ? (
-            Settings.from(c1.getValue(), c1,c2,c3)
+            Settings.from(c1, c1,c2,c3)
         ) : (
             Settings.empty()
         );
@@ -58,8 +58,8 @@ public class MASpikeWiggle extends AutoRoutine {
         return (noteCount.getResponse() >= 6) ? (
             Settings.from(
                 switch(firstCenterNote.getResponse()) {
-                    default -> c2.getValue();
-                    case Note2 -> c3.getValue();
+                    default -> c3;
+                    case Note1 -> c2;
                 },
                 c1,c2,c3
             )

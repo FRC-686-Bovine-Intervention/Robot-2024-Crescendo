@@ -22,7 +22,7 @@ public class Disruptor extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
         var source = StartPosition.Source.toEntry();
 
-        return Settings.from(source.getValue(), source);
+        return Settings.from(source, source);
     });
 
     public Disruptor(RobotContainer robot) {

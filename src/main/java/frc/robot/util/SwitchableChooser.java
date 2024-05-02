@@ -24,6 +24,7 @@ public class SwitchableChooser implements LoggedDashboardInput, LazyOptional<Str
 
   private String[] options;
   private Optional<String> active = Optional.empty();
+  private Optional<String> defaultO = Optional.empty();
 
   private final StringPublisher namePublisher;
   private final StringPublisher typePublisher;
@@ -57,6 +58,13 @@ public class SwitchableChooser implements LoggedDashboardInput, LazyOptional<Str
     setActive(Optional.empty());
   }
 
+  public void setDefault(Optional<String> defaultOption) {
+    if (this.defaultO.equals(defaultOption)) return;
+    this.defaultO = defaultOption;
+    defaultPublisher.set(defaultOption.orElse(placeholder));
+    setActive(defaultOption);
+  }
+
   public String[] getOptions() {
     return options;
   }
@@ -70,7 +78,6 @@ public class SwitchableChooser implements LoggedDashboardInput, LazyOptional<Str
   public void setActive(Optional<String> newActive) {
     active = newActive;
     selectedPublisher.set(active.orElse(placeholder));
-    defaultPublisher.set(active.orElse(placeholder));
     activePublisher.set(active.orElse(placeholder));
   }
 
