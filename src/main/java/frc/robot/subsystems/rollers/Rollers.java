@@ -3,7 +3,6 @@ package frc.robot.subsystems.rollers;
 import java.util.Arrays;
 import java.util.Optional;
 
-import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -19,7 +18,8 @@ public class Rollers extends VirtualSubsystem {
     private final RollerSensorsIO sensorsIO;
     private final RollerSensorsIOInputsAutoLogged inputs = new RollerSensorsIOInputsAutoLogged();
 
-    private final EdgeDetector kickerEdgeDetector = new EdgeDetector(() -> inputs.kickerSensor);
+    private final EdgeDetector intakeEdgeDetector = new EdgeDetector(() -> inputs.intakeSensorHistory);
+    private final EdgeDetector kickerEdgeDetector = new EdgeDetector(() -> inputs.kickerSensorHistory);
 
     public final Intake intake;
     public final Kicker kicker;
@@ -126,11 +126,12 @@ public class Rollers extends VirtualSubsystem {
     public void periodic() {
         sensorsIO.updateInputs(inputs);
         Logger.processInputs("RollerSensors", inputs);
+        intakeEdgeDetector.update();
         kickerEdgeDetector.update();
-        if(inputs.intakeSensor) {
+        if(intakeEdgeDetector.getValue()) {
             gamePiece = Optional.of(GamePieceState.INTAKE);
         }
-        if(inputs.kickerSensor) {
+        if(kickerEdgeDetector.getValue()) {
             gamePiece = Optional.of(GamePieceState.KICKER);
         }
         if(kickerEdgeDetector.fallingEdge()) {
