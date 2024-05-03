@@ -131,11 +131,11 @@ public class Rollers extends VirtualSubsystem {
         if(intakeEdgeDetector.getValue()) {
             gamePiece = Optional.of(GamePieceState.INTAKE);
         }
-        if(kickerEdgeDetector.getValue()) {
-            gamePiece = Optional.of(GamePieceState.KICKER);
-        }
         if(kickerEdgeDetector.fallingEdge()) {
             gamePiece = Optional.empty();
+        }
+        if(kickerEdgeDetector.getValue()) {
+            gamePiece = Optional.of(GamePieceState.KICKER);
         }
         NoteVisualizer.internalNote = gamePiece;
         intake.periodic();
