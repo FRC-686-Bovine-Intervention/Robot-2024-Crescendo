@@ -134,8 +134,10 @@ public class RobotContainer {
                     new Intake(new IntakeIOSim(), drive::getRobotRelativeSpeeds),
                     new Kicker(new KickerIONeo550()),
                     new RollerSensorsIOSim(
-                        simJoystick.button(1),
-                        simJoystick.button(3)
+                        // simJoystick.button(1).onTrue(Commands.print("------------------YIPPEEE")),
+                        // simJoystick.button(3)
+                        driveController.povDown(),
+                        driveController.povUp()
                     )
                 );
                 pivot = new Pivot(new PivotIOSim(), ()->false,()->false);

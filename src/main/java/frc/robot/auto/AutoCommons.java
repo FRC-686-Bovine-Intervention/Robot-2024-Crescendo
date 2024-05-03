@@ -116,7 +116,7 @@ public class AutoCommons {
 
             return shooterReady && pivotReady && poseReady && speedReady;
         };
-        return rollers.setKickerGoalCommand(Kicker.Goal.KICK).onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::kickerFallingEdge);
+        return rollers.setKickerGoalCommand(Kicker.Goal.KICK).asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::kickerFallingEdge);
     }
 
     private static Translation2d getFORR(Translation2d pos) {
@@ -166,7 +166,7 @@ public class AutoCommons {
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                rollers.setIntakeGoalCommand(Intake.Goal.INTAKE),
+                rollers.setIntakeGoalCommand(Intake.Goal.INTAKE).asProxy(),
                 AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
             )
@@ -179,7 +179,7 @@ public class AutoCommons {
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                rollers.setIntakeGoalCommand(Intake.Goal.INTAKE),
+                rollers.setIntakeGoalCommand(Intake.Goal.INTAKE).asProxy(),
                 AutoCommons.autoAim(shotPos, shooter, pivot),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle)))
@@ -207,7 +207,7 @@ public class AutoCommons {
                 AutoCommons.followPathFlipped(toCenterLine, drive)
                 .until(noteVision::hasTarget)
                 .andThen(
-                    rollers.setIntakeGoalCommand(Intake.Goal.INTAKE)
+                    rollers.setIntakeGoalCommand(Intake.Goal.INTAKE).asProxy()
                     .raceWith(
                         noteVision.autoIntake(() -> 2, rollers::noNote, drive)
                     )

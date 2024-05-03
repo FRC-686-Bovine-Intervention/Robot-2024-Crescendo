@@ -49,6 +49,7 @@ public final class Constants {
     public static final boolean tuningMode = true;
 
     public static final double dtSeconds = 0.02;
+    public static final double sensorDtSeconds = 0.005;
     public static final double loopFrequencyHz = 1.0/dtSeconds;
 
     public static Mode getMode() {
