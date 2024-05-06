@@ -9,10 +9,13 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.RobotState;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.LoggedTunableNumber;
@@ -62,6 +65,14 @@ public class Shooter extends SubsystemBase {
             new LoggedTunableNumber("Shooter/Custom/Minimum Speed", 50),
             new LoggedTunableNumber("Shooter/Custom/Maximum Speed", 50)
         ),
+        SYSID(
+            () -> 0, () -> Double.POSITIVE_INFINITY
+        ) {
+            @Override
+            public void runGoal(ShooterIO shooterIO) {
+                
+            }
+        },
         ;
         private final DoubleSupplier targetShootingSpeed;
         private final DoubleSupplier minimumShootingSpeed;
@@ -105,6 +116,32 @@ public class Shooter extends SubsystemBase {
         this.shooterIO = shooterIO;
         System.out.println("[Init Shooter] Shooter IO: " + this.shooterIO.getClass().getSimpleName());
         SmartDashboard.putData("Subsystems/Shooter", this);
+
+        var routine = new SysIdRoutine(
+            new SysIdRoutine.Config(),
+            new SysIdRoutine.Mechanism(
+                (volts) -> {
+                    shooterIO.setLeftVoltage(volts.in(Units.Volts));
+                    shooterIO.setLeftVoltage(volts.in(Units.Volts));
+                },
+                (log) -> {
+                    log.motor("left")
+                        .angularPosition(Units.Radians.of(inputs.leftMotor.positionRad))
+                        .angularVelocity(Units.RadiansPerSecond.of(inputs.leftMotor.velocityRadPerSec))
+                    ;
+                    log.motor("right")
+                        .angularPosition(Units.Radians.of(inputs.rightMotor.positionRad))
+                        .angularVelocity(Units.RadiansPerSecond.of(inputs.rightMotor.velocityRadPerSec))
+                    ;
+                },
+                this
+            )
+        );
+
+        SmartDashboard.putData("SysID/Shooter/Quasi Forward", routine.quasistatic(Direction.kForward));
+        SmartDashboard.putData("SysID/Shooter/Quasi Reverse", routine.quasistatic(Direction.kReverse));
+        SmartDashboard.putData("SysID/Shooter/Dynamic Forward", routine.dynamic(Direction.kForward));
+        SmartDashboard.putData("SysID/Shooter/Dynamic Reverse", routine.dynamic(Direction.kReverse));
     }
 
     @Override
@@ -132,88 +169,6 @@ public class Shooter extends SubsystemBase {
     public double getTargetSpeed() {
         return goal.targetShootingSpeed.getAsDouble();
     }
-
-    // private Command surfaceSpeed(DoubleSupplier mps) {
-    //     return surfaceSpeed(mps, () -> mps.getAsDouble() - 1);
-    // }
-
-    // private Command surfaceSpeed(DoubleSupplier mps, DoubleSupplier acceptableMPS) {
-    //     var subsystem = this;
-    //     return new Command() {
-    //         {
-    //             addRequirements(subsystem);
-    //             setName("Set Surface Speed");
-    //         }
-    //         @Override
-    //         public void initialize() {
-    //             execute();
-    //         }
-    //         @Override
-    //         public void execute() {
-    //             targetSpeed = mps.getAsDouble();
-    //             shooterIO.setLeftSurfaceSpeed(targetSpeed);
-    //             shooterIO.setRightSurfaceSpeed(targetSpeed);
-    //             readyToShoot = getAverageSurfaceSpeed() >= acceptableMPS.getAsDouble() && getAverageSurfaceSpeed() <= targetSpeed + 2;
-    //         }
-    //         @Override
-    //         public void end(boolean interrupted) {
-    //             followUpTimer.stop();
-    //             followUpTimer.reset();
-    //             shooterIO.stop();
-    //             readyToShoot = false;
-    //         }
-    //     };
-    // }
-
-    // private Command followUp(BooleanSupplier shot) {
-    //     return new Command() {
-    //         {
-    //             setName("Wait for Followup");
-    //         }
-    //         @Override
-    //         public void execute() {
-    //             if(shot.getAsBoolean()) {
-    //                 followUpTimer.start();
-    //             }
-    //         }
-    //         @Override
-    //         public void end(boolean interrupted) {
-    //             followUpTimer.stop();
-    //             followUpTimer.reset();
-    //         }
-    //         @Override
-    //         public boolean isFinished() {
-    //             return followUpTimer.hasElapsed(followUpTime.get());
-    //         }
-    //     };
-    // }
-
-    // private Command surfaceSpeedWithFinish(DoubleSupplier mps, BooleanSupplier shot) {
-    //     return surfaceSpeedWithFinish(mps, () -> mps.getAsDouble() - 1, shot);
-    // }
-    // private Command surfaceSpeedWithFinish(DoubleSupplier mps, DoubleSupplier acceptableMPS, BooleanSupplier shot) {
-    //     return followUp(shot).deadlineWith(surfaceSpeed(mps, acceptableMPS)).withName("Set Surface Speed Finish");
-    // }
-
-    // public Command shootWithTunableNumber() {
-    //     return surfaceSpeed(tuningMPS::get).withName("Shoot with tunable number");
-    // }
-
-    // public Command shoot(Supplier<Translation2d> FORR) {
-    //     return surfaceSpeed(() -> ShooterConstants.targetShooterSpeed.get(FORR.get().getNorm()), () -> ShooterConstants.minimumShooterSpeed.get(FORR.get().getNorm())).withName("Shoot at pos");
-    // }
-
-    // public Command shoot(Supplier<Translation2d> FORR, BooleanSupplier shot) {
-    //     return surfaceSpeedWithFinish(() -> ShooterConstants.targetShooterSpeed.get(FORR.get().getNorm()), () -> ShooterConstants.minimumShooterSpeed.get(FORR.get().getNorm()), shot).withName("Shoot at pos");
-    // }
-
-    // public Command preemptiveSpinup() {
-    //     return surfaceSpeed(preemtiveMPS::get).withName("Pre-emptive Spinup");
-    // }
-
-    // public Command amp() {
-    //     return surfaceSpeed(ampMPS::get, () -> 500).withName("Amp");
-    // }
 
     public Command setGoalCommand(Goal goal) {
         return startEnd(
