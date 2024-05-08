@@ -10,7 +10,6 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.units.Units;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -108,9 +107,6 @@ public class Shooter extends SubsystemBase {
     @AutoLogOutput(key = "Shooter/Goal")
     private Goal goal = Goal.IDLE;
 
-    private static final LoggedTunableNumber followUpTime = new LoggedTunableNumber("Shooter/Follow Up Time", 0.25);
-    private final Timer followUpTimer = new Timer();
-
     public Shooter(ShooterIO shooterIO) {
         System.out.println("[Init Shooter] Instantiating Shooter");
         this.shooterIO = shooterIO;
@@ -118,30 +114,47 @@ public class Shooter extends SubsystemBase {
         SmartDashboard.putData("Subsystems/Shooter", this);
 
         var routine = new SysIdRoutine(
-            new SysIdRoutine.Config(),
+            new SysIdRoutine.Config(
+                null,
+                null,
+                null,
+                (state) -> {
+                    Logger.recordOutput("SysID/Shooter/State", state.toString());
+                }
+            ),
             new SysIdRoutine.Mechanism(
                 (volts) -> {
                     shooterIO.setLeftVoltage(volts.in(Units.Volts));
-                    shooterIO.setLeftVoltage(volts.in(Units.Volts));
+                    shooterIO.setRightVoltage(volts.in(Units.Volts));
                 },
                 (log) -> {
-                    log.motor("left")
-                        .angularPosition(Units.Radians.of(inputs.leftMotor.positionRad))
-                        .angularVelocity(Units.RadiansPerSecond.of(inputs.leftMotor.velocityRadPerSec))
-                    ;
-                    log.motor("right")
-                        .angularPosition(Units.Radians.of(inputs.rightMotor.positionRad))
-                        .angularVelocity(Units.RadiansPerSecond.of(inputs.rightMotor.velocityRadPerSec))
-                    ;
+                    Logger.recordOutput("SysID/Shooter/Left Position", inputs.leftMotor.positionRad);
+                    Logger.recordOutput("SysID/Shooter/Right Position", inputs.rightMotor.positionRad);
+                    Logger.recordOutput("SysID/Shooter/Left Velocity", inputs.leftMotor.velocityRadPerSec);
+                    Logger.recordOutput("SysID/Shooter/Right Velocity", inputs.rightMotor.velocityRadPerSec);
+                    Logger.recordOutput("SysID/Shooter/Left Voltage", inputs.leftMotor.appliedVolts);
+                    Logger.recordOutput("SysID/Shooter/Right Voltage", inputs.rightMotor.appliedVolts);
+                    // log.motor("left")
+                    //     .angularPosition(Units.Radians.of(inputs.leftMotor.positionRad))
+                    //     .angularVelocity(Units.RadiansPerSecond.of(inputs.leftMotor.velocityRadPerSec))
+                    //     .voltage(Units.Volts.of(inputs.leftMotor.appliedVolts))
+                    //     .current(Units.Amps.of(inputs.leftMotor.currentAmps))
+                    // ;
+                    // log.motor("right")
+                    //     .angularPosition(Units.Radians.of(inputs.rightMotor.positionRad))
+                    //     .angularVelocity(Units.RadiansPerSecond.of(inputs.rightMotor.velocityRadPerSec))
+                    //     .voltage(Units.Volts.of(inputs.rightMotor.appliedVolts))
+                    //     .current(Units.Amps.of(inputs.rightMotor.currentAmps))
+                    // ;
                 },
                 this
             )
         );
 
-        SmartDashboard.putData("SysID/Shooter/Quasi Forward", routine.quasistatic(Direction.kForward));
-        SmartDashboard.putData("SysID/Shooter/Quasi Reverse", routine.quasistatic(Direction.kReverse));
-        SmartDashboard.putData("SysID/Shooter/Dynamic Forward", routine.dynamic(Direction.kForward));
-        SmartDashboard.putData("SysID/Shooter/Dynamic Reverse", routine.dynamic(Direction.kReverse));
+        SmartDashboard.putData("SysID/Shooter/Quasi Forward", routine.quasistatic(Direction.kForward).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Quasistatic Forward"));
+        SmartDashboard.putData("SysID/Shooter/Quasi Reverse", routine.quasistatic(Direction.kReverse).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Quasistatic Reverse"));
+        SmartDashboard.putData("SysID/Shooter/Dynamic Forward", routine.dynamic(Direction.kForward).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Dynamic Forward"));
+        SmartDashboard.putData("SysID/Shooter/Dynamic Reverse", routine.dynamic(Direction.kReverse).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Dynamic Reverse"));
     }
 
     @Override
@@ -149,7 +162,6 @@ public class Shooter extends SubsystemBase {
         shooterIO.updateInputs(inputs);
         Logger.processInputs("Shooter", inputs);
         Logger.recordOutput("Shooter/Average MPS", getAverageSurfaceSpeed());
-        Logger.recordOutput("Shooter/Timer", followUpTimer.get());
 
         Leds.getInstance().shooterReady = readyToShoot();
         Leds.getInstance().shooterSpeed = getAverageSurfaceSpeed();
