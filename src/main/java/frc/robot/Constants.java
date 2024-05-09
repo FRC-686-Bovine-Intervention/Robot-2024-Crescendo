@@ -6,12 +6,14 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Centimeters;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Kilograms;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import java.util.Arrays;
 import java.util.function.Function;
@@ -225,7 +227,7 @@ public final class Constants {
         public static final double driveSnapKd = 0;
 
 
-        public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
+        public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(2).in(MetersPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(RobotConstants.trackWidthXMeters/2, RobotConstants.trackWidthYMeters/2);
         /**full speed in 0.25 sec*/
@@ -248,6 +250,7 @@ public final class Constants {
         public static final double headingKi = 0;
         public static final double headingKd = 0;
         public static final double headingTolerance = Degrees.of(1).in(Radians);
+        public static final double omegaTolerance = DegreesPerSecond.of(1).in(RadiansPerSecond);
     }
 
     public static final class PivotConstants {

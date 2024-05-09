@@ -151,10 +151,10 @@ public class Shooter extends SubsystemBase {
             )
         );
 
-        SmartDashboard.putData("SysID/Shooter/Quasi Forward", routine.quasistatic(Direction.kForward).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Quasistatic Forward"));
-        SmartDashboard.putData("SysID/Shooter/Quasi Reverse", routine.quasistatic(Direction.kReverse).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Quasistatic Reverse"));
-        SmartDashboard.putData("SysID/Shooter/Dynamic Forward", routine.dynamic(Direction.kForward).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Dynamic Forward"));
-        SmartDashboard.putData("SysID/Shooter/Dynamic Reverse", routine.dynamic(Direction.kReverse).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Dynamic Reverse"));
+        // SmartDashboard.putData("SysID/Shooter/Quasi Forward", routine.quasistatic(Direction.kForward).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Quasistatic Forward"));
+        // SmartDashboard.putData("SysID/Shooter/Quasi Reverse", routine.quasistatic(Direction.kReverse).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Quasistatic Reverse"));
+        // SmartDashboard.putData("SysID/Shooter/Dynamic Forward", routine.dynamic(Direction.kForward).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Dynamic Forward"));
+        // SmartDashboard.putData("SysID/Shooter/Dynamic Reverse", routine.dynamic(Direction.kReverse).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Dynamic Reverse"));
     }
 
     @Override

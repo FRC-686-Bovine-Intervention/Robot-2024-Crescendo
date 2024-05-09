@@ -401,7 +401,7 @@ public class Drive extends VirtualSubsystem {
                     addRequirements(subsystem);
                     setName("PID Controlled Heading");
                     headingPID.enableContinuousInput(-Math.PI, Math.PI);  // since gyro angle is not limited to [-pi, pi]
-                    headingPID.setTolerance(DriveConstants.headingTolerance);
+                    headingPID.setTolerance(DriveConstants.headingTolerance, DriveConstants.omegaTolerance);
                 }
                 private Rotation2d desiredHeading;
                 private boolean headingSet;
