@@ -16,6 +16,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import java.util.Arrays;
+import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -39,6 +40,7 @@ import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
+import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.GearRatio.Wheel;
 
 public final class Constants {
@@ -227,9 +229,11 @@ public final class Constants {
         public static final double driveSnapKd = 0;
 
 
-        public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(2).in(MetersPerSecond);
+        public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(RobotConstants.trackWidthXMeters/2, RobotConstants.trackWidthYMeters/2);
+        public static final DoubleSupplier maxDriveSpeedPercentage = new LoggedTunableNumber("Drive Constraints/Max Translational Percentage", 1);
+        public static final DoubleSupplier maxTurnRatePercentage = new LoggedTunableNumber("Drive Constraints/Max Rotational Percentage", 1);
         /**full speed in 0.25 sec*/
         public static final double joystickSlewRateLimit = 1.0 / 0.25;
         public static final double driveJoystickDeadbandPercent = 0.2;

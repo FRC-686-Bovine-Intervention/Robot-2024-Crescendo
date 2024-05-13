@@ -45,7 +45,6 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.manualOverrides.ManualOverrides;
 import frc.robot.subsystems.pivot.Pivot;
@@ -173,7 +172,7 @@ public class RobotContainer {
             .radialSensitivity(0.75)
             .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
 
-        joystickTranslational = FieldOrientedDrive.joystickSpectatorToFieldRelative(
+        joystickTranslational = Drive.Translational.joystickSpectatorToFieldRelative(
             driveJoystick,
             () -> false
             // driveController.leftBumper()

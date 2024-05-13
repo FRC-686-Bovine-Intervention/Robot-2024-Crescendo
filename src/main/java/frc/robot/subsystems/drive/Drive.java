@@ -52,13 +52,13 @@ import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
-import frc.robot.subsystems.drive.commands.FieldOrientedDrive.SpectatorType;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.MathExtraUtil;
+import frc.robot.util.SpectatorType;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.pathplanner.AutoBuilder;
@@ -295,6 +295,7 @@ public class Drive extends VirtualSubsystem {
                     translationalJoystick.toVector()
                     .times(
                         DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedPercentage.getAsDouble() * 
                         (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
                     )
                 );
@@ -362,7 +363,8 @@ public class Drive extends VirtualSubsystem {
                     if(desiredLinear.norm() > defenseSpinLinearThreshold.get()) {
                         dot = -joyVec.dot(perpendicularLinear);
                     }
-                    var omega = dot * DriveConstants.maxTurnRateRadiansPerSec * 0.25;
+                    var omega = dot * DriveConstants.maxTurnRateRadiansPerSec * 
+                        DriveConstants.maxTurnRatePercentage.getAsDouble() * 0.25;
                     driveVelocity(omega);
                     if(desiredLinear.norm() <= defenseSpinLinearThreshold.get()) {
                         drive.setCenterOfRotation(new Translation2d());
@@ -417,7 +419,8 @@ public class Drive extends VirtualSubsystem {
                     double turnInput = headingPID.calculate(drive.getRotation().getRadians(), desiredHeading.getRadians());
                     turnInput = headingPID.atSetpoint() ? 0 : turnInput;
                     turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
-                    driveVelocity(turnInput * DriveConstants.maxTurnRateRadiansPerSec);
+                    driveVelocity(turnInput * DriveConstants.maxTurnRateRadiansPerSec * 
+                        DriveConstants.maxTurnRatePercentage.getAsDouble());
                 }
                 @Override
                 public void end(boolean interrupted) {
@@ -487,9 +490,12 @@ public class Drive extends VirtualSubsystem {
 
     public void drivePercent(ChassisSpeeds speeds) {
         driveVelocity(new ChassisSpeeds(
-                speeds.vxMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec,
-                speeds.vyMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec,
-                speeds.omegaRadiansPerSecond * DriveConstants.maxTurnRateRadiansPerSec));
+                speeds.vxMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedPercentage.getAsDouble(),
+                speeds.vyMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedPercentage.getAsDouble(),
+                speeds.omegaRadiansPerSecond * DriveConstants.maxTurnRateRadiansPerSec * 
+                        DriveConstants.maxTurnRatePercentage.getAsDouble()));
     }
 
     public void setCenterOfRotation(Translation2d cor) {
@@ -530,12 +536,14 @@ public class Drive extends VirtualSubsystem {
 
     /** Returns the maximum linear speed in meters per sec. */
     public double getMaxLinearSpeedMetersPerSec() {
-        return DriveConstants.maxDriveSpeedMetersPerSec;
+        return DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedPercentage.getAsDouble();
     }
 
     /** Returns the maximum angular speed in radians per sec. */
     public double getMaxAngularSpeedRadiansPerSec() {
-        return DriveConstants.maxTurnRateRadiansPerSec;
+        return DriveConstants.maxTurnRateRadiansPerSec * 
+                        DriveConstants.maxTurnRatePercentage.getAsDouble();
     }
 
     /**
@@ -669,7 +677,8 @@ public class Drive extends VirtualSubsystem {
                 rI.get(),
                 rD.get()
             ),
-            DriveConstants.maxDriveSpeedMetersPerSec,
+            DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedPercentage.getAsDouble(),
             DriveConstants.driveBaseRadius,
             new ReplanningConfig()
         );
