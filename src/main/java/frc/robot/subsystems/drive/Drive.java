@@ -418,9 +418,12 @@ public class Drive extends VirtualSubsystem {
                     heading.ifPresent((r) -> desiredHeading = r);
                     double turnInput = headingPID.calculate(drive.getRotation().getRadians(), desiredHeading.getRadians());
                     turnInput = headingPID.atSetpoint() ? 0 : turnInput;
-                    turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
-                    driveVelocity(turnInput * DriveConstants.maxTurnRateRadiansPerSec * 
-                        DriveConstants.maxTurnRatePercentage.getAsDouble());
+                    turnInput = MathUtil.clamp(
+                        turnInput, 
+                        -0.5 * DriveConstants.maxTurnRatePercentage.getAsDouble(), 
+                        +0.5 * DriveConstants.maxTurnRatePercentage.getAsDouble()
+                    );
+                    driveVelocity(turnInput * DriveConstants.maxTurnRateRadiansPerSec);
                 }
                 @Override
                 public void end(boolean interrupted) {
