@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.RobotState;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.MathExtraUtil;
@@ -97,7 +98,7 @@ public class Shooter extends SubsystemBase {
             return maximumShootingSpeed.getAsDouble();
         }
         public void runGoal(ShooterIO shooterIO) {
-            var goalSpeed = getTargetSpeed();
+            var goalSpeed = getTargetSpeed() * ShooterConstants.shooterSpeedEnvCoef.getAsDouble();
             shooterIO.setLeftSurfaceSpeed(goalSpeed);
             shooterIO.setRightSurfaceSpeed(goalSpeed);
             Leds.getInstance().shooterBarGraph.set(true);

@@ -232,8 +232,8 @@ public final class Constants {
         public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(RobotConstants.trackWidthXMeters/2, RobotConstants.trackWidthYMeters/2);
-        public static final DoubleSupplier maxDriveSpeedPercentage = new LoggedTunableNumber("Drive Constraints/Max Translational Percentage", 1);
-        public static final DoubleSupplier maxTurnRatePercentage = new LoggedTunableNumber("Drive Constraints/Max Rotational Percentage", 1);
+        public static final DoubleSupplier maxDriveSpeedEnvCoef = new LoggedTunableNumber("Drive Constraints/Max Translational Percentage", 1);
+        public static final DoubleSupplier maxTurnRateEnvCoef = new LoggedTunableNumber("Drive Constraints/Max Rotational Percentage", 1);
         /**full speed in 0.25 sec*/
         public static final double joystickSlewRateLimit = 1.0 / 0.25;
         public static final double driveJoystickDeadbandPercent = 0.2;
@@ -279,6 +279,8 @@ public final class Constants {
             .sprocket(+24).sprocket(+24)
             .wheelRadius(wheelRadius)
         ;
+
+        public static final DoubleSupplier shooterSpeedEnvCoef = new LoggedTunableNumber("Drive Constraints/Shooter Speed", 1);
 
         public static final InterpolatingDoubleTreeMap targetShooterSpeed = new InterpolatingDoubleTreeMap();
         static {
