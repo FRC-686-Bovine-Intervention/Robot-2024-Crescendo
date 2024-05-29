@@ -5,15 +5,15 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.GameState;
 import frc.robot.subsystems.leds.Leds;
-import frc.robot.util.EdgeDetector;
+import frc.robot.util.SuppliedEdgeDetector;
 import frc.robot.util.VirtualSubsystem;
 
 public class AutoManager extends VirtualSubsystem {
     private final AutoSelector selector;
 
     private Command autonomousCommand;
-    private final EdgeDetector autoEnabled = new EdgeDetector(DriverStation::isAutonomousEnabled);
-    private final EdgeDetector autoScheduled = new EdgeDetector(() -> autonomousCommand != null && autonomousCommand.isScheduled());
+    private final SuppliedEdgeDetector autoEnabled = new SuppliedEdgeDetector(DriverStation::isAutonomousEnabled);
+    private final SuppliedEdgeDetector autoScheduled = new SuppliedEdgeDetector(() -> autonomousCommand != null && autonomousCommand.isScheduled());
 
     public AutoManager(AutoSelector selector) {
         this.selector = selector;

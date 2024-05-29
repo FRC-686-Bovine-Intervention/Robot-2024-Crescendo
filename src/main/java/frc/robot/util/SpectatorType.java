@@ -1,7 +1,6 @@
 package frc.robot.util;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
 
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
@@ -31,10 +30,17 @@ public enum SpectatorType {
 		)
 	),
 	;
-	private static final MappedSwitchableChooser<SpectatorType> chooser = new MappedSwitchableChooser<>("Spectator Type");
-	static{
-		chooser.setOptions(Arrays.stream(values()).collect(Collectors.toMap(Enum::name, (e) -> e)));
-		chooser.setDefault(Comp);
+	private static final MappedSwitchableChooser<SpectatorType> chooser;
+	static {
+		var map = new LinkedHashMap<String, SpectatorType>();
+		map.put("Competition", Comp);
+		map.put("Spectator", Spectator);
+		map.put("Inverse Spectator", InvSpectator);
+		chooser = new MappedSwitchableChooser<>(
+			"Spectator Type",
+			map,
+			Spectator
+		);
 	}
 
 	private final Matrix<N2, N2> spectatorToField;
@@ -55,7 +61,10 @@ public enum SpectatorType {
 	}
 
 	public static SpectatorType getCurrentType() {
-		var selected = Environment.isCompetition() ? Comp : chooser.get().orElse(Spectator);
+		if (Environment.isCompetition()) {
+			chooser.setSelected(Comp);
+		}
+		var selected = chooser.get();
 		chooser.setActive(selected);
 		return selected;
 	}

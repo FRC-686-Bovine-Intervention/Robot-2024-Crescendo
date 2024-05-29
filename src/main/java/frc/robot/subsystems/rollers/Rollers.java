@@ -11,15 +11,15 @@ import frc.robot.NoteVisualizer;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.rollers.intake.Intake;
 import frc.robot.subsystems.rollers.kicker.Kicker;
-import frc.robot.util.EdgeDetector;
+import frc.robot.util.SuppliedEdgeDetector;
 import frc.robot.util.VirtualSubsystem;
 
 public class Rollers extends VirtualSubsystem {
     private final RollerSensorsIO sensorsIO;
     private final RollerSensorsIOInputsAutoLogged inputs = new RollerSensorsIOInputsAutoLogged();
 
-    private final EdgeDetector intakeEdgeDetector = new EdgeDetector(() -> inputs.intakeSensorHistory);
-    private final EdgeDetector kickerEdgeDetector = new EdgeDetector(() -> inputs.kickerSensorHistory);
+    private final SuppliedEdgeDetector intakeEdgeDetector = new SuppliedEdgeDetector(() -> inputs.intakeSensorHistory);
+    private final SuppliedEdgeDetector kickerEdgeDetector = new SuppliedEdgeDetector(() -> inputs.kickerSensorHistory);
 
     public final Intake intake;
     public final Kicker kicker;

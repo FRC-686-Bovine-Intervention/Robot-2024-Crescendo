@@ -23,7 +23,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.NoteVisualizer;
 import frc.robot.RobotState;
-import frc.robot.util.EdgeDetector;
+import frc.robot.util.SuppliedEdgeDetector;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Pivot extends SubsystemBase {
@@ -81,16 +81,16 @@ public class Pivot extends SubsystemBase {
   @AutoLogOutput(key = "Pivot/Goal")
   private Goal goal = Goal.IDLE;
 
-  private final EdgeDetector increaseEdgeDetector;
-  private final EdgeDetector decreaseEdgeDetector;
+  private final SuppliedEdgeDetector increaseEdgeDetector;
+  private final SuppliedEdgeDetector decreaseEdgeDetector;
 
   public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
     System.out.println("[Init Pivot] Instantiating Pivot");
     this.pivotIO = pivotIO;
     System.out.println("[Init Pivot] Pivot IO: " + this.pivotIO.getClass().getSimpleName());
     SmartDashboard.putData("Subsystems/Pivot", this);
-    this.increaseEdgeDetector = new EdgeDetector(increaseRuntimeOffset);
-    this.decreaseEdgeDetector = new EdgeDetector(decreaseRuntimeOffset);
+    this.increaseEdgeDetector = new SuppliedEdgeDetector(increaseRuntimeOffset);
+    this.decreaseEdgeDetector = new SuppliedEdgeDetector(decreaseRuntimeOffset);
   }
 
   @Override

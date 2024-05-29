@@ -1,11 +1,14 @@
 package frc.robot;
 
-import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.util.Alert;
 import frc.robot.util.MappedSwitchableChooser;
+import frc.robot.util.SuppliedEdgeDetector;
+import frc.robot.util.Alert.AlertType;
 
 public enum Environment {
     PRACTICE,
@@ -13,16 +16,34 @@ public enum Environment {
     DEMO,
     ;
     public static Environment currentEnvironment = PRACTICE;
-    private static final MappedSwitchableChooser<Environment> environmentChooser = new MappedSwitchableChooser<>("Environment Chooser");
-
+    private static final MappedSwitchableChooser<Environment> environmentChooser;
     static {
-        environmentChooser.setOptions(Arrays.stream(values()).collect(Collectors.toMap(Enum::name, (e) -> e)));
-        environmentChooser.setDefault(PRACTICE);
-    }
+		var map = new LinkedHashMap<String, Environment>();
+		map.put("Practice", PRACTICE);
+		map.put("Competition", COMPETITION);
+		map.put("Demo", DEMO);
+		environmentChooser = new MappedSwitchableChooser<>(
+			"Environment Chooser",
+			map,
+			PRACTICE
+		);
+	}
+
+    private static final Alert fms_alert = new Alert("FMS detected, Competition Environment selected", AlertType.INFO);
+    private static final Alert fms_no_comp_alert = new Alert("FMS detected but selected Environment is not Competition", AlertType.WARNING);
+    private static final Alert demo_alert = new Alert("Demo Environment selected, Robot functionality restricted", AlertType.WARNING);
     
+    private static final SuppliedEdgeDetector fms_detector = new SuppliedEdgeDetector(DriverStation::isFMSAttached);
     public static void update() {
-        environmentChooser.get().ifPresent((e) -> currentEnvironment = e);
+        fms_detector.update();
+        if(fms_detector.risingEdge()) {
+            environmentChooser.setSelected(COMPETITION);
+        }
+        currentEnvironment = environmentChooser.get();
         environmentChooser.setActive(currentEnvironment);
+        fms_alert.set(fms_detector.getValue() && isCompetition());
+        fms_no_comp_alert.set(fms_detector.getValue() && !isCompetition());
+        demo_alert.set(isDemo());
     }
 
     public static boolean is(Environment is) {

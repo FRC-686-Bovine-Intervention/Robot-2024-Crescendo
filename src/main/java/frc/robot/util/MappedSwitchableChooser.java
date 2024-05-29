@@ -2,7 +2,7 @@ package frc.robot.util;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardInput;
@@ -13,13 +13,11 @@ import edu.wpi.first.networktables.StringArrayPublisher;
 import edu.wpi.first.networktables.StringPublisher;
 
 /** A string chooser for the dashboard where the options can be changed on-the-fly. */
-public class MappedSwitchableChooser<T> implements LoggedDashboardInput, LazyOptional<T> {
-  public static final String placeholder = "<NA>";
-
+public class MappedSwitchableChooser<T> implements LoggedDashboardInput, Supplier<T> {
   private Map<String, T> options;
-  private Optional<T> selectedOption = Optional.empty();
-  private Optional<T> activeOption = Optional.empty();
-  private Optional<T> defaultOption = Optional.empty();
+  private T selectedOption;
+  private T activeOption;
+  private T defaultOption;
 
   private final StringPublisher namePublisher;
   private final StringPublisher typePublisher;
@@ -29,7 +27,7 @@ public class MappedSwitchableChooser<T> implements LoggedDashboardInput, LazyOpt
   private final StringPublisher selectedPublisher;
   private final LoggedDashboardString selectedInput;
 
-  public MappedSwitchableChooser(String name) {
+  public MappedSwitchableChooser(String name, Map<String, T> options, T defaultOption) {
     var table = NetworkTableInstance.getDefault().getTable("SmartDashboard").getSubTable(name);
     namePublisher = table.getStringTopic(".name").publish();
     typePublisher = table.getStringTopic(".type").publish();
@@ -42,38 +40,41 @@ public class MappedSwitchableChooser<T> implements LoggedDashboardInput, LazyOpt
 
     namePublisher.set(name);
     typePublisher.set("String Chooser");
-    setOptions(Map.of());
+    setOptions(options);
+    setDefault(defaultOption);
+    setActive(defaultOption);
+    setSelected(defaultOption);
   }
 
   @Override
   public void periodic() {
     var selected = selectedInput.get();
-    selectedOption = Optional.ofNullable(placeholder.equals(selected) ? null : options.get(selected));
+    selectedOption = options.get(selected);
   }
 
   /** Updates the set of available options. */
   public void setOptions(Map<String, T> options) {
     if(options.equals(this.options)) return;
     this.options = options;
-    optionsPublisher.set(this.options.size() == 0 ? new String[]{placeholder} : this.options.keySet().toArray(String[]::new));
+    optionsPublisher.set(this.options.keySet().toArray(String[]::new));
   }
 
   public void setSelected(T selectedValue) {
-    if (this.selectedOption.equals(selectedValue)) return;
-    this.selectedOption = Optional.ofNullable(selectedValue);
-    selectedPublisher.set(this.selectedOption.map(this::getKey).orElse(placeholder));
+    if (selectedValue.equals(this.selectedOption)) return;
+    this.selectedOption = selectedValue;
+    selectedPublisher.set(this.getKey(this.selectedOption));
   }
 
   public void setActive(T activeValue) {
-    if (this.activeOption.equals(activeValue)) return;
-    this.activeOption = Optional.ofNullable(activeValue);
-    activePublisher.set(this.activeOption.map(this::getKey).orElse(placeholder));
+    if (activeValue.equals(this.activeOption)) return;
+    this.activeOption = activeValue;
+    activePublisher.set(this.getKey(this.activeOption));
   }
 
   public void setDefault(T defaultValue) {
-    if (this.defaultOption.equals(defaultValue)) return;
-    this.defaultOption = Optional.ofNullable(defaultValue);
-    defaultPublisher.set(this.defaultOption.map(this::getKey).orElse(placeholder));
+    if (defaultValue.equals(this.defaultOption)) return;
+    this.defaultOption = defaultValue;
+    defaultPublisher.set(this.getKey(this.defaultOption));
   }
 
   public Map<String, T> getOptions() {
@@ -82,19 +83,19 @@ public class MappedSwitchableChooser<T> implements LoggedDashboardInput, LazyOpt
 
   /** Returns the selected option. */
   @Override
-  public Optional<T> get() {
+  public T get() {
     return selectedOption;
   }
 
-  public Optional<T> getActive() {
+  public T getActive() {
     return activeOption;
   }
 
-  public Optional<T> getDefault() {
+  public T getDefault() {
     return defaultOption;
   }
 
   private String getKey(T value) {
-    return this.options.entrySet().stream().filter((e) -> e.getValue().equals(value)).map(Entry::getKey).findAny().orElse(placeholder);
+    return this.options.entrySet().stream().filter((e) -> e.getValue().equals(value)).map(Entry::getKey).findAny().orElse(null);
   }
 }

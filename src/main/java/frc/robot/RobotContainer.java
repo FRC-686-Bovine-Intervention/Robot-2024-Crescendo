@@ -194,7 +194,7 @@ public class RobotContainer {
         configureSystemCheck();
 
         if (Constants.tuningMode) {
-            new Alert("Tuning mode active, do not use in competition.", AlertType.INFO).set(true);
+            new Alert("Tuning mode active", AlertType.INFO).set(true);
         }
     }
 
