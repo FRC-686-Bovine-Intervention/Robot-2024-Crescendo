@@ -1,14 +1,15 @@
 package frc.robot.util;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import edu.wpi.first.math.MatBuilder;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N2;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.MatchType;
+import frc.robot.Environment;
 
 public enum SpectatorType {
 	Comp(
@@ -23,16 +24,21 @@ public enum SpectatorType {
 			+0,+1
 		)
 	),
-	ISpectator(
+	InvSpectator(
 		MatBuilder.fill(Nat.N2(), Nat.N2(),
 			-1,+0,
 			+0,-1
 		)
 	),
 	;
+	private static final MappedSwitchableChooser<SpectatorType> chooser = new MappedSwitchableChooser<>("Spectator Type");
+	static{
+		chooser.setOptions(Arrays.stream(values()).collect(Collectors.toMap(Enum::name, (e) -> e)));
+		chooser.setDefault(Comp);
+	}
+
 	private final Matrix<N2, N2> spectatorToField;
 	private final Matrix<N2, N2> fieldToSpectator;
-	private static final LoggedTunableNumber spectatorType = new LoggedTunableNumber("Spectator Type", 1);
 	SpectatorType(Matrix<N2, N2> spectatorToField) {
 		this.spectatorToField = spectatorToField;
 		this.fieldToSpectator = this.spectatorToField.inv();
@@ -49,7 +55,8 @@ public enum SpectatorType {
 	}
 
 	public static SpectatorType getCurrentType() {
-		if(DriverStation.getMatchType() != MatchType.None) return Comp;
-		return SpectatorType.values()[MathUtil.clamp((int) spectatorType.get(), 0, values().length - 1)];
+		var selected = Environment.isCompetition() ? Comp : chooser.get().orElse(Spectator);
+		chooser.setActive(selected);
+		return selected;
 	}
 }

@@ -116,6 +116,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
+    Environment.update();
     GameState.getInstance().periodic();
     VirtualSubsystem.periodicAll();
     CommandScheduler.getInstance().run();

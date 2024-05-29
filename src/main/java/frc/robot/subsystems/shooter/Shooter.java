@@ -59,7 +59,15 @@ public class Shooter extends SubsystemBase {
             new LoggedTunableNumber("Shooter/Amp/Target Speed", 2),
             new LoggedTunableNumber("Shooter/Amp/Minimum Speed", 1.5),
             new LoggedTunableNumber("Shooter/Amp/Maximum Speed", 3)
-        ),
+        ) {
+            @Override
+            public void runGoal(ShooterIO shooterIO) {
+                var goalSpeed = getTargetSpeed();
+                shooterIO.setLeftSurfaceSpeed(goalSpeed);
+                shooterIO.setRightSurfaceSpeed(goalSpeed);
+                Leds.getInstance().shooterBarGraph.set(true);
+            }
+        },
         CUSTOM(
             new LoggedTunableNumber("Shooter/Custom/Target Speed", 10),
             new LoggedTunableNumber("Shooter/Custom/Minimum Speed", 50),

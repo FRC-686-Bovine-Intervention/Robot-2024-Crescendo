@@ -1,30 +1,41 @@
 package frc.robot;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import frc.robot.util.SwitchableChooser;
+import frc.robot.util.MappedSwitchableChooser;
 
 public enum Environment {
     PRACTICE,
     COMPETITION,
     DEMO,
     ;
-    public static Environment currentEnvironment;
-    // public static final Map<String, Environment> nameMap = Arrays.stream(values()).collect(Collectors.toMap(Enum::name, (e) -> e));
-    private static final SwitchableChooser environmentChooser = new SwitchableChooser("Environment Chooser");
+    public static Environment currentEnvironment = PRACTICE;
+    private static final MappedSwitchableChooser<Environment> environmentChooser = new MappedSwitchableChooser<>("Environment Chooser");
 
     static {
-        environmentChooser.setOptions(Arrays.stream(values()).map(Enum::name).toArray(String[]::new));
-        environmentChooser.setDefault(Optional.of(PRACTICE.name()));
+        environmentChooser.setOptions(Arrays.stream(values()).collect(Collectors.toMap(Enum::name, (e) -> e)));
+        environmentChooser.setDefault(PRACTICE);
     }
     
     public static void update() {
-        currentEnvironment = valueOf(null);
+        environmentChooser.get().ifPresent((e) -> currentEnvironment = e);
+        environmentChooser.setActive(currentEnvironment);
+    }
+
+    public static boolean is(Environment is) {
+        return is.equals(currentEnvironment);
+    }
+    public static boolean isPractice() {
+        return is(PRACTICE);
+    }
+    public static boolean isCompetition() {
+        return is(COMPETITION);
+    }
+    public static boolean isDemo() {
+        return is(DEMO);
     }
 
     public static DoubleSupplier switchVar(DoubleSupplier prac_comp, DoubleSupplier demo) {

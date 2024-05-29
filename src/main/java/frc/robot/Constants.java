@@ -232,8 +232,14 @@ public final class Constants {
         public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(RobotConstants.trackWidthXMeters/2, RobotConstants.trackWidthYMeters/2);
-        public static final DoubleSupplier maxDriveSpeedEnvCoef = new LoggedTunableNumber("Drive Constraints/Max Translational Percentage", 1);
-        public static final DoubleSupplier maxTurnRateEnvCoef = new LoggedTunableNumber("Drive Constraints/Max Rotational Percentage", 1);
+        public static final DoubleSupplier maxDriveSpeedEnvCoef = Environment.switchVar(
+            () -> 1,
+            new LoggedTunableNumber("Drive Constraints/Max Translational Percentage", 0.25)
+        );
+        public static final DoubleSupplier maxTurnRateEnvCoef = Environment.switchVar(
+            () -> 1,
+            new LoggedTunableNumber("Drive Constraints/Max Rotational Percentage", 0.25)
+        );
         /**full speed in 0.25 sec*/
         public static final double joystickSlewRateLimit = 1.0 / 0.25;
         public static final double driveJoystickDeadbandPercent = 0.2;
@@ -280,7 +286,10 @@ public final class Constants {
             .wheelRadius(wheelRadius)
         ;
 
-        public static final DoubleSupplier shooterSpeedEnvCoef = new LoggedTunableNumber("Drive Constraints/Shooter Speed", 1);
+        public static final DoubleSupplier shooterSpeedEnvCoef = Environment.switchVar(
+            () -> 1,
+            new LoggedTunableNumber("Drive Constraints/Shooter Demo Speed", 0.5)
+        );
 
         public static final InterpolatingDoubleTreeMap targetShooterSpeed = new InterpolatingDoubleTreeMap();
         static {
@@ -299,8 +308,8 @@ public final class Constants {
         public static final InterpolatingDoubleTreeMap pivotAltitude = new InterpolatingDoubleTreeMap();
         static {
             pivotAltitude.put(FieldConstants.subwooferToSpeakerDist, 59.39+5.09765625-4.5+0.5);
-            pivotAltitude.put(FieldConstants.podiumToSpeakerDist, 37.2+5.09765625-2.5+0.5+1+0.5);
-            pivotAltitude.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 27.2+5.09765625-2.5-0.5-0.5-0.5);
+            pivotAltitude.put(FieldConstants.podiumToSpeakerDist, 37.2+5.09765625-2.5+0.5);
+            pivotAltitude.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 27.2+5.09765625-2.5-0.5-0.5-0.5-1);
         }
     }
 
