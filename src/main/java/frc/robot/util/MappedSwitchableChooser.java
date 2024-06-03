@@ -54,6 +54,7 @@ public class MappedSwitchableChooser<T> implements LoggedDashboardInput, Supplie
 
   /** Updates the set of available options. */
   public void setOptions(Map<String, T> options) {
+    if(options.isEmpty()) throw new UnsupportedOperationException("Options should not be empty. Try using Optionals or null to clear options");
     if(options.equals(this.options)) return;
     this.options = options;
     optionsPublisher.set(this.options.keySet().toArray(String[]::new));
