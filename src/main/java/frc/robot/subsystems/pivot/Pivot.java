@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.InternalButton;
 import frc.robot.NoteVisualizer;
 import frc.robot.RobotState;
 import frc.robot.util.SuppliedEdgeDetector;
@@ -39,12 +40,15 @@ public class Pivot extends SubsystemBase {
       Inches.of(19.01)
     )
   ;
+
+  private final InternalButton isIdle = new InternalButton();
+
   public static Transform3d getRobotToPivot(double angle) {
     return new Transform3d(
       robotToPivotTranslation,
       new Rotation3d(
         0,
-        Goal.IDLE.getRads()-angle,
+        idleAltitudeDeg.get()-angle,
         0
       )
     );
@@ -53,33 +57,75 @@ public class Pivot extends SubsystemBase {
     return getRobotToPivot(inputs.pivotEncoder.positionRad);
   }
 
-  public static enum Goal {
-    IDLE(new LoggedTunableNumber("Pivot/Angles/Zero", 9)),
-    AIM(() -> RobotState.getInstance().aimingParameters.pivotAltitude()),
-    AMP(new LoggedTunableNumber("Pivot/Angles/Amp", 109)),
-    SUPER_PASS(new LoggedTunableNumber("Pivot/Angles/Super Pass", 50+5.09765625)),
-    // RECAL(() -> 0){
-    //   private final LoggedTunableNumber recalVolts = new LoggedTunableNumber("Pivot/Recal Volts", -1);
-    //   @Override
-    //   public void runGoal(PivotIO pivotIO) {
-    //     pivotIO.setPivotVoltage(recalVolts.get());
-    //   }
-    // },
-    ;
-    private final DoubleSupplier altitudeDeg;
-    Goal(DoubleSupplier altitudeDeg) {
-      this.altitudeDeg = altitudeDeg;
-    }
-    public double getRads() {
-      return Units.degreesToRadians(altitudeDeg.getAsDouble());
-    }
-    public void runGoal(PivotIO pivotIO) {
-      pivotIO.setPivotPos(getRads());
-    }
+  public Command speaker() {
+    var subsystem = this;
+    return new Command() {
+      {
+        setName("Speaker");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        pivotIO.setPivotPos(Units.degreesToRadians(RobotState.getInstance().aimingParameters.pivotAltitude()));
+      }
+    };
   }
 
-  @AutoLogOutput(key = "Pivot/Goal")
-  private Goal goal = Goal.IDLE;
+  public static final LoggedTunableNumber ampAltitudeDeg = new LoggedTunableNumber("Pivot/Angles/Amp", 109);
+  public Command amp() {
+    var subsystem = this;
+    return new Command() {
+      {
+        setName("Amp");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        pivotIO.setPivotPos(Units.degreesToRadians(ampAltitudeDeg.get()));
+      }
+    };
+  }
+
+  public Command superPass() {
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber altitudeDeg = new LoggedTunableNumber("Pivot/Angles/Super Pass", 50+5.09765625);
+      {
+        setName("Super Pass");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        pivotIO.setPivotPos(Units.degreesToRadians(altitudeDeg.get()));
+      }
+    };
+  }
+
+  public static final LoggedTunableNumber idleAltitudeDeg = new LoggedTunableNumber("Pivot/Angles/Zero", 9);
+  public Command idle() {
+    var subsystem = this;
+    return new Command() {
+      {
+        setName("Idle");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        pivotIO.setPivotPos(Units.degreesToRadians(idleAltitudeDeg.get()));
+        isIdle.setPressed(true);
+      }
+
+      @Override
+      public void end(boolean interrupted) {
+        super.end(interrupted);
+        isIdle.setPressed(false);
+      }
+    };
+  }
 
   private final SuppliedEdgeDetector increaseEdgeDetector;
   private final SuppliedEdgeDetector decreaseEdgeDetector;
@@ -111,9 +157,6 @@ public class Pivot extends SubsystemBase {
     if(increaseEdgeDetector.risingEdge() || decreaseEdgeDetector.risingEdge()) {
       pivotIO.setRotorOffset(Units.degreesToRadians(runtimeOffset));
     }
-    if(DriverStation.isEnabled()) {
-      goal.runGoal(pivotIO);
-    }
   }
 
   @AutoLogOutput(key = "Pivot/Runtime Offset")
@@ -142,16 +185,8 @@ public class Pivot extends SubsystemBase {
   //   };
   // }
 
-  public Command setGoalCommand(Goal goal) {
-    return startEnd(
-        () -> this.goal = goal,
-        () -> this.goal = Goal.IDLE
-    )
-    .withName("Pivot " + goal.name());
-}
-
   public boolean readyToShoot() {
-    return atPos() && goal != Goal.IDLE;
+    return atPos() && isIdle.getAsBoolean();
   }
 
   public boolean atPos() {

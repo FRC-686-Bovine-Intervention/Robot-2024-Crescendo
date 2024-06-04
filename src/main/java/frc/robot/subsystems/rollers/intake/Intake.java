@@ -7,7 +7,6 @@ package frc.robot.subsystems.rollers.intake;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -22,6 +21,8 @@ public class Intake extends SubsystemBase {
 
   private static final LoggedTunableNumber toggleReverseThreshold = new LoggedTunableNumber("Intake/Toggle Reverse Threshold", 0.1);
   private final DoubleSupplier forwardSpeedSupplier;
+  
+  private boolean intakeReversed;
 
   public Intake(IntakeIO intakeIO, Supplier<ChassisSpeeds> robotRelativeSpeeds) {
     System.out.println("[Init Intake] Instantiating Intake");
@@ -31,74 +32,98 @@ public class Intake extends SubsystemBase {
     forwardSpeedSupplier = () -> robotRelativeSpeeds.get().vxMetersPerSecond * (intakeReversed ? -1 : 1);
   }
 
-  public static enum Goal {
-    IDLE(
-      () -> 0,
-      () -> 0
-    ),
-    ANTI_DEADZONE(
-      new LoggedTunableNumber("Intake/Anti Deadzone/Roller Voltage", 1),
-      new LoggedTunableNumber("Intake/Anti Deadzone/Belt Voltage", 1)
-    ),
-    INTAKE(
-      new LoggedTunableNumber("Intake/Intaking/Roller Voltage", 6),
-      new LoggedTunableNumber("Intake/Intaking/Belt Voltage", 6)
-    ){
-      @Override
-      public void runGoal(Intake intake) {
-        if(intake.forwardSpeedSupplier.getAsDouble() >= Intake.toggleReverseThreshold.get()) {
-          intake.intakeReversed = !intake.intakeReversed;
-        }
-        super.runGoal(intake);
+  public Command antiDeadzone() {
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber rollerVoltage = new LoggedTunableNumber("Intake/Anti Deadzone/Roller Voltage", 1);
+      private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Anti Deadzone/Belt Voltage", 1);
+      {
+        setName("AntiDeadzone");
+        addRequirements(subsystem);
       }
-    },
-    EJECT(
-      new LoggedTunableNumber("Intake/Eject/Roller Voltage", -6),
-      new LoggedTunableNumber("Intake/Eject/Belt Voltage", -6)
-    ),
-    FEED(
-      new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 6),
-      new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 6)
-    ),
-    ;
-    private final DoubleSupplier rollerVoltage;
-    private final DoubleSupplier beltVoltage;
-    Goal(DoubleSupplier rollerVoltage, DoubleSupplier beltVoltage) {
-      this.rollerVoltage = rollerVoltage;
-      this.beltVoltage = beltVoltage;
-    }
-    public double getRollerVoltage() {
-      return rollerVoltage.getAsDouble();
-    }
-    public double getBeltVoltage() {
-      return beltVoltage.getAsDouble();
-    }
-    public void runGoal(Intake intake) {
-      intake.intakeIO.setRollerVoltage(getRollerVoltage() * (intake.intakeReversed ? -1 : 1));
-      intake.intakeIO.setBeltVoltage(getBeltVoltage());
-    }
+
+      public void execute() {
+        subsystem.intakeIO.setRollerVoltage(this.rollerVoltage.get() * (getIntakeReversed() ? -1 : 1));
+        subsystem.intakeIO.setBeltVoltage(this.beltVoltage.get());
+      }
+    };
   }
 
-  @AutoLogOutput(key = "Intake/Goal")
-  private Goal goal = Goal.IDLE;
-  public Goal getGoal() {return goal;}
-  public void setGoal(Goal goal) {this.goal = goal;}
+  public Command intake() {
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber rollerVoltage = new LoggedTunableNumber("Intake/Intaking/Roller Voltage", 6);
+      private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Intaking/Belt Voltage", 6);
+      {
+        setName("Intake");
+        addRequirements(subsystem);
+      }
 
-  private boolean intakeReversed;
+      @Override
+      public void execute() {
+        if(subsystem.forwardSpeedSupplier.getAsDouble() >= Intake.toggleReverseThreshold.get()) {
+          subsystem.intakeReversed = !subsystem.intakeReversed;
+        }
+        subsystem.intakeIO.setRollerVoltage(this.rollerVoltage.get() * (getIntakeReversed() ? -1 : 1));
+        subsystem.intakeIO.setBeltVoltage(this.beltVoltage.get());
+      } 
+    };
+  }
+
+  public Command eject() {
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber rollerVoltage = new LoggedTunableNumber("Intake/Eject/Roller Voltage", -6);
+      private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Eject/Belt Voltage", -6);
+      {
+        setName("Eject");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        subsystem.intakeIO.setRollerVoltage(this.rollerVoltage.get() * (getIntakeReversed() ? -1 : 1));
+        subsystem.intakeIO.setBeltVoltage(this.beltVoltage.get());
+      }
+    };
+  }
+
+  public Command feed() {
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber rollerVoltage = new LoggedTunableNumber("Intake/Feeding/Roller Voltage", 6);
+      private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Feeding/Belt Voltage", 6);
+      {
+        setName("Feed");
+        addRequirements(subsystem);
+      }
+
+      public void execute() {
+        subsystem.intakeIO.setRollerVoltage(this.rollerVoltage.get() * (getIntakeReversed() ? -1 : 1));
+        subsystem.intakeIO.setBeltVoltage(this.beltVoltage.get());
+      }
+    };
+  }
+
+  public Command idle() {
+    var subsystem = this;
+    return new Command() {
+      {
+        setName("Idle");
+        addRequirements(subsystem);
+      }
+
+      public void execute() {
+        subsystem.intakeIO.setRollerVoltage(0);
+        subsystem.intakeIO.setBeltVoltage(0);
+      }
+    };
+  }
 
   @Override
   public void periodic() {
     intakeIO.updateInputs(inputs);
     Logger.processInputs("Intake", inputs);
-    goal.runGoal(this);
-  }
-
-  public Command setGoalCommand(Goal goal) {
-    return startEnd(
-        () -> this.goal = goal,
-        () -> this.goal = Goal.IDLE
-    )
-    .withName("Intake " + goal.name());
   }
 
   public boolean getIntakeReversed() {

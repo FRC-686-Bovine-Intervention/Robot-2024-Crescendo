@@ -21,13 +21,11 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
-import frc.robot.RobotState.AimingParameters;
 import frc.robot.RobotState;
+import frc.robot.RobotState.AimingParameters;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.rollers.Rollers;
-import frc.robot.subsystems.rollers.intake.Intake;
-import frc.robot.subsystems.rollers.kicker.Kicker;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.Alert;
@@ -116,7 +114,7 @@ public class AutoCommons {
 
             return shooterReady && pivotReady && poseReady && speedReady;
         };
-        return rollers.setKickerGoalCommand(Kicker.Goal.KICK).asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::kickerFallingEdge);
+        return rollers.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::kickerFallingEdge);
     }
 
     private static Translation2d getFORR(Translation2d pos) {
@@ -126,10 +124,10 @@ public class AutoCommons {
         return rotation.pidControlledHeading(() -> Optional.of(getFORR(pos)).map((t) -> new Rotation2d(t.getX(), t.getY())));
     }
     public static Command autoAim(Translation2d pos, Shooter shooter) {
-        return shooter.setGoalCommand(Shooter.Goal.SHOOTING);
+        return shooter.shooting();
     }
     public static Command autoAim(Translation2d pos, Pivot pivot) {
-        return pivot.setGoalCommand(Pivot.Goal.AIM);
+        return pivot.speaker();
     }
     public static Command autoAim(Translation2d pos, Shooter shooter, Pivot pivot) {
         return autoAim(pos, shooter).alongWith(autoAim(pos, pivot));
@@ -166,7 +164,7 @@ public class AutoCommons {
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                rollers.setIntakeGoalCommand(Intake.Goal.INTAKE).asProxy(),
+                rollers.intake().asProxy(),
                 AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
             )
@@ -179,7 +177,7 @@ public class AutoCommons {
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                rollers.setIntakeGoalCommand(Intake.Goal.INTAKE).asProxy(),
+                rollers.intake().asProxy(),
                 AutoCommons.autoAim(shotPos, shooter, pivot),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle)))
@@ -207,7 +205,7 @@ public class AutoCommons {
                 AutoCommons.followPathFlipped(toCenterLine, drive)
                 .until(noteVision::hasTarget)
                 .andThen(
-                    rollers.setIntakeGoalCommand(Intake.Goal.INTAKE).asProxy()
+                    rollers.intake().asProxy()
                     .raceWith(
                         noteVision.autoIntake(() -> 2, rollers::noNote, drive)
                     )

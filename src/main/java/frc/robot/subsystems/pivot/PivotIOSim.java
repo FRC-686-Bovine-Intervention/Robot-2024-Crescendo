@@ -21,8 +21,8 @@ public class PivotIOSim extends PivotIOFalcon {
         4,
         0.5,
         Units.inchesToMeters(11.876),
-        -Pivot.Goal.IDLE.getRads(),
-        Pivot.Goal.AMP.getRads(),
+        -Units.degreesToRadians(Pivot.idleAltitudeDeg.get()),
+        Units.degreesToRadians(Pivot.ampAltitudeDeg.get()),
         true,
         0
     );

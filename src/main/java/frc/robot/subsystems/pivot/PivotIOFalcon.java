@@ -63,7 +63,7 @@ public class PivotIOFalcon implements PivotIO {
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0;
         motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Units.radiansToRotations(Pivot.Goal.AMP.getRads());
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Units.degreesToRotations(Pivot.ampAltitudeDeg.get());
         pivotLeftMotor.getConfigurator().apply(motorConfig);
         motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         pivotRightMotor.getConfigurator().apply(motorConfig);

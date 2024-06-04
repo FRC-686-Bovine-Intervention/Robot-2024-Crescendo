@@ -4,52 +4,98 @@
 
 package frc.robot.subsystems.rollers.kicker;
 
-import java.util.function.DoubleSupplier;
-
-import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.InternalButton;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Kicker extends SubsystemBase {
   private final KickerIO kickerIO;
   private final KickerIOInputsAutoLogged inputs = new KickerIOInputsAutoLogged();
 
-  public static enum Goal {
-    IDLE(
-      () -> 0
-    ),
-    ANTI_DEADZONE(
-      new LoggedTunableNumber("Kicker/Voltage/Anti Deadzone", 1.5)
-    ),
-    FEED(
-      new LoggedTunableNumber("Kicker/Voltage/Feed", 1.5)
-    ),
-    KICK(
-      new LoggedTunableNumber("Kicker/Voltage/Kick", 5)
-    ),
-    EJECT(
-      new LoggedTunableNumber("Kicker/Voltage/Eject", -5)
-    ),
-    ;
-    private final DoubleSupplier voltage;
-    Goal(DoubleSupplier voltage) {
-      this.voltage = voltage;
-    }
-    public double getVoltage() {
-      return voltage.getAsDouble();
-    }
-    public void runGoal(KickerIO kickerIO) {
-      kickerIO.setKickerVoltage(getVoltage());
-    }
+  public final InternalButton isKicking = new InternalButton();
+
+  public Command antiDeadZone() {
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber voltage = new LoggedTunableNumber("Kicker/Voltage/Anti Deadzone", 1.5);
+      {
+        setName("AntiDeadzone");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        kickerIO.setKickerVoltage(voltage.get());
+      }
+    };
   }
 
-  @AutoLogOutput(key = "Kicker/Goal")
-  private Goal goal = Goal.IDLE;
-  public Goal getGoal() {return goal;}
-  public void setGoal(Goal goal) {this.goal = goal;}
+  public Command feed() {
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber voltage = new LoggedTunableNumber("Kicker/Voltage/Feed", 1.5);
+      {
+        setName("Feed");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        kickerIO.setKickerVoltage(voltage.get());
+      }
+    };
+  }
+
+  public Command kick() {
+    isKicking.setPressed(true);
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber voltage = new LoggedTunableNumber("Kicker/Voltage/Kick", 5);
+      {
+        setName("Kick");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        kickerIO.setKickerVoltage(voltage.get());
+      }
+    };
+  }
+
+  public Command eject() {
+    var subsystem = this;
+    return new Command() {
+      private final LoggedTunableNumber voltage = new LoggedTunableNumber("Kicker/Voltage/Eject", -5);
+      {
+        setName("Eject");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        kickerIO.setKickerVoltage(voltage.get());
+      }
+    };
+  }
+
+    public Command idle() {
+    var subsystem = this;
+    return new Command() {
+      {
+        setName("Idle");
+        addRequirements(subsystem);
+      }
+
+      @Override
+      public void execute() {
+        kickerIO.setKickerVoltage(0);
+      }
+    };
+  }
 
   public Kicker(KickerIO kickerIO) {
     System.out.println("[Init Kicker] Instantiating Kicker");
@@ -61,14 +107,5 @@ public class Kicker extends SubsystemBase {
   public void periodic() {
     kickerIO.updateInputs(inputs);
     Logger.processInputs("Kicker", inputs);
-    goal.runGoal(kickerIO);
-  }
-
-  public Command setGoalCommand(Goal goal) {
-    return startEnd(
-        () -> this.goal = goal,
-        () -> this.goal = Goal.IDLE
-    )
-    .withName("Kicker " + goal.name());
   }
 }
