@@ -54,11 +54,10 @@ import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.AllianceFlipUtil;
-import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.MathExtraUtil;
-import frc.robot.util.SpectatorType;
+import frc.robot.util.PerspectiveType;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.pathplanner.AutoBuilder;
@@ -291,7 +290,7 @@ public class Drive extends VirtualSubsystem {
 
         public static Supplier<ChassisSpeeds> joystickSpectatorToFieldRelative(Joystick translationalJoystick, BooleanSupplier precisionSupplier) {
             return () -> {
-                var fieldVec = SpectatorType.getCurrentType().toField(
+                var fieldVec = PerspectiveType.getCurrentType().toField(
                     translationalJoystick.toVector()
                     .times(
                         DriveConstants.maxDriveSpeedMetersPerSec * 
@@ -299,13 +298,10 @@ public class Drive extends VirtualSubsystem {
                         (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
                     )
                 );
-                return AllianceFlipUtil.applyFieldRelative(
-                    new ChassisSpeeds(
-                        fieldVec.get(0),
-                        fieldVec.get(1),
-                        0
-                    ),
-                    FieldFlipType.CenterPointFlip
+                return new ChassisSpeeds(
+                    fieldVec.get(0),
+                    fieldVec.get(1),
+                    0
                 );
             };
         }
@@ -353,7 +349,7 @@ public class Drive extends VirtualSubsystem {
                 @Override
                 public void execute() {
                     Leds.getInstance().defenseSpin.set(true);
-                    var joyVec = SpectatorType.getCurrentType().toField(joystick.toVector());
+                    var joyVec = PerspectiveType.getCurrentType().toField(joystick.toVector());
                     var desiredLinear = VecBuilder.fill(drive.setpoint.vxMetersPerSecond, drive.setpoint.vyMetersPerSecond);
                     var fieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.setpoint, drive.getRotation());
                     var perpendicularLinear = new Vector<N2>(perpendicularMatrix.times(
@@ -450,8 +446,7 @@ public class Drive extends VirtualSubsystem {
                             preciseTurnTimer.restart();
                             return Optional.empty();
                         }
-                        var joyVec = SpectatorType.getCurrentType().toField(joystick.toVector());
-                        Rotation2d joyHeading = AllianceFlipUtil.apply(MathExtraUtil.rotationFromVector(joyVec), FieldFlipType.CenterPointFlip);
+                        var joyHeading = MathExtraUtil.rotationFromVector(PerspectiveType.getCurrentType().toField(joystick.toVector()));
                         if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
                             return outputMap(joyHeading);
                         }
