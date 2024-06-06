@@ -50,7 +50,6 @@ public class Kicker extends SubsystemBase {
   }
 
   public Command kick() {
-    isKicking.setPressed(true);
     var subsystem = this;
     return new Command() {
       private final LoggedTunableNumber voltage = new LoggedTunableNumber("Kicker/Voltage/Kick", 5);
@@ -60,8 +59,18 @@ public class Kicker extends SubsystemBase {
       }
 
       @Override
+      public void initialize() {
+        isKicking.setPressed(true);
+      }
+
+      @Override
       public void execute() {
         kickerIO.setKickerVoltage(voltage.get());
+      }
+
+      @Override
+      public void end(boolean interrupted) {
+          isKicking.setPressed(false);
       }
     };
   }

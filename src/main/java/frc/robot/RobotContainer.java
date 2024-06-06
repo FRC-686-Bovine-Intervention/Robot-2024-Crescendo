@@ -372,9 +372,9 @@ public class RobotContainer {
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
         
         // Auto Fire
-        new Trigger(() -> 
-            shooter.readyToShoot() && 
-            pivot.readyToShoot() && 
+        shooter.readyToAutoShoot
+        .and((() ->
+            pivot.atPos() &&
             MathExtraUtil.isNear(
                 RobotState.getInstance().aimingParameters.drivePose().getRotation(),
                 drive.getRotation(),
@@ -382,7 +382,7 @@ public class RobotContainer {
             ) && 
             DriverStation.isTeleopEnabled() &&
             !Optional.ofNullable(shooter.getCurrentCommand()).map((c) -> c.getName().contains("Subwoofer")).orElse(false)
-        ).onTrue(rollers.kick());
+        )).onTrue(rollers.kick());
         
         // Cancel Auto Drive
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
@@ -489,7 +489,7 @@ public class RobotContainer {
         Camera.logCameraOverrides();
         xboxConnect.set(!driveController.isConnected());
         buttonBoardConnect.set(!buttonBoard.isConnected());
-        Logger.recordOutput("Ready to shoot", pivot.atPos() && shooter.readyToShoot());
+        Logger.recordOutput("Ready to shoot", pivot.atPos() && shooter.readyToAutoShoot.getAsBoolean());
     }
 
     public void enabledInit() {

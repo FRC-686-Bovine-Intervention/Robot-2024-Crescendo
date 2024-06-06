@@ -102,8 +102,8 @@ public class AutoCommons {
 
     public static Command shootWhenReady(double angularTolerance, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
         BooleanSupplier condition = () -> {
-            var shooterReady = shooter.readyToShoot();
-            var pivotReady = pivot.readyToShoot();
+            var shooterReady = shooter.readyToAutoShoot.getAsBoolean();
+            var pivotReady = pivot.atPos();
             var poseReady = MathExtraUtil.isNear(RobotState.getInstance().aimingParameters.drivePose(), drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
             var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getRobotRelativeSpeeds(), 0.75, 1);
 

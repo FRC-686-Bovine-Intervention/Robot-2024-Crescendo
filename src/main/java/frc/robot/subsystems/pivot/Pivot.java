@@ -7,7 +7,6 @@ package frc.robot.subsystems.pivot;
 import static edu.wpi.first.units.Units.Inches;
 
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -17,15 +16,13 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.InternalButton;
 import frc.robot.NoteVisualizer;
 import frc.robot.RobotState;
-import frc.robot.util.SuppliedEdgeDetector;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.SuppliedEdgeDetector;
 
 public class Pivot extends SubsystemBase {
   private final PivotIO pivotIO;
@@ -41,7 +38,40 @@ public class Pivot extends SubsystemBase {
     )
   ;
 
-  private final InternalButton isIdle = new InternalButton();
+  private final SuppliedEdgeDetector increaseEdgeDetector;
+  private final SuppliedEdgeDetector decreaseEdgeDetector;
+
+  @AutoLogOutput(key = "Pivot/Runtime Offset")
+  private double runtimeOffset = 0;
+
+  public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
+    System.out.println("[Init Pivot] Instantiating Pivot");
+    this.pivotIO = pivotIO;
+    System.out.println("[Init Pivot] Pivot IO: " + this.pivotIO.getClass().getSimpleName());
+    SmartDashboard.putData("Subsystems/Pivot", this);
+    this.increaseEdgeDetector = new SuppliedEdgeDetector(increaseRuntimeOffset);
+    this.decreaseEdgeDetector = new SuppliedEdgeDetector(decreaseRuntimeOffset);
+  }
+
+  @Override
+  public void periodic() {
+    pivotIO.updateInputs(inputs);
+    Logger.processInputs("Pivot", inputs);
+    Logger.recordOutput("Mechanism3d/Shooter", getRobotToPivot());
+    NoteVisualizer.robotToPivot = getRobotToPivot();
+    increaseEdgeDetector.update();
+    decreaseEdgeDetector.update();
+    if(increaseEdgeDetector.risingEdge()) {
+      runtimeOffset += 0.5;
+    }
+    if(decreaseEdgeDetector.risingEdge()) {
+      runtimeOffset -= 0.5;
+    }
+
+    if(increaseEdgeDetector.risingEdge() || decreaseEdgeDetector.risingEdge()) {
+      pivotIO.setRotorOffset(Units.degreesToRadians(runtimeOffset));
+    }
+  }
 
   public static Transform3d getRobotToPivot(double angle) {
     return new Transform3d(
@@ -53,8 +83,21 @@ public class Pivot extends SubsystemBase {
       )
     );
   }
+
   public Transform3d getRobotToPivot() {
     return getRobotToPivot(inputs.pivotEncoder.positionRad);
+  }
+
+  public boolean atPos() {
+    return inputs.atGoal;
+  }
+
+  public boolean isAtAngle(double angleRad) {
+    return MathUtil.isNear(angleRad, inputs.pivotEncoder.positionRad, Units.degreesToRadians(toleranceDeg.get()));
+  }
+
+  public void setCoast(boolean coast) {
+    pivotIO.setCoast(coast);
   }
 
   public Command speaker() {
@@ -88,10 +131,10 @@ public class Pivot extends SubsystemBase {
     };
   }
 
+  private static final LoggedTunableNumber superPassAltitudeDeg = new LoggedTunableNumber("Pivot/Angles/Super Pass", 50+5.09765625);
   public Command superPass() {
     var subsystem = this;
     return new Command() {
-      private final LoggedTunableNumber altitudeDeg = new LoggedTunableNumber("Pivot/Angles/Super Pass", 50+5.09765625);
       {
         setName("Super Pass");
         addRequirements(subsystem);
@@ -99,7 +142,7 @@ public class Pivot extends SubsystemBase {
 
       @Override
       public void execute() {
-        pivotIO.setPivotPos(Units.degreesToRadians(altitudeDeg.get()));
+        pivotIO.setPivotPos(Units.degreesToRadians(superPassAltitudeDeg.get()));
       }
     };
   }
@@ -116,51 +159,14 @@ public class Pivot extends SubsystemBase {
       @Override
       public void execute() {
         pivotIO.setPivotPos(Units.degreesToRadians(idleAltitudeDeg.get()));
-        isIdle.setPressed(true);
       }
 
       @Override
       public void end(boolean interrupted) {
         super.end(interrupted);
-        isIdle.setPressed(false);
       }
     };
   }
-
-  private final SuppliedEdgeDetector increaseEdgeDetector;
-  private final SuppliedEdgeDetector decreaseEdgeDetector;
-
-  public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
-    System.out.println("[Init Pivot] Instantiating Pivot");
-    this.pivotIO = pivotIO;
-    System.out.println("[Init Pivot] Pivot IO: " + this.pivotIO.getClass().getSimpleName());
-    SmartDashboard.putData("Subsystems/Pivot", this);
-    this.increaseEdgeDetector = new SuppliedEdgeDetector(increaseRuntimeOffset);
-    this.decreaseEdgeDetector = new SuppliedEdgeDetector(decreaseRuntimeOffset);
-  }
-
-  @Override
-  public void periodic() {
-    pivotIO.updateInputs(inputs);
-    Logger.processInputs("Pivot", inputs);
-    Logger.recordOutput("Mechanism3d/Shooter", getRobotToPivot());
-    NoteVisualizer.robotToPivot = getRobotToPivot();
-    increaseEdgeDetector.update();
-    decreaseEdgeDetector.update();
-    if(increaseEdgeDetector.risingEdge()) {
-      runtimeOffset += 0.5;
-    }
-    if(decreaseEdgeDetector.risingEdge()) {
-      runtimeOffset -= 0.5;
-    }
-
-    if(increaseEdgeDetector.risingEdge() || decreaseEdgeDetector.risingEdge()) {
-      pivotIO.setRotorOffset(Units.degreesToRadians(runtimeOffset));
-    }
-  }
-
-  @AutoLogOutput(key = "Pivot/Runtime Offset")
-  private double runtimeOffset = 0;
 
   // public Command recal() {
   //   var subsystem = this;
@@ -184,20 +190,4 @@ public class Pivot extends SubsystemBase {
   //     }
   //   };
   // }
-
-  public boolean readyToShoot() {
-    return atPos() && isIdle.getAsBoolean();
-  }
-
-  public boolean atPos() {
-    return inputs.atGoal;
-  }
-
-  public boolean isAtAngle(double angleRad) {
-    return MathUtil.isNear(angleRad, inputs.pivotEncoder.positionRad, Units.degreesToRadians(toleranceDeg.get()));
-  }
-
-  public void setCoast(boolean coast) {
-    pivotIO.setCoast(coast);
-  }
 }

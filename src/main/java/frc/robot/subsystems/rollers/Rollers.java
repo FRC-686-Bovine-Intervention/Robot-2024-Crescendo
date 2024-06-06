@@ -6,7 +6,6 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.InternalButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.NoteVisualizer;
 import frc.robot.subsystems.leds.Leds;
@@ -31,7 +30,6 @@ public class Rollers extends VirtualSubsystem {
         System.out.println("[Init Rollers] Sensors IO: " + this.sensorsIO.getClass().getSimpleName());
         this.intake = intake;
         this.kicker = kicker;
-        new Trigger(kickerEdgeDetector::fallingEdge).toggleOnTrue(Commands.runOnce(() -> kicker.isKicking.setPressed(false)));
     }
 
     public Command antiDeadzone() {
