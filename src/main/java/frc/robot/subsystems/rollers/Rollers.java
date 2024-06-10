@@ -11,6 +11,7 @@ import frc.robot.NoteVisualizer;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.rollers.intake.Intake;
 import frc.robot.subsystems.rollers.kicker.Kicker;
+import frc.robot.util.EdgeDetector;
 import frc.robot.util.SuppliedEdgeDetector;
 import frc.robot.util.VirtualSubsystem;
 
@@ -18,8 +19,8 @@ public class Rollers extends VirtualSubsystem {
     private final RollerSensorsIO sensorsIO;
     private final RollerSensorsIOInputsAutoLogged inputs = new RollerSensorsIOInputsAutoLogged();
 
-    private final SuppliedEdgeDetector intakeEdgeDetector = new SuppliedEdgeDetector(() -> inputs.intakeSensorHistory);
-    private final SuppliedEdgeDetector kickerEdgeDetector = new SuppliedEdgeDetector(() -> inputs.kickerSensorHistory);
+    private final EdgeDetector intakeEdgeDetector = new EdgeDetector();
+    private final EdgeDetector kickerEdgeDetector = new EdgeDetector();
 
     public final Intake intake;
     public final Kicker kicker; 
@@ -66,6 +67,7 @@ public class Rollers extends VirtualSubsystem {
         ;
     }
 
+    private final SuppliedEdgeDetector noteExitDetector = new SuppliedEdgeDetector(this::noNote);
     public Optional<GamePieceState> gamePiece = Optional.empty();
     public boolean noNote() {
         return gamePiece.isEmpty();
@@ -76,8 +78,8 @@ public class Rollers extends VirtualSubsystem {
     public boolean noteInKicker() {
         return gamePiece.equals(Optional.of(GamePieceState.KICKER));
     }
-    public boolean kickerFallingEdge() {
-        return kickerEdgeDetector.fallingEdge();
+    public boolean noteExited() {
+        return noteExitDetector.risingEdge();
     }
 
     public Trigger isKicking() {
@@ -88,17 +90,20 @@ public class Rollers extends VirtualSubsystem {
     public void periodic() {
         sensorsIO.updateInputs(inputs);
         Logger.processInputs("RollerSensors", inputs);
-        intakeEdgeDetector.update();
-        kickerEdgeDetector.update();
-        if(intakeEdgeDetector.getValue()) {
-            gamePiece = Optional.of(GamePieceState.INTAKE);
+        for(int i = 0; i < Math.min(inputs.intakeSensorHistory.length, inputs.kickerSensorHistory.length); i++) {
+            intakeEdgeDetector.update(inputs.intakeSensorHistory[i]);
+            kickerEdgeDetector.update(inputs.kickerSensorHistory[i]);
+            if(intakeEdgeDetector.getValue()) {
+                gamePiece = Optional.of(GamePieceState.INTAKE);
+            }
+            if(kickerEdgeDetector.fallingEdge()) {
+                gamePiece = Optional.empty();
+            }
+            if(kickerEdgeDetector.getValue()) {
+                gamePiece = Optional.of(GamePieceState.KICKER);
+            }
         }
-        if(kickerEdgeDetector.fallingEdge()) {
-            gamePiece = Optional.empty();
-        }
-        if(kickerEdgeDetector.getValue()) {
-            gamePiece = Optional.of(GamePieceState.KICKER);
-        }
+        noteExitDetector.update();
         NoteVisualizer.internalNote = gamePiece;
         intake.periodic();
         kicker.periodic();

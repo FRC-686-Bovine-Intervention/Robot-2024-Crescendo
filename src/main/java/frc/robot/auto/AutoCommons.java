@@ -114,7 +114,7 @@ public class AutoCommons {
 
             return shooterReady && pivotReady && poseReady && speedReady;
         };
-        return rollers.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::kickerFallingEdge);
+        return rollers.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::noteExited);
     }
 
     private static Translation2d getFORR(Translation2d pos) {
