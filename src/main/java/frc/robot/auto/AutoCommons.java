@@ -114,7 +114,7 @@ public class AutoCommons {
 
             return shooterReady && pivotReady && poseReady && speedReady;
         };
-        return rollers.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::noteExited);
+        return rollers.kicker.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::noteExited);
     }
 
     private static Translation2d getFORR(Translation2d pos) {
@@ -164,7 +164,7 @@ public class AutoCommons {
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                rollers.intake().asProxy(),
+                rollers.intake.intake().asProxy(),
                 AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
             )
@@ -177,7 +177,7 @@ public class AutoCommons {
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                rollers.intake().asProxy(),
+                rollers.intake.intake().asProxy(),
                 AutoCommons.autoAim(shotPos, shooter, pivot),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle)))
@@ -205,7 +205,7 @@ public class AutoCommons {
                 AutoCommons.followPathFlipped(toCenterLine, drive)
                 .until(noteVision::hasTarget)
                 .andThen(
-                    rollers.intake().asProxy()
+                    rollers.intake.intake().asProxy()
                     .raceWith(
                         noteVision.autoIntake(() -> 2, rollers::noNote, drive)
                     )

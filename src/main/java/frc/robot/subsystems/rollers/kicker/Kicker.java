@@ -72,6 +72,11 @@ public class Kicker extends SubsystemBase {
       public void end(boolean interrupted) {
           isKicking.setPressed(false);
       }
+
+      @Override
+      public InterruptionBehavior getInterruptionBehavior() {
+          return InterruptionBehavior.kCancelIncoming;
+      }
     };
   }
 
@@ -87,6 +92,11 @@ public class Kicker extends SubsystemBase {
       @Override
       public void execute() {
         kickerIO.setKickerVoltage(voltage.get());
+      }
+
+      @Override
+      public InterruptionBehavior getInterruptionBehavior() {
+          return InterruptionBehavior.kCancelIncoming;
       }
     };
   }

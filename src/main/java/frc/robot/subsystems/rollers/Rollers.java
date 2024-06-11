@@ -34,31 +34,31 @@ public class Rollers extends VirtualSubsystem {
     }
 
     public Command antiDeadzone() {
-        return Commands.parallel(intake.antiDeadzone(), kicker.antiDeadZone());
+        return Commands.parallel(intake.antiDeadzone().asProxy(), kicker.antiDeadZone().asProxy());
     }
 
-    public Command intake() {
-        return Commands.parallel(intake.intake(), kicker.idle());
-    }
+    // public Command intake() {
+    //     return Commands.parallel(intake.intake(), kicker.idle());
+    // }
 
     public Command feed() {
-        return Commands.parallel(intake.feed(), kicker.feed());
+        return Commands.parallel(intake.feed().asProxy(), kicker.feed().asProxy());
     }
 
-    public Command kick() {
-        return Commands.parallel(intake.idle(), kicker.kick());
-    }
+    // public Command kick() {
+    //     return Commands.parallel(intake.idle(), kicker.kick());
+    // }
 
-    public Command inNOut() {
-        return Commands.parallel(intake.intake(), kicker.kick());
-    }
+    // public Command inNOut() {
+    //     return Commands.parallel(intake.intake(), kicker.kick());
+    // }
 
     public Command eject() {
-        return Commands.parallel(intake.eject(), kicker.eject());
+        return Commands.parallel(intake.eject().asProxy(), kicker.eject().asProxy());
     }
     
     public Command idle() {
-        return Commands.parallel(intake.idle(), kicker.idle());
+        return Commands.parallel(intake.idle().asProxy(), kicker.idle().asProxy());
     }
 
     public static enum GamePieceState {

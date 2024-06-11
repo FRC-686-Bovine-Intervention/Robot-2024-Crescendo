@@ -214,9 +214,10 @@ public class RobotContainer {
 
         new Trigger(rollers::noteInKicker)
         .and(DriverStation::isEnabled)
+        .onTrue(rollers.intake.idle())
         .and(rollers.isKicking().negate())
         .onTrue(
-            rollers.idle()
+            rollers.kicker.idle()
         );
 
         shooter.setDefaultCommand(shooter.idle());
@@ -279,7 +280,7 @@ public class RobotContainer {
         // driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake
-        driveController.a().and(() -> !rollers.noteInKicker()).whileTrue(rollers.intake());
+        driveController.a().and(() -> !rollers.noteInKicker()).whileTrue(rollers.intake.intake());
         driveController.b()
             .and(() -> Math.abs(drive.getRobotRelativeSpeeds().vxMetersPerSecond) >= 0.25)
             .whileTrue(
@@ -288,7 +289,7 @@ public class RobotContainer {
         ;
         
         // Kicker
-        driveController.x().whileTrue(rollers.kick());
+        driveController.x().whileTrue(rollers.kicker.kick());
 
         // Amp
         driveController.y().toggleOnTrue(
@@ -382,7 +383,7 @@ public class RobotContainer {
             ) && 
             DriverStation.isTeleopEnabled() &&
             !Optional.ofNullable(shooter.getCurrentCommand()).map((c) -> c.getName().contains("Subwoofer")).orElse(false)
-        )).onTrue(rollers.kick());
+        )).onTrue(rollers.kicker.kick().withName("Auto-Kick"));
         
         // Cancel Auto Drive
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
@@ -429,8 +430,8 @@ public class RobotContainer {
         SmartDashboard.putData("System Check/Climber/Wind Down", climber.getDefaultCommand());
         SmartDashboard.putData("System Check/Climber/Deploy", climber.deploy());
         SmartDashboard.putData("System Check/Climber/Retract", climber.retract());
-        SmartDashboard.putData("System Check/Intake/Intake", rollers.intake());
-        SmartDashboard.putData("System Check/Kicker/Kick", rollers.kick());
+        SmartDashboard.putData("System Check/Intake/Intake", rollers.intake.intake());
+        SmartDashboard.putData("System Check/Kicker/Kick", rollers.kicker.kick());
         SmartDashboard.putData("System Check/Shooter/Amp", shooter.amp());
         SmartDashboard.putData("System Check/Drive/Spin", 
             new Command() {

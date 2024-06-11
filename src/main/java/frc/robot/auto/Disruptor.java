@@ -13,7 +13,6 @@ import frc.robot.auto.AutoSelector.AutoRoutine;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.rollers.Rollers;
-import frc.robot.subsystems.rollers.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.AllianceFlipUtil;
@@ -68,7 +67,7 @@ public class Disruptor extends AutoRoutine {
                     AutoCommons.followPathFlipped(disruptorPath, drive)
                     .andThen(
                         Commands.runOnce(noteVision::clearMemory),
-                        rollers.intake()
+                        rollers.intake.intake()
                         .deadlineWith(
                             noteVision.autoIntake(() -> 2, rollers::noNote, drive)
                         ),

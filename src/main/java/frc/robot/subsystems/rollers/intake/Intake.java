@@ -85,6 +85,11 @@ public class Intake extends SubsystemBase {
         subsystem.intakeIO.setRollerVoltage(this.rollerVoltage.get() * (getIntakeReversed() ? -1 : 1));
         subsystem.intakeIO.setBeltVoltage(this.beltVoltage.get());
       }
+
+      @Override
+        public InterruptionBehavior getInterruptionBehavior() {
+          return InterruptionBehavior.kCancelIncoming;
+        }
     };
   }
 
