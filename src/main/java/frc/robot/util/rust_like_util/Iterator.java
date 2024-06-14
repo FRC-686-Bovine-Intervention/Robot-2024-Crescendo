@@ -32,6 +32,15 @@ public interface Iterator<I> {
     }
 
     // Adapters
+    public default Iterator<I> inspect(Consumer<I> inspect_function) {
+        var parent = this;
+        return new Iterator<I>() {
+            @Override
+            public Option<I> next() {
+                return parent.next().inspect(inspect_function);
+            }
+        };
+    }
     public default <U> Iterator<U> map(Function<I, U> map_function) {
         var parent = this;
         return new Iterator<U>() {

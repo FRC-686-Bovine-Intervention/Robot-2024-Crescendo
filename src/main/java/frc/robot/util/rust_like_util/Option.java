@@ -1,6 +1,7 @@
 package frc.robot.util.rust_like_util;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -39,8 +40,14 @@ public class Option<T> {
     }
 
     public <U> Option<U> map(Function<T, U> map_function) {
-        if(is_none()) return none();
-        return some(map_function.apply(some));
+        return is_none() ? none() : some(map_function.apply(some));
+    }
+
+    public Option<T> inspect(Consumer<T> inspect_function) {
+        if(is_some()) {
+            inspect_function.accept(some);
+        }
+        return this;
     }
 
     public <U> Option<U> and(Option<U> other) {

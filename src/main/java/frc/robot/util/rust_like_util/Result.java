@@ -1,5 +1,6 @@
 package frc.robot.util.rust_like_util;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Result<T, E> {
@@ -54,6 +55,19 @@ public class Result<T, E> {
     }
     public <U> Result<T, U> map_err(Function<E, U> map_function) {
         return is_ok() ? ok(ok) : err(map_function.apply(err));
+    }
+
+    public Result<T, E> inspect(Consumer<T> inspect_function) {
+        if(is_ok()) {
+            inspect_function.accept(ok);
+        }
+        return this;
+    }
+    public Result<T, E> inspect_err(Consumer<E> inspect_function) {
+        if(is_err()) {
+            inspect_function.accept(err);
+        }
+        return this;
     }
 
     public <U> Result<U, E> and(Result<U,E> other) {
