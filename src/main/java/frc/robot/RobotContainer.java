@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -37,7 +36,6 @@ import frc.robot.auto.AutoSelector;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.Source4Note;
-import frc.robot.commands.WaitForAllLogged;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.climber.ClimberIOFalcon;
@@ -172,7 +170,8 @@ public class RobotContainer {
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
-            .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
+            .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit)
+        ;
 
         joystickTranslational = Drive.Translational.joystickSpectatorToFieldRelative(
             driveJoystick,
@@ -201,31 +200,33 @@ public class RobotContainer {
     }
 
     private void configureSubsystems() {
-        drive.translationSubsystem.setDefaultCommand(
-            drive.translationSubsystem.fieldRelative(joystickTranslational).withName("Driver Control Field Relative")
-        );
+        drive.translationSubsystem.setDefaultCommand(drive.translationSubsystem.fieldRelative(joystickTranslational).withName("Driver Control Field Relative"));
 
         rollers.intake.setDefaultCommand(rollers.intake.antiDeadzone());
         rollers.kicker.setDefaultCommand(rollers.kicker.antiDeadZone());
 
-        new Trigger(rollers::noteExited).and(DriverStation::isEnabled).onTrue(Commands.runOnce(() -> rollers.kicker.getCurrentCommand().cancel()));
-        new Trigger(rollers::noNote).onTrue(rollers.antiDeadzone());
+        //TODO: ICKY
+        new Trigger(rollers::noteExited)
+            .and(DriverStation::isEnabled)
+            .onTrue(Commands.runOnce(() -> rollers.kicker.getCurrentCommand().cancel()))
+        ;
+        new Trigger(rollers::noNote)
+            .onTrue(rollers.antiDeadzone())
+        ;
 
         new Trigger(rollers::noteInIntake)
-        .and(DriverStation::isEnabled)
-        .whileTrue(rollers.intake.feed())
-        .and(rollers.isKicking().negate())
-        .whileTrue(
-            rollers.kicker.feed()
-        );
+            .and(DriverStation::isEnabled)
+            .whileTrue(rollers.intake.feed())
+            .and(rollers.isKicking().negate())
+            .whileTrue(rollers.kicker.feed())
+        ;
 
         new Trigger(rollers::noteInKicker)
-        .and(DriverStation::isEnabled)
-        .onTrue(rollers.intake.idle())
-        .and(rollers.isKicking().negate())
-        .onTrue(
-            rollers.kicker.idle()
-        );
+            .and(DriverStation::isEnabled)
+            .onTrue(rollers.intake.idle())
+            .and(rollers.isKicking().negate())
+            .onTrue(rollers.kicker.idle())
+        ;
 
         shooter.setDefaultCommand(shooter.idle());
 
@@ -380,24 +381,25 @@ public class RobotContainer {
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
         
         // Auto Fire
-        new Trigger(new WaitForAllLogged.AllLogged(
-            "Auto Kick",
-            Map.of(
-                "Pivot Ready", pivot::atPos,
-                "Rotation Ready", () -> MathExtraUtil.isNear(
+        shooter.readyToAutoShoot
+            .and(pivot::atPos)
+            .and(
+                () -> MathExtraUtil.isNear(
                     RobotState.getInstance().aimingParameters.drivePose().getRotation(),
                     drive.getRotation(),
                     Units.degreesToRadians(3)
-                ),
-                "Shooter Ready", shooter.readyToAutoShoot
+                )
             )
-        ))
-        .and(DriverStation::isTeleopEnabled)
-        .onTrue(rollers.kicker.kick().withName("Auto Kick"));
+            .and(DriverStation::isTeleopEnabled)
+            .onTrue(rollers.kicker.kick().withName("Auto Kick"))
+        ;
         
         // Cancel Auto Drive
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
-            .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
+            .and(
+                () -> drive.translationSubsystem.getCurrentCommand() != null
+                && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix)
+            )
             .onTrue(drive.translationSubsystem.getDefaultCommand())
         ;
     }
@@ -405,9 +407,10 @@ public class RobotContainer {
     private void configureNotifications() {
         // Intake Notification
         new Trigger(rollers::noteInIntake)
-        .onTrue(Leds.getInstance().noteAcquired.setCommand().withTimeout(1))
-        .and(DriverStation::isTeleopEnabled)
-        .whileTrue(driveController.rumble(RumbleType.kBothRumble, 0.4));
+            .onTrue(Leds.getInstance().noteAcquired.setCommand().withTimeout(1))
+            .and(DriverStation::isTeleopEnabled)
+            .whileTrue(driveController.rumble(RumbleType.kBothRumble, 0.4))
+        ;
         
         // Human Player Notification
         driveController.leftStickButton().onTrue(Leds.getInstance().humanPlayerFlash.setCommand().withTimeout(1));
