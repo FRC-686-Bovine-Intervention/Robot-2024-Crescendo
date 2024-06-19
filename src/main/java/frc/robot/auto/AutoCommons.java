@@ -105,7 +105,7 @@ public class AutoCommons {
             var shooterReady = shooter.readyToAutoShoot.getAsBoolean();
             var pivotReady = pivot.atPos();
             var poseReady = MathExtraUtil.isNear(RobotState.getInstance().aimingParameters.drivePose(), drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
-            var speedReady = MathExtraUtil.isNear(new ChassisSpeeds(), drive.getRobotRelativeSpeeds(), 0.75, 1);
+            var speedReady = MathExtraUtil.isNear(RobotState.getInstance().aimingParameters.chassisSpeeds(), drive.getRobotRelativeSpeeds(), 0.75, 1);
 
             Logger.recordOutput("DEBUG/Shooter Ready", shooterReady);
             Logger.recordOutput("DEBUG/Pivot Ready", pivotReady);
@@ -117,23 +117,20 @@ public class AutoCommons {
         return rollers.kicker.kick().asProxy().onlyWhile(condition).onlyIf(condition).repeatedly().until(rollers::noteExited);
     }
 
-    private static Translation2d getFORR(Translation2d pos) {
-        return AllianceFlipUtil.apply(FieldConstants.speakerAimPoint).minus(pos);
+    public static Command autoAim(Drive.Rotational rotation) {
+        return rotation.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()));
     }
-    public static Command autoAim(Translation2d pos, Drive.Rotational rotation) {
-        return rotation.pidControlledHeading(() -> Optional.of(getFORR(pos)).map((t) -> new Rotation2d(t.getX(), t.getY())));
+    public static Command autoAim(Shooter shooter) {
+        return shooter.shooting().asProxy();
     }
-    public static Command autoAim(Translation2d pos, Shooter shooter) {
-        return shooter.shooting();
+    public static Command autoAim(Pivot pivot) {
+        return pivot.speaker().asProxy();
     }
-    public static Command autoAim(Translation2d pos, Pivot pivot) {
-        return pivot.speaker();
+    public static Command autoAim(Shooter shooter, Pivot pivot) {
+        return autoAim(shooter).alongWith(autoAim(pivot));
     }
-    public static Command autoAim(Translation2d pos, Shooter shooter, Pivot pivot) {
-        return autoAim(pos, shooter).alongWith(autoAim(pos, pivot));
-    }
-    public static Command autoAim(Translation2d pos, Shooter shooter, Pivot pivot, Drive.Rotational rotation) {
-        return autoAim(pos, shooter, pivot).alongWith(autoAim(pos, rotation));
+    public static Command autoAim(Shooter shooter, Pivot pivot, Drive.Rotational rotation) {
+        return autoAim(shooter, pivot).alongWith(autoAim(rotation));
     }
 
     public static Translation2d getFirstPoint(PathPlannerPath path) {
@@ -153,19 +150,41 @@ public class AutoCommons {
         return 
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem)
+                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem)
             )
             .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
         ;
     }
 
+    public static AimingParameters aimingFromPath(double samplePoint, PathPlannerPath path) {
+        var traj = path.getTrajectory(new ChassisSpeeds(), new Rotation2d());
+        System.out.println("YO IDIOT                      " + samplePoint * traj.getTotalTimeSeconds());
+        System.out.println("YO IDIOT                      " + traj.getTotalTimeSeconds());
+        var sampleState = traj.sample(samplePoint * traj.getTotalTimeSeconds());
+        var velo = MathExtraUtil.vectorFromRotation(sampleState.heading).times(sampleState.velocityMps);
+        return AimingParameters.from(sampleState.positionMeters, new ChassisSpeeds(velo.get(0), velo.get(1), 0));
+    }
+
+    public static Command spikeNoteSOTM(PathPlannerPath toSpike, double samplePoint, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
+        var shotPos = getLastPoint(toSpike);
+        return
+            AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
+            .deadlineWith(
+                rollers.intake.intake().asProxy(),
+                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem),
+                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
+            )
+            .withTimeout(3)
+            .beforeStarting(() -> RobotState.getInstance().aimingParameters = aimingFromPath(samplePoint, toSpike))
+        ;
+    }
     public static Command spikeNote(PathPlannerPath toSpike, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
         var shotPos = getLastPoint(toSpike);
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
                 rollers.intake.intake().asProxy(),
-                AutoCommons.autoAim(shotPos, shooter, pivot, drive.rotationalSubsystem),
+                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
             )
             .withTimeout(3)
@@ -178,12 +197,12 @@ public class AutoCommons {
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
                 rollers.intake.intake().asProxy(),
-                AutoCommons.autoAim(shotPos, shooter, pivot),
+                AutoCommons.autoAim(shooter, pivot),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle)))
                 .onlyWhile(rollers::noNote)
                 .andThen(
-                    AutoCommons.autoAim(shotPos, drive.rotationalSubsystem)
+                    AutoCommons.autoAim(drive.rotationalSubsystem)
                 )
             )
             .withTimeout(4)
@@ -214,22 +233,22 @@ public class AutoCommons {
                 .onlyWhile(rollers::noNote)
                 .deadlineWith(
                     isStagePath(toCenterLine) ? (
-                        AutoCommons.autoAim(defaultShot, shooter)
+                        AutoCommons.autoAim(shooter)
                     ) : (
-                        AutoCommons.autoAim(defaultShot, shooter, pivot)
+                        AutoCommons.autoAim(shooter, pivot)
                     )
                 )
                 .andThen(
                     Commands.either((
                         AutoCommons.shootWhenReady(3, drive, shooter, pivot, rollers)
                         .deadlineWith(
-                            AutoCommons.autoAim(defaultShot, shooter),
+                            AutoCommons.autoAim(shooter),
                             returnFromCenter(defaultReturn, drive, shooter, pivot)
                         )
                     ),(
                         AutoCommons.shootWhenReady(3, drive, shooter, pivot, rollers)
                         .deadlineWith(
-                            AutoCommons.autoAim(altShot, shooter),
+                            AutoCommons.autoAim(shooter),
                             returnFromCenter(altReturn, drive, shooter, pivot)
                         )
                         .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(altShot))
@@ -243,16 +262,15 @@ public class AutoCommons {
     }
 
     private static Command returnFromCenter(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot) {
-        var shotPos = getLastPoint(path);
         return
-            AutoCommons.autoAim(shotPos, drive.rotationalSubsystem)
+            AutoCommons.autoAim(drive.rotationalSubsystem)
             .alongWith(
                 isStagePath(path) ? (
                     AutoCommons.followPathFlipped(path, drive.translationSubsystem)
-                    .andThen(AutoCommons.autoAim(shotPos, pivot))
+                    .andThen(AutoCommons.autoAim(pivot))
                 ) : (
                     AutoCommons.followPathFlipped(path, drive.translationSubsystem)
-                    .alongWith(AutoCommons.autoAim(shotPos, pivot))
+                    .alongWith(AutoCommons.autoAim(pivot))
                 )
             )
         ;

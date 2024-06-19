@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -36,6 +37,7 @@ import frc.robot.auto.AutoSelector;
 import frc.robot.auto.MASpikeWiggle;
 import frc.robot.auto.Rush6Note;
 import frc.robot.auto.Source4Note;
+import frc.robot.commands.WaitForAllLogged;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.climber.ClimberIOFalcon;
@@ -206,11 +208,16 @@ public class RobotContainer {
         rollers.intake.setDefaultCommand(rollers.intake.antiDeadzone());
         rollers.kicker.setDefaultCommand(rollers.kicker.antiDeadZone());
 
+        new Trigger(rollers::noteExited).and(DriverStation::isEnabled).onTrue(Commands.runOnce(() -> rollers.kicker.getCurrentCommand().cancel()));
         new Trigger(rollers::noNote).onTrue(rollers.antiDeadzone());
 
         new Trigger(rollers::noteInIntake)
         .and(DriverStation::isEnabled)
-        .whileTrue(rollers.feed());
+        .whileTrue(rollers.intake.feed())
+        .and(rollers.isKicking().negate())
+        .whileTrue(
+            rollers.kicker.feed()
+        );
 
         new Trigger(rollers::noteInKicker)
         .and(DriverStation::isEnabled)
@@ -373,17 +380,20 @@ public class RobotContainer {
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
         
         // Auto Fire
-        shooter.readyToAutoShoot
-        .and((() ->
-            pivot.atPos() &&
-            MathExtraUtil.isNear(
-                RobotState.getInstance().aimingParameters.drivePose().getRotation(),
-                drive.getRotation(),
-                Units.degreesToRadians(3)
-            ) && 
-            DriverStation.isTeleopEnabled() &&
-            !Optional.ofNullable(shooter.getCurrentCommand()).map((c) -> c.getName().contains("Subwoofer")).orElse(false)
-        )).onTrue(rollers.kicker.kick().withName("Auto-Kick"));
+        new Trigger(new WaitForAllLogged.AllLogged(
+            "Auto Kick",
+            Map.of(
+                "Pivot Ready", pivot::atPos,
+                "Rotation Ready", () -> MathExtraUtil.isNear(
+                    RobotState.getInstance().aimingParameters.drivePose().getRotation(),
+                    drive.getRotation(),
+                    Units.degreesToRadians(3)
+                ),
+                "Shooter Ready", shooter.readyToAutoShoot
+            )
+        ))
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(rollers.kicker.kick().withName("Auto Kick"));
         
         // Cancel Auto Drive
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)

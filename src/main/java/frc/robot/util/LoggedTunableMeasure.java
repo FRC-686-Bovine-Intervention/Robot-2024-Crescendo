@@ -10,12 +10,12 @@ package frc.robot.util;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Unit;
 import frc.robot.Constants;
 /**
@@ -26,20 +26,9 @@ public class LoggedTunableMeasure<U extends Unit<U>> implements Supplier<Measure
   private static final String tableKey = "TunableNumbers";
 
   private final String key;
-  private final U dashboardUnit;
-  private Optional<Measure<U>> defaultValue = Optional.empty();
-  private LoggedDashboardNumber dashboardNumber;
-  private Map<Integer, Double> lastHasChangedValues = new HashMap<>();
-
-  /**
-   * Create a new LoggedTunableNumber
-   *
-   * @param dashboardKey Key on dashboard
-   */
-  public LoggedTunableMeasure(String dashboardKey, U dashboardUnit) {
-    this.key = tableKey + "/" + dashboardKey;
-    this.dashboardUnit = dashboardUnit;
-  }
+  private final MutableMeasure<U> dashboardMeasure;
+  private final LoggedDashboardNumber dashboardNumber;
+  private final Map<Integer, Double> lastHasChangedValues = new HashMap<>();
 
   /**
    * Create a new LoggedTunableNumber with the default value
@@ -48,21 +37,10 @@ public class LoggedTunableMeasure<U extends Unit<U>> implements Supplier<Measure
    * @param defaultValue Default value
    */
   public LoggedTunableMeasure(String dashboardKey, Measure<U> defaultValue) {
-    this(dashboardKey, defaultValue.unit());
-    initDefault(defaultValue);
-  }
-
-  /**
-   * Set the default value of the number. The default value can only be set once.
-   *
-   * @param defaultValue The default value
-   */
-  public void initDefault(Measure<U> defaultValue) {
-    if(this.defaultValue.isEmpty()) {
-      this.defaultValue = Optional.of(defaultValue);
-      if(Constants.tuningMode) {
-        dashboardNumber = new LoggedDashboardNumber(key, defaultValue.in(dashboardUnit));
-      }
+    this.key = tableKey + "/" + dashboardKey;
+    this.dashboardMeasure = MutableMeasure.mutable(defaultValue);
+    if(Constants.tuningMode) {
+      dashboardNumber = new LoggedDashboardNumber(key, dashboardMeasure.magnitude());
     }
   }
 
@@ -72,7 +50,10 @@ public class LoggedTunableMeasure<U extends Unit<U>> implements Supplier<Measure
    * @return The current value
    */
   public Measure<U> get() {
-    return defaultValue.map((def) -> Constants.tuningMode ? dashboardUnit.of(dashboardNumber.get()) : def).orElseGet(() -> dashboardUnit.of(0));
+    if(Constants.tuningMode) {
+      dashboardMeasure.mut_setMagnitude(dashboardNumber.get());
+    }
+    return dashboardMeasure;
   }
 
   public double in(U unit) {
@@ -99,7 +80,7 @@ public class LoggedTunableMeasure<U extends Unit<U>> implements Supplier<Measure
   }
 
   /** Runs action if any of the tunableNumbers have changed */
-  public static <U extends Unit<U>> void ifChanged(int id, Runnable action, LoggedTunableMeasure<U>... tunableMeasures) {
+  public static void ifChanged(int id, Runnable action, LoggedTunableMeasure<?>... tunableMeasures) {
     if (Arrays.stream(tunableMeasures).anyMatch((tunableMeasure) -> tunableMeasure.hasChanged(id))) {
       action.run();
     }

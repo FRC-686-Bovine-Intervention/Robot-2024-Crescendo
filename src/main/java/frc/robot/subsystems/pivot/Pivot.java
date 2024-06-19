@@ -78,7 +78,7 @@ public class Pivot extends SubsystemBase {
       robotToPivotTranslation,
       new Rotation3d(
         0,
-        idleAltitudeDeg.get()-angle,
+        Units.degreesToRadians(idleAltitudeDeg.get())-angle,
         0
       )
     );

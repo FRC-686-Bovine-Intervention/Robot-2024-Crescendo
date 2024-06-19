@@ -15,9 +15,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.InternalButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.RobotState;
 import frc.robot.subsystems.leds.Leds;
+import frc.robot.util.LoggedInternalButton;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.MathExtraUtil;
 
@@ -25,8 +27,8 @@ public class Shooter extends SubsystemBase {
     private final ShooterIO shooterIO;
     private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
-    public final InternalButton readyToShoot = new InternalButton();
-    public final InternalButton autoShootEnabled = new InternalButton();
+    public final InternalButton readyToShoot = new LoggedInternalButton("Shooter/Ready to Shoot");
+    public final InternalButton autoShootEnabled = new LoggedInternalButton("Shooter/AutoShoot Enabled");
     public final Trigger readyToAutoShoot = readyToShoot.and(autoShootEnabled);
 
     public Shooter(ShooterIO shooterIO) {
@@ -56,27 +58,15 @@ public class Shooter extends SubsystemBase {
                     Logger.recordOutput("SysID/Shooter/Right Velocity", inputs.rightMotor.velocityRadPerSec);
                     Logger.recordOutput("SysID/Shooter/Left Voltage", inputs.leftMotor.appliedVolts);
                     Logger.recordOutput("SysID/Shooter/Right Voltage", inputs.rightMotor.appliedVolts);
-                    // log.motor("left")
-                    //     .angularPosition(Units.Radians.of(inputs.leftMotor.positionRad))
-                    //     .angularVelocity(Units.RadiansPerSecond.of(inputs.leftMotor.velocityRadPerSec))
-                    //     .voltage(Units.Volts.of(inputs.leftMotor.appliedVolts))
-                    //     .current(Units.Amps.of(inputs.leftMotor.currentAmps))
-                    // ;
-                    // log.motor("right")
-                    //     .angularPosition(Units.Radians.of(inputs.rightMotor.positionRad))
-                    //     .angularVelocity(Units.RadiansPerSecond.of(inputs.rightMotor.velocityRadPerSec))
-                    //     .voltage(Units.Volts.of(inputs.rightMotor.appliedVolts))
-                    //     .current(Units.Amps.of(inputs.rightMotor.currentAmps))
-                    // ;
                 },
                 this
             )
         );
 
-        // SmartDashboard.putData("SysID/Shooter/Quasi Forward", routine.quasistatic(Direction.kForward).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Quasistatic Forward"));
-        // SmartDashboard.putData("SysID/Shooter/Quasi Reverse", routine.quasistatic(Direction.kReverse).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Quasistatic Reverse"));
-        // SmartDashboard.putData("SysID/Shooter/Dynamic Forward", routine.dynamic(Direction.kForward).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Dynamic Forward"));
-        // SmartDashboard.putData("SysID/Shooter/Dynamic Reverse", routine.dynamic(Direction.kReverse).deadlineWith(setGoalCommand(Goal.SYSID)).withName("SysID Dynamic Reverse"));
+        SmartDashboard.putData("SysID/Shooter/Quasi Forward", routine.quasistatic(Direction.kForward).withName("SysID Quasistatic Forward"));
+        SmartDashboard.putData("SysID/Shooter/Quasi Reverse", routine.quasistatic(Direction.kReverse).withName("SysID Quasistatic Reverse"));
+        SmartDashboard.putData("SysID/Shooter/Dynamic Forward", routine.dynamic(Direction.kForward).withName("SysID Dynamic Forward"));
+        SmartDashboard.putData("SysID/Shooter/Dynamic Reverse", routine.dynamic(Direction.kReverse).withName("SysID Dynamic Reverse"));
     }
 
     @Override
@@ -107,32 +97,13 @@ public class Shooter extends SubsystemBase {
     private final DoubleSupplier shootingMinimumSpeed = () -> RobotState.getInstance().aimingParameters.minimumShooterSpeed();
     private final DoubleSupplier shootingMaximumSpeed = () -> Double.POSITIVE_INFINITY;
     public Command shooting() {
-        var subsystem = this;
-        return new Command() {
-            {
-                setName("Shooting");
-                addRequirements(subsystem);
-            }
-
-            @Override
-            public void initialize() {
-                autoShootEnabled.setPressed(true);
-            }
-
-            @Override
-            public void execute() {
-                applyShooterSpeed(shootingTargetSpeed);
-                setReadyToShoot(shootingMinimumSpeed, shootingMaximumSpeed);
-                Leds.getInstance().shooterTarget = shootingTargetSpeed.getAsDouble();
-                Leds.getInstance().shooterBarGraph.set(true);
-            }
-
-            @Override
-            public void end(boolean interrupted) {
-                readyToShoot.setPressed(false);
-                autoShootEnabled.setPressed(false);
-            }
-        };
+        return genCommand(
+            "Shooting",
+            shootingTargetSpeed,
+            shootingMinimumSpeed,
+            shootingMaximumSpeed,
+            true
+        );
     }
 
     private static LoggedTunableNumber preemptiveTargetSpeed = new LoggedTunableNumber("Shooter/Pre-emptive/Target Speed", 17);
@@ -153,102 +124,89 @@ public class Shooter extends SubsystemBase {
         };
     }
 
-    private static LoggedTunableNumber passTargetSpeed = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
-    private static LoggedTunableNumber passTargetMinimum = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
-    private static LoggedTunableNumber passTargetMaximum = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
+    private static final LoggedTunableNumber passTargetSpeed = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
+    private static final LoggedTunableNumber passTargetMinimum = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
+    private static final LoggedTunableNumber passTargetMaximum = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
     public Command pass() {
-        var subsystem = this;
-        return new Command() {
-            {
-                setName("Pass");
-                addRequirements(subsystem);
-            }
-
-            @Override
-            public void execute() {
-                applyShooterSpeed(passTargetSpeed);
-                setReadyToShoot(passTargetMinimum, passTargetMaximum);
-                Leds.getInstance().shooterTarget = passTargetSpeed.getAsDouble();
-                Leds.getInstance().shooterBarGraph.set(true);
-            }
-        };
+        return genCommand(
+            "Pass",
+            passTargetSpeed,
+            passTargetMinimum,
+            passTargetMaximum,
+            false
+        );
     }
 
     private static final LoggedTunableNumber superPassTargetSpeed = new LoggedTunableNumber("Shooter/Super Pass/Target Speed", 12);
     private static final LoggedTunableNumber superPassMinimumSpeed = new LoggedTunableNumber("Shooter/Super Pass/Minimum Speed", 9);
     private static final LoggedTunableNumber superPassMaximumSpeed = new LoggedTunableNumber("Shooter/Super Pass/Maximum Speed", 13);
     public Command superPass() {
-        var subsystem = this;
-        return new Command() {
-            {
-                setName("Super Pass");
-                addRequirements(subsystem);
-            }
-
-            @Override
-            public void execute() {
-                applyShooterSpeed(superPassTargetSpeed);
-                setReadyToShoot(superPassMinimumSpeed, superPassMaximumSpeed);
-                Leds.getInstance().shooterTarget = superPassTargetSpeed.getAsDouble();
-                Leds.getInstance().shooterBarGraph.set(true);
-            }
-        };
+        return genCommand(
+            "Super Pass",
+            superPassTargetSpeed,
+            superPassMinimumSpeed,
+            superPassMaximumSpeed,
+            false
+        );
     }
 
     private static final LoggedTunableNumber ampTargetSpeed = new LoggedTunableNumber("Shooter/Amp/Target Speed", 2);
     private static final LoggedTunableNumber ampMinimumSpeed = new LoggedTunableNumber("Shooter/Amp/Minimum Speed", 1.5);
     private static final LoggedTunableNumber ampMaximumSpeed = new LoggedTunableNumber("Shooter/Amp/Maximum Speed", 3);
     public Command amp() {
-        var subsystem = this;
-        return new Command() {
-            {
-                setName("Amp");
-                addRequirements(subsystem);
-            }
-
-            @Override
-            public void execute() {
-                applyShooterSpeed(ampTargetSpeed);
-                setReadyToShoot(ampMinimumSpeed, ampMaximumSpeed);
-                Leds.getInstance().shooterTarget = ampTargetSpeed.getAsDouble();
-                Leds.getInstance().shooterBarGraph.set(true);
-            }
-        };
+        return genCommand(
+            "Amp",
+            ampTargetSpeed,
+            ampMinimumSpeed,
+            ampMaximumSpeed,
+            false
+        );
     }
 
     private static final LoggedTunableNumber customTargetSpeed = new LoggedTunableNumber("Shooter/Custom/Target Speed", 10);
     private static final LoggedTunableNumber customMinimumSpeed = new LoggedTunableNumber("Shooter/Custom/Minimum Speed", 50);
     private static final LoggedTunableNumber customMaximumSpeed = new LoggedTunableNumber("Shooter/Custom/Maximum Speed", 50);
     public Command custom() {
-        var subsystem = this;
-        return new Command() {
-            {
-                setName("Custom");
-                addRequirements(subsystem);
-            }
-
-            @Override
-            public void execute() {
-                applyShooterSpeed(customTargetSpeed);
-                setReadyToShoot(customMinimumSpeed, customMaximumSpeed);
-                Leds.getInstance().shooterTarget = customTargetSpeed.getAsDouble();
-                Leds.getInstance().shooterBarGraph.set(true);
-            }
-        };
+        return genCommand(
+            "Custom",
+            customTargetSpeed,
+            customMinimumSpeed,
+            customMaximumSpeed,
+            false
+        );
     }
 
-    public Command sysId() {
+    private Command genCommand(
+        String name,
+        DoubleSupplier targetSpeed,
+        DoubleSupplier minimumSpeed,
+        DoubleSupplier maximumSpeed,
+        boolean enableAutoShoot
+    ) {
         var subsystem = this;
         return new Command() {
             {
-                setName("SysId");
+                setName(name);
                 addRequirements(subsystem);
             }
 
             @Override
+            public void initialize() {
+                autoShootEnabled.setPressed(enableAutoShoot);
+            }
+
+            @Override
             public void execute() {
-                Leds.getInstance().shooterTarget = 0;
-                Leds.getInstance().shooterBarGraph.set(false);
+                applyShooterSpeed(targetSpeed);
+                setReadyToShoot(minimumSpeed, maximumSpeed);
+                Leds.getInstance().shooterTarget = targetSpeed.getAsDouble();
+                Leds.getInstance().shooterBarGraph.set(true);
+            }
+
+            @Override
+            public void end(boolean interrupted) {
+                readyToShoot.setPressed(false);
+                autoShootEnabled.setPressed(false);
             }
         };
     }
