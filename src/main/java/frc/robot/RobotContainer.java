@@ -205,11 +205,6 @@ public class RobotContainer {
         rollers.intake.setDefaultCommand(rollers.intake.antiDeadzone());
         rollers.kicker.setDefaultCommand(rollers.kicker.antiDeadZone());
 
-        //TODO: ICKY
-        new Trigger(rollers::noteExited)
-            .and(DriverStation::isEnabled)
-            .onTrue(Commands.runOnce(() -> rollers.kicker.getCurrentCommand().cancel()))
-        ;
         new Trigger(rollers::noNote)
             .onTrue(rollers.antiDeadzone())
         ;
@@ -391,7 +386,7 @@ public class RobotContainer {
                 )
             )
             .and(DriverStation::isTeleopEnabled)
-            .onTrue(rollers.kicker.kick().withName("Auto Kick"))
+            .onTrue(rollers.kicker.kick().until(rollers::noteExited).withName("Auto Kick"))
         ;
         
         // Cancel Auto Drive
