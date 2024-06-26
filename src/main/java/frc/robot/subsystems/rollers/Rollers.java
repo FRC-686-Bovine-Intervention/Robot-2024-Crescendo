@@ -89,7 +89,7 @@ public class Rollers extends VirtualSubsystem {
     @Override
     public void periodic() {
         sensorsIO.updateInputs(inputs);
-        Logger.processInputs("RollerSensors", inputs);
+        Logger.processInputs("Inputs/RollerSensors", inputs);
         for(int i = 0; i < Math.min(inputs.intakeSensorHistory.length, inputs.kickerSensorHistory.length); i++) {
             intakeEdgeDetector.update(inputs.intakeSensorHistory[i]);
             kickerEdgeDetector.update(inputs.kickerSensorHistory[i]);

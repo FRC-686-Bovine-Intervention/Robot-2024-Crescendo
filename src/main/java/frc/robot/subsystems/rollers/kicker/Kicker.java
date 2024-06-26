@@ -20,7 +20,7 @@ public class Kicker extends SubsystemBase {
   public Command antiDeadZone() {
     var subsystem = this;
     return new Command() {
-      private final LoggedTunableNumber voltage = new LoggedTunableNumber("Kicker/Voltage/Anti Deadzone", 1.5);
+      private final LoggedTunableNumber voltage = new LoggedTunableNumber("Kicker/Voltage/Anti Deadzone", 0);
       {
         setName("AntiDeadzone");
         addRequirements(subsystem);
@@ -125,6 +125,6 @@ public class Kicker extends SubsystemBase {
   @Override
   public void periodic() {
     kickerIO.updateInputs(inputs);
-    Logger.processInputs("Kicker", inputs);
+    Logger.processInputs("Inputs/Kicker", inputs);
   }
 }

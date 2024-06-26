@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -94,8 +93,8 @@ public class RobotContainer {
     private final XboxController driveController = new XboxController(0);
     private final Joystick driveJoystick;
     private final Supplier<ChassisSpeeds> joystickTranslational;
-    @SuppressWarnings("unused")
     private final ButtonBoard3x3 buttonBoard = new ButtonBoard3x3(1);
+    @SuppressWarnings("unused")
     private final CommandJoystick simJoystick = new CommandJoystick(2);
 
     public RobotContainer() {
@@ -306,7 +305,7 @@ public class RobotContainer {
                     pivot.amp(),
                     shooter.amp()
                 ).withName("Amp").asProxy(),
-                () -> DriverStation.getMatchType() != MatchType.None
+                Environment::isCompetition
             )
         );
 
@@ -317,8 +316,8 @@ public class RobotContainer {
         driveController.rightBumper().toggleOnTrue(
             Commands.parallel(
                 Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds())),
-                pivot.speaker(),
-                shooter.shooting(),
+                pivot.aim(),
+                shooter.aimWithAutoShoot(),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()))
             )
             .until(rollers::noNote)
@@ -328,11 +327,11 @@ public class RobotContainer {
         // Aim from Subwoofer
         driveController.leftBumper().toggleOnTrue(
             Commands.parallel(
-                pivot.speaker(),
-                shooter.shooting()
+                Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
+                pivot.aim(),
+                shooter.aimWithoutAutoShoot()
             )
             .until(rollers::noNote)
-            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation())))
             .withName("Shoot From Subwoofer")
         );
 

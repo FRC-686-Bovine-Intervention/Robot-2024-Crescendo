@@ -72,7 +72,7 @@ public class Shooter extends SubsystemBase {
     @Override
     public void periodic() {
         shooterIO.updateInputs(inputs);
-        Logger.processInputs("Shooter", inputs);
+        Logger.processInputs("Inputs/Shooter", inputs);
         Logger.recordOutput("Shooter/Average MPS", getAverageSurfaceSpeed());
 
         Leds.getInstance().shooterReady = readyToShoot.getAsBoolean();
@@ -96,13 +96,22 @@ public class Shooter extends SubsystemBase {
     private final DoubleSupplier shootingTargetSpeed = () -> RobotState.getInstance().aimingParameters.targetShooterSpeed();
     private final DoubleSupplier shootingMinimumSpeed = () -> RobotState.getInstance().aimingParameters.minimumShooterSpeed();
     private final DoubleSupplier shootingMaximumSpeed = () -> Double.POSITIVE_INFINITY;
-    public Command shooting() {
+    public Command aimWithAutoShoot() {
         return genCommand(
-            "Shooting",
+            "Aim-AutoShoot",
             shootingTargetSpeed,
             shootingMinimumSpeed,
             shootingMaximumSpeed,
             true
+        );
+    }
+    public Command aimWithoutAutoShoot() {
+        return genCommand(
+            "Aim",
+            shootingTargetSpeed,
+            shootingMinimumSpeed,
+            shootingMaximumSpeed,
+            false
         );
     }
 
@@ -125,8 +134,8 @@ public class Shooter extends SubsystemBase {
     }
 
     private static final LoggedTunableNumber passTargetSpeed = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
-    private static final LoggedTunableNumber passTargetMinimum = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
-    private static final LoggedTunableNumber passTargetMaximum = new LoggedTunableNumber("Shooter/Pass/Target Speed", 17);
+    private static final LoggedTunableNumber passTargetMinimum = new LoggedTunableNumber("Shooter/Pass/Target Speed", 4);
+    private static final LoggedTunableNumber passTargetMaximum = new LoggedTunableNumber("Shooter/Pass/Target Speed", 21);
     public Command pass() {
         return genCommand(
             "Pass",

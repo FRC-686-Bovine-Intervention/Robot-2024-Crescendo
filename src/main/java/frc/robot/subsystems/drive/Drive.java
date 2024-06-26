@@ -138,7 +138,7 @@ public class Drive extends VirtualSubsystem {
     public void periodic() {
         // update IO inputs
         gyroIO.updateInputs(gyroInputs);
-        Logger.processInputs("Drive/Gyro", gyroInputs);
+        Logger.processInputs("Inputs/Drive/Gyro", gyroInputs);
         for (var module : modules) {
             module.periodic();
         }

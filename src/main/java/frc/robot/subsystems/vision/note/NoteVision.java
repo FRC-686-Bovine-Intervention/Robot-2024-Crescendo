@@ -77,7 +77,7 @@ public class NoteVision extends VirtualSubsystem {
     @Override
     public void periodic() {
         noteVisionIO.updateInputs(inputs);
-        Logger.processInputs("NoteVision", inputs);
+        Logger.processInputs("Inputs/NoteVision", inputs);
         var frameTargets = Arrays.asList(inputs.trackedNotes);
         var connections = new ArrayList<PhotonMemoryConnection>();
         noteMemories.forEach(

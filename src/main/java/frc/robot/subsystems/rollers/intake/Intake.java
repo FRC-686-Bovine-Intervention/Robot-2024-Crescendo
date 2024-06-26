@@ -35,8 +35,8 @@ public class Intake extends SubsystemBase {
   public Command antiDeadzone() {
     var subsystem = this;
     return new Command() {
-      private final LoggedTunableNumber rollerVoltage = new LoggedTunableNumber("Intake/Anti Deadzone/Roller Voltage", 1);
-      private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Anti Deadzone/Belt Voltage", 1);
+      private final LoggedTunableNumber rollerVoltage = new LoggedTunableNumber("Intake/Anti Deadzone/Roller Voltage", 0);
+      private final LoggedTunableNumber beltVoltage = new LoggedTunableNumber("Intake/Anti Deadzone/Belt Voltage", 0);
       {
         setName("AntiDeadzone");
         addRequirements(subsystem);
@@ -128,7 +128,7 @@ public class Intake extends SubsystemBase {
   @Override
   public void periodic() {
     intakeIO.updateInputs(inputs);
-    Logger.processInputs("Intake", inputs);
+    Logger.processInputs("Inputs/Intake", inputs);
   }
 
   public boolean getIntakeReversed() {

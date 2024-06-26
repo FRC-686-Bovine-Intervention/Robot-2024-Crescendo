@@ -121,10 +121,10 @@ public class AutoCommons {
         return rotation.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()));
     }
     public static Command autoAim(Shooter shooter) {
-        return shooter.shooting().asProxy();
+        return shooter.aimWithAutoShoot().asProxy();
     }
     public static Command autoAim(Pivot pivot) {
-        return pivot.speaker().asProxy();
+        return pivot.aim().asProxy();
     }
     public static Command autoAim(Shooter shooter, Pivot pivot) {
         return autoAim(shooter).alongWith(autoAim(pivot));
