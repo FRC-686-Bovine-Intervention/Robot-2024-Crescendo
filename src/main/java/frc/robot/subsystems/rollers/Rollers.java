@@ -1,28 +1,29 @@
 package frc.robot.subsystems.rollers;
 
-import java.util.Arrays;
 import java.util.Optional;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.NoteVisualizer;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.rollers.intake.Intake;
 import frc.robot.subsystems.rollers.kicker.Kicker;
 import frc.robot.util.EdgeDetector;
+import frc.robot.util.SuppliedEdgeDetector;
 import frc.robot.util.VirtualSubsystem;
 
 public class Rollers extends VirtualSubsystem {
     private final RollerSensorsIO sensorsIO;
     private final RollerSensorsIOInputsAutoLogged inputs = new RollerSensorsIOInputsAutoLogged();
 
-    private final EdgeDetector intakeEdgeDetector = new EdgeDetector(() -> inputs.intakeSensorHistory);
-    private final EdgeDetector kickerEdgeDetector = new EdgeDetector(() -> inputs.kickerSensorHistory);
+    private final EdgeDetector intakeEdgeDetector = new EdgeDetector();
+    private final EdgeDetector kickerEdgeDetector = new EdgeDetector();
 
     public final Intake intake;
-    public final Kicker kicker;
+    public final Kicker kicker; 
 
     public Rollers(Intake intake, Kicker kicker, RollerSensorsIO sensorsIO) {
         System.out.println("[Init Rollers] Instantiating Rollers");
@@ -32,74 +33,32 @@ public class Rollers extends VirtualSubsystem {
         this.kicker = kicker;
     }
 
-    public static enum Goal {
-        IDLE(
-            Intake.Goal.IDLE,
-            Kicker.Goal.IDLE
-        ),
-        ANTI_DEADZONE(
-            Intake.Goal.ANTI_DEADZONE,
-            Kicker.Goal.ANTI_DEADZONE
-        ),
-        INTAKE(
-            Intake.Goal.INTAKE,
-            Kicker.Goal.IDLE
-        ),
-        FEED(
-            Intake.Goal.FEED,
-            Kicker.Goal.FEED
-        ),
-        KICK(
-            Intake.Goal.IDLE,
-            Kicker.Goal.KICK
-        ),
-        IN_N_OUT(
-            Intake.Goal.INTAKE,
-            Kicker.Goal.KICK
-        ),
-        EJECT(
-            Intake.Goal.EJECT,
-            Kicker.Goal.EJECT
-        ),
-        ;
-        public final Intake.Goal intakeGoal;
-        public final Kicker.Goal kickerGoal;
-        Goal(Intake.Goal intakeGoal, Kicker.Goal kickerGoal) {
-            this.intakeGoal = intakeGoal;
-            this.kickerGoal = kickerGoal;
-        }
+    public Command antiDeadzone() {
+        return Commands.parallel(intake.antiDeadzone().asProxy(), kicker.antiDeadZone().asProxy());
+    }
 
-        public void runGoal(Intake intake, Kicker kicker) {
-            intake.setGoal(intakeGoal);
-            kicker.setGoal(kickerGoal);
-        }
+    // public Command intake() {
+    //     return Commands.parallel(intake.intake(), kicker.idle());
+    // }
 
-        public static Goal from(Intake.Goal intakeGoal, Kicker.Goal kickerGoal) {
-            return 
-                Arrays.stream(values())
-                .filter((g) -> g.intakeGoal == intakeGoal && g.kickerGoal == kickerGoal)
-                .findAny()
-                .orElseGet(() -> switch (intakeGoal) {
-                    default -> Goal.IDLE;
-                    case FEED -> Goal.FEED;
-                    case EJECT -> Goal.EJECT;
-                    case INTAKE -> Goal.INTAKE;
-                })
-            ;
-        }
-        public static Goal from(Kicker.Goal kickerGoal, Intake.Goal intakeGoal) {
-            return 
-                Arrays.stream(values())
-                .filter((g) -> g.intakeGoal == intakeGoal && g.kickerGoal == kickerGoal)
-                .findAny()
-                .orElseGet(() -> switch (kickerGoal) {
-                    default -> Goal.IDLE;
-                    case FEED -> Goal.FEED;
-                    case EJECT -> Goal.EJECT;
-                    case KICK -> Goal.KICK;
-                })
-            ;
-        }
+    public Command feed() {
+        return Commands.parallel(intake.feed().asProxy(), kicker.feed().asProxy());
+    }
+
+    // public Command kick() {
+    //     return Commands.parallel(intake.idle(), kicker.kick());
+    // }
+
+    // public Command inNOut() {
+    //     return Commands.parallel(intake.intake(), kicker.kick());
+    // }
+
+    public Command eject() {
+        return Commands.parallel(intake.eject().asProxy(), kicker.eject().asProxy());
+    }
+    
+    public Command idle() {
+        return Commands.parallel(intake.idle().asProxy(), kicker.idle().asProxy());
     }
 
     public static enum GamePieceState {
@@ -108,6 +67,7 @@ public class Rollers extends VirtualSubsystem {
         ;
     }
 
+    private final SuppliedEdgeDetector noteExitDetector = new SuppliedEdgeDetector(this::noNote);
     public Optional<GamePieceState> gamePiece = Optional.empty();
     public boolean noNote() {
         return gamePiece.isEmpty();
@@ -118,42 +78,35 @@ public class Rollers extends VirtualSubsystem {
     public boolean noteInKicker() {
         return gamePiece.equals(Optional.of(GamePieceState.KICKER));
     }
-    public boolean kickerFallingEdge() {
-        return kickerEdgeDetector.fallingEdge();
+    public boolean noteExited() {
+        return noteExitDetector.risingEdge();
+    }
+
+    public Trigger isKicking() {
+        return kicker.isKicking;
     }
 
     @Override
     public void periodic() {
         sensorsIO.updateInputs(inputs);
-        Logger.processInputs("RollerSensors", inputs);
-        intakeEdgeDetector.update();
-        kickerEdgeDetector.update();
-        if(intakeEdgeDetector.getValue()) {
-            gamePiece = Optional.of(GamePieceState.INTAKE);
+        Logger.processInputs("Inputs/RollerSensors", inputs);
+        for(int i = 0; i < Math.min(inputs.intakeSensorHistory.length, inputs.kickerSensorHistory.length); i++) {
+            intakeEdgeDetector.update(inputs.intakeSensorHistory[i]);
+            kickerEdgeDetector.update(inputs.kickerSensorHistory[i]);
+            if(intakeEdgeDetector.getValue()) {
+                gamePiece = Optional.of(GamePieceState.INTAKE);
+            }
+            if(kickerEdgeDetector.fallingEdge()) {
+                gamePiece = Optional.empty();
+            }
+            if(kickerEdgeDetector.getValue()) {
+                gamePiece = Optional.of(GamePieceState.KICKER);
+            }
         }
-        if(kickerEdgeDetector.fallingEdge()) {
-            gamePiece = Optional.empty();
-        }
-        if(kickerEdgeDetector.getValue()) {
-            gamePiece = Optional.of(GamePieceState.KICKER);
-        }
+        noteExitDetector.update();
         NoteVisualizer.internalNote = gamePiece;
         intake.periodic();
         kicker.periodic();
         Leds.getInstance().noteSecured.set(noteInKicker());
-    }
-
-    public Command setGoalCommand(Goal goal) {
-        return Commands.parallel(
-            setIntakeGoalCommand(goal.intakeGoal),
-            setKickerGoalCommand(goal.kickerGoal)
-        )
-        .withName("Rollers " + goal.name());
-    }
-    public Command setIntakeGoalCommand(Intake.Goal goal) {
-        return intake.setGoalCommand(goal);
-    }
-    public Command setKickerGoalCommand(Kicker.Goal goal) {
-        return kicker.setGoalCommand(goal);
     }
 }

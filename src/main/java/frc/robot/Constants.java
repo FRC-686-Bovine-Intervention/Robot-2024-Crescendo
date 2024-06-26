@@ -6,14 +6,17 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Centimeters;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Kilograms;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import java.util.Arrays;
+import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -37,6 +40,7 @@ import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
 import frc.robot.util.GearRatio;
+import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.GearRatio.Wheel;
 
 public final class Constants {
@@ -228,6 +232,14 @@ public final class Constants {
         public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
         public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(RobotConstants.trackWidthXMeters/2, RobotConstants.trackWidthYMeters/2);
+        public static final DoubleSupplier maxDriveSpeedEnvCoef = Environment.switchVar(
+            () -> 1,
+            new LoggedTunableNumber("Demo Constraints/Max Translational Percentage", 0.25)
+        );
+        public static final DoubleSupplier maxTurnRateEnvCoef = Environment.switchVar(
+            () -> 1,
+            new LoggedTunableNumber("Demo Constraints/Max Rotational Percentage", 0.25)
+        );
         /**full speed in 0.25 sec*/
         public static final double joystickSlewRateLimit = 1.0 / 0.25;
         public static final double driveJoystickDeadbandPercent = 0.2;
@@ -248,6 +260,7 @@ public final class Constants {
         public static final double headingKi = 0;
         public static final double headingKd = 0;
         public static final double headingTolerance = Degrees.of(1).in(Radians);
+        public static final double omegaTolerance = DegreesPerSecond.of(1).in(RadiansPerSecond);
     }
 
     public static final class PivotConstants {
@@ -273,6 +286,11 @@ public final class Constants {
             .wheelRadius(wheelRadius)
         ;
 
+        public static final DoubleSupplier shooterSpeedEnvCoef = Environment.switchVar(
+            () -> 1,
+            new LoggedTunableNumber("Demo Constraints/Shooter Demo Speed", 0.5)
+        );
+
         public static final InterpolatingDoubleTreeMap targetShooterSpeed = new InterpolatingDoubleTreeMap();
         static {
             targetShooterSpeed.put(FieldConstants.subwooferToSpeakerDist, 15.0);
@@ -289,9 +307,9 @@ public final class Constants {
 
         public static final InterpolatingDoubleTreeMap pivotAltitude = new InterpolatingDoubleTreeMap();
         static {
-            pivotAltitude.put(FieldConstants.subwooferToSpeakerDist, 59.39+5.09765625-4.5+0.5);
-            pivotAltitude.put(FieldConstants.podiumToSpeakerDist, 37.2+5.09765625-2.5+0.5+1+0.5);
-            pivotAltitude.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 27.2+5.09765625-2.5-0.5-0.5-0.5);
+            pivotAltitude.put(FieldConstants.subwooferToSpeakerDist, 59.39+5.09765625-4.5+0.5-8.5-8);
+            pivotAltitude.put(FieldConstants.podiumToSpeakerDist, 37.2+5.09765625-2.5+0.5-8.5-5.5);
+            pivotAltitude.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 27.2+5.09765625-2.5-0.5-0.5-0.5-1-8.5-3.5);
         }
     }
 

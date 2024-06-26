@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.pivot;
 
+import static edu.wpi.first.units.Units.Radians;
+
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -21,8 +23,8 @@ public class PivotIOSim extends PivotIOFalcon {
         4,
         0.5,
         Units.inchesToMeters(11.876),
-        -Pivot.Goal.IDLE.getRads(),
-        Pivot.Goal.AMP.getRads(),
+        -Pivot.idleAltitude.in(Radians),
+        Pivot.ampAltitude.in(Radians),
         true,
         0
     );

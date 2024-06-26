@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.MatchType;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -45,7 +44,6 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOFalcon550;
 import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.commands.FieldOrientedDrive;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.manualOverrides.ManualOverrides;
 import frc.robot.subsystems.pivot.Pivot;
@@ -95,8 +93,8 @@ public class RobotContainer {
     private final XboxController driveController = new XboxController(0);
     private final Joystick driveJoystick;
     private final Supplier<ChassisSpeeds> joystickTranslational;
-    @SuppressWarnings("unused")
     private final ButtonBoard3x3 buttonBoard = new ButtonBoard3x3(1);
+    @SuppressWarnings("unused")
     private final CommandJoystick simJoystick = new CommandJoystick(2);
 
     public RobotContainer() {
@@ -171,9 +169,10 @@ public class RobotContainer {
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
-            .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit);
+            .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit)
+        ;
 
-        joystickTranslational = FieldOrientedDrive.joystickSpectatorToFieldRelative(
+        joystickTranslational = Drive.Translational.joystickSpectatorToFieldRelative(
             driveJoystick,
             () -> false
             // driveController.leftBumper()
@@ -195,35 +194,37 @@ public class RobotContainer {
         configureSystemCheck();
 
         if (Constants.tuningMode) {
-            new Alert("Tuning mode active, do not use in competition.", AlertType.INFO).set(true);
+            new Alert("Tuning mode active", AlertType.INFO).set(true);
         }
     }
 
     private void configureSubsystems() {
-        drive.translationSubsystem.setDefaultCommand(
-            drive.translationSubsystem.fieldRelative(joystickTranslational).withName("Driver Control Field Relative")
-        );
+        drive.translationSubsystem.setDefaultCommand(drive.translationSubsystem.fieldRelative(joystickTranslational).withName("Driver Control Field Relative"));
 
-        rollers.intake.setDefaultCommand(rollers.setIntakeGoalCommand(Intake.Goal.ANTI_DEADZONE));
-        rollers.kicker.setDefaultCommand(rollers.setKickerGoalCommand(Kicker.Goal.ANTI_DEADZONE));
+        rollers.intake.setDefaultCommand(rollers.intake.antiDeadzone());
+        rollers.kicker.setDefaultCommand(rollers.kicker.antiDeadZone());
 
         new Trigger(rollers::noNote)
-        .onTrue(rollers.setGoalCommand(Rollers.Goal.ANTI_DEADZONE));
+            .onTrue(rollers.antiDeadzone())
+        ;
 
         new Trigger(rollers::noteInIntake)
-        .and(DriverStation::isEnabled)
-        .whileTrue(rollers.setGoalCommand(Rollers.Goal.FEED));
+            .and(DriverStation::isEnabled)
+            .whileTrue(rollers.intake.feed())
+            .and(rollers.isKicking().negate())
+            .whileTrue(rollers.kicker.feed())
+        ;
 
         new Trigger(rollers::noteInKicker)
-        .and(DriverStation::isEnabled)
-        .and(() -> rollers.kicker.getGoal() != Kicker.Goal.KICK)
-        .onTrue(
-            rollers.setGoalCommand(Rollers.Goal.IDLE)
-        );
+            .and(DriverStation::isEnabled)
+            .onTrue(rollers.intake.idle())
+            .and(rollers.isKicking().negate())
+            .onTrue(rollers.kicker.idle())
+        ;
 
-        shooter.setDefaultCommand(shooter.setGoalCommand(Shooter.Goal.IDLE));
+        shooter.setDefaultCommand(shooter.idle());
 
-        pivot.setDefaultCommand(pivot.setGoalCommand(Pivot.Goal.IDLE));
+        pivot.setDefaultCommand(pivot.idle());
 
         climber.setDefaultCommand(climber.windDown());
     }
@@ -281,43 +282,42 @@ public class RobotContainer {
         // driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake
-        driveController.a().and(() -> !rollers.noteInKicker()).whileTrue(rollers.setIntakeGoalCommand(Intake.Goal.INTAKE));
+        driveController.a().and(() -> !rollers.noteInKicker()).whileTrue(rollers.intake.intake());
         driveController.b()
             .and(() -> Math.abs(drive.getRobotRelativeSpeeds().vxMetersPerSecond) >= 0.25)
             .whileTrue(
-                rollers.setGoalCommand(Rollers.Goal.EJECT)
-                .withInterruptBehavior(InterruptionBehavior.kCancelIncoming)
+                rollers.eject().withInterruptBehavior(InterruptionBehavior.kCancelIncoming)
             )
         ;
         
         // Kicker
-        driveController.x().whileTrue(rollers.setKickerGoalCommand(Kicker.Goal.KICK));
+        driveController.x().whileTrue(rollers.kicker.kick());
 
         // Amp
         driveController.y().toggleOnTrue(
             Commands.either(
                 Commands.parallel(
-                    pivot.setGoalCommand(Pivot.Goal.AMP),
-                    shooter.setGoalCommand(Shooter.Goal.AMP),
+                    pivot.amp(),
+                    shooter.amp(),
                     drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(FieldConstants.amp.getRotation()))
                 ).withName("Amp").asProxy(),
                 Commands.parallel(
-                    pivot.setGoalCommand(Pivot.Goal.AMP),
-                    shooter.setGoalCommand(Shooter.Goal.AMP)
+                    pivot.amp(),
+                    shooter.amp()
                 ).withName("Amp").asProxy(),
-                () -> DriverStation.getMatchType() != MatchType.None
+                Environment::isCompetition
             )
         );
 
         // Shooter
-        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.setGoalCommand(Shooter.Goal.PASS));
+        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.pass());
 
         // Auto Aim
         driveController.rightBumper().toggleOnTrue(
             Commands.parallel(
                 Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds())),
-                pivot.setGoalCommand(Pivot.Goal.AIM),
-                shooter.setGoalCommand(Shooter.Goal.SHOOTING),
+                pivot.aim(),
+                shooter.aimWithAutoShoot(),
                 drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()))
             )
             .until(rollers::noNote)
@@ -327,11 +327,11 @@ public class RobotContainer {
         // Aim from Subwoofer
         driveController.leftBumper().toggleOnTrue(
             Commands.parallel(
-                pivot.setGoalCommand(Pivot.Goal.AIM),
-                shooter.setGoalCommand(Shooter.Goal.SHOOTING)
+                Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
+                pivot.aim(),
+                shooter.aimWithoutAutoShoot()
             )
             .until(rollers::noNote)
-            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation())))
             .withName("Shoot From Subwoofer")
         );
 
@@ -375,21 +375,25 @@ public class RobotContainer {
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
         
         // Auto Fire
-        new Trigger(() -> 
-            shooter.readyToShoot() && 
-            pivot.readyToShoot() && 
-            MathExtraUtil.isNear(
-                RobotState.getInstance().aimingParameters.drivePose().getRotation(),
-                drive.getRotation(),
-                Units.degreesToRadians(3)
-            ) && 
-            DriverStation.isTeleopEnabled() &&
-            !Optional.ofNullable(shooter.getCurrentCommand()).map((c) -> c.getName().contains("Subwoofer")).orElse(false)
-        ).onTrue(rollers.setKickerGoalCommand(Kicker.Goal.KICK));
+        shooter.readyToAutoShoot
+            .and(pivot::atPos)
+            .and(
+                () -> MathExtraUtil.isNear(
+                    RobotState.getInstance().aimingParameters.drivePose().getRotation(),
+                    drive.getRotation(),
+                    Units.degreesToRadians(3)
+                )
+            )
+            .and(DriverStation::isTeleopEnabled)
+            .onTrue(rollers.kicker.kick().until(rollers::noteExited).withName("Auto Kick"))
+        ;
         
         // Cancel Auto Drive
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
-            .and(() -> drive.translationSubsystem.getCurrentCommand() != null && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix))
+            .and(
+                () -> drive.translationSubsystem.getCurrentCommand() != null
+                && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix)
+            )
             .onTrue(drive.translationSubsystem.getDefaultCommand())
         ;
     }
@@ -397,9 +401,10 @@ public class RobotContainer {
     private void configureNotifications() {
         // Intake Notification
         new Trigger(rollers::noteInIntake)
-        .onTrue(Leds.getInstance().noteAcquired.setCommand().withTimeout(1))
-        .and(DriverStation::isTeleopEnabled)
-        .whileTrue(driveController.rumble(RumbleType.kBothRumble, 0.4));
+            .onTrue(Leds.getInstance().noteAcquired.setCommand().withTimeout(1))
+            .and(DriverStation::isTeleopEnabled)
+            .whileTrue(driveController.rumble(RumbleType.kBothRumble, 0.4))
+        ;
         
         // Human Player Notification
         driveController.leftStickButton().onTrue(Leds.getInstance().humanPlayerFlash.setCommand().withTimeout(1));
@@ -428,13 +433,13 @@ public class RobotContainer {
 
     private void configureSystemCheck() {
         SmartDashboard.putData("System Check/Pivot/Zero", pivot.getDefaultCommand());
-        SmartDashboard.putData("System Check/Pivot/Amp", pivot.setGoalCommand(Pivot.Goal.AMP));
+        SmartDashboard.putData("System Check/Pivot/Amp", pivot.amp());
         SmartDashboard.putData("System Check/Climber/Wind Down", climber.getDefaultCommand());
         SmartDashboard.putData("System Check/Climber/Deploy", climber.deploy());
         SmartDashboard.putData("System Check/Climber/Retract", climber.retract());
-        SmartDashboard.putData("System Check/Intake/Intake", rollers.setIntakeGoalCommand(Intake.Goal.INTAKE));
-        SmartDashboard.putData("System Check/Kicker/Kick", rollers.setKickerGoalCommand(Kicker.Goal.KICK));
-        SmartDashboard.putData("System Check/Shooter/Amp", shooter.setGoalCommand(Shooter.Goal.AMP));
+        SmartDashboard.putData("System Check/Intake/Intake", rollers.intake.intake());
+        SmartDashboard.putData("System Check/Kicker/Kick", rollers.kicker.kick());
+        SmartDashboard.putData("System Check/Shooter/Amp", shooter.amp());
         SmartDashboard.putData("System Check/Drive/Spin", 
             new Command() {
                 private final Drive.Rotational rotationalSubsystem = drive.rotationalSubsystem;
@@ -492,7 +497,7 @@ public class RobotContainer {
         Camera.logCameraOverrides();
         xboxConnect.set(!driveController.isConnected());
         buttonBoardConnect.set(!buttonBoard.isConnected());
-        Logger.recordOutput("Ready to shoot", pivot.atPos() && shooter.readyToShoot());
+        Logger.recordOutput("Ready to shoot", pivot.atPos() && shooter.readyToAutoShoot.getAsBoolean());
     }
 
     public void enabledInit() {

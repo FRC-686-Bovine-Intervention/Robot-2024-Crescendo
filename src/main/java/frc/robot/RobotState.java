@@ -71,6 +71,7 @@ public class RobotState {
 
     public static record AimingParameters (
         Pose2d drivePose,
+        ChassisSpeeds chassisSpeeds,
         double effectiveDistance,
         double pivotAltitude,
         double targetShooterSpeed,
@@ -95,7 +96,8 @@ public class RobotState {
             var driveAzimuth = aimPoint.minus(predictedRobotPos).getAngle();
             var predictedDistToAimPoint = aimPoint.getDistance(predictedRobotPos);
             return new AimingParameters(
-                new Pose2d(predictedRobotPos, driveAzimuth),
+                new Pose2d(robotPos, driveAzimuth),
+                new ChassisSpeeds(fieldRelativeSpeed.vxMetersPerSecond, fieldRelativeSpeed.vyMetersPerSecond, 0),
                 predictedDistToAimPoint,
                 ShooterConstants.pivotAltitude.get(predictedDistToAimPoint),
                 ShooterConstants.targetShooterSpeed.get(predictedDistToAimPoint),
@@ -117,27 +119,39 @@ public class RobotState {
 
             @Override
             public int getSize() {
-                return Pose2d.struct.getSize() * 1 + Transform3d.struct.getSize() * 1 + kSizeDouble * 4;
+                return 
+                    Pose2d.struct.getSize() * 1 + 
+                    ChassisSpeeds.struct.getSize() * 1 + 
+                    Transform3d.struct.getSize() * 1 + 
+                    kSizeDouble * 4;
             }
 
             @Override
             public String getSchema() {
-                return "Pose2d RobotPose;double EffectiveDistance;double PivotAltitude;double TargetShooterSpeed;double MinimumShooterSpeed;Transform3d RobotToPivot";
+                return "Pose2d RobotPose;ChassisSpeeds ChassisSpeeds;double EffectiveDistance;double PivotAltitude;double TargetShooterSpeed;double MinimumShooterSpeed;Transform3d RobotToPivot";
             }
 
             @Override
             public Struct<?>[] getNested() {
-                return new Struct[]{Pose2d.struct, Transform3d.struct};
+                return new Struct[]{Pose2d.struct, ChassisSpeeds.struct, Transform3d.struct};
             }
 
             @Override
             public AimingParameters unpack(ByteBuffer bb) {
-                return new AimingParameters(Pose2d.struct.unpack(bb), bb.getDouble(), bb.getDouble(), bb.getDouble(), bb.getDouble());
+                return new AimingParameters(
+                    Pose2d.struct.unpack(bb),
+                    ChassisSpeeds.struct.unpack(bb),
+                    bb.getDouble(),
+                    bb.getDouble(),
+                    bb.getDouble(),
+                    bb.getDouble()
+                );
             }
 
             @Override
             public void pack(ByteBuffer bb, AimingParameters value) {
                 Pose2d.struct.pack(bb, value.drivePose);
+                ChassisSpeeds.struct.pack(bb, value.chassisSpeeds);
                 bb.putDouble(value.effectiveDistance);
                 bb.putDouble(value.pivotAltitude);
                 bb.putDouble(value.targetShooterSpeed);

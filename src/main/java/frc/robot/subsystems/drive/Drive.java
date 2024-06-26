@@ -52,13 +52,12 @@ import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
-import frc.robot.subsystems.drive.commands.FieldOrientedDrive.SpectatorType;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.AllianceFlipUtil;
-import frc.robot.util.AllianceFlipUtil.FieldFlipType;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.MathExtraUtil;
+import frc.robot.util.PerspectiveType;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.pathplanner.AutoBuilder;
@@ -139,7 +138,7 @@ public class Drive extends VirtualSubsystem {
     public void periodic() {
         // update IO inputs
         gyroIO.updateInputs(gyroInputs);
-        Logger.processInputs("Drive/Gyro", gyroInputs);
+        Logger.processInputs("Inputs/Drive/Gyro", gyroInputs);
         for (var module : modules) {
             module.periodic();
         }
@@ -291,20 +290,18 @@ public class Drive extends VirtualSubsystem {
 
         public static Supplier<ChassisSpeeds> joystickSpectatorToFieldRelative(Joystick translationalJoystick, BooleanSupplier precisionSupplier) {
             return () -> {
-                var fieldVec = SpectatorType.getCurrentType().toField(
+                var fieldVec = PerspectiveType.getCurrentType().toField(
                     translationalJoystick.toVector()
                     .times(
                         DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble() * 
                         (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
                     )
                 );
-                return AllianceFlipUtil.applyFieldRelative(
-                    new ChassisSpeeds(
-                        fieldVec.get(0),
-                        fieldVec.get(1),
-                        0
-                    ),
-                    FieldFlipType.CenterPointFlip
+                return new ChassisSpeeds(
+                    fieldVec.get(0),
+                    fieldVec.get(1),
+                    0
                 );
             };
         }
@@ -352,7 +349,7 @@ public class Drive extends VirtualSubsystem {
                 @Override
                 public void execute() {
                     Leds.getInstance().defenseSpin.set(true);
-                    var joyVec = SpectatorType.getCurrentType().toField(joystick.toVector());
+                    var joyVec = PerspectiveType.getCurrentType().toField(joystick.toVector());
                     var desiredLinear = VecBuilder.fill(drive.setpoint.vxMetersPerSecond, drive.setpoint.vyMetersPerSecond);
                     var fieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.setpoint, drive.getRotation());
                     var perpendicularLinear = new Vector<N2>(perpendicularMatrix.times(
@@ -362,7 +359,8 @@ public class Drive extends VirtualSubsystem {
                     if(desiredLinear.norm() > defenseSpinLinearThreshold.get()) {
                         dot = -joyVec.dot(perpendicularLinear);
                     }
-                    var omega = dot * DriveConstants.maxTurnRateRadiansPerSec * 0.25;
+                    var omega = dot * DriveConstants.maxTurnRateRadiansPerSec * 
+                        DriveConstants.maxTurnRateEnvCoef.getAsDouble() * 0.25;
                     driveVelocity(omega);
                     if(desiredLinear.norm() <= defenseSpinLinearThreshold.get()) {
                         drive.setCenterOfRotation(new Translation2d());
@@ -401,7 +399,7 @@ public class Drive extends VirtualSubsystem {
                     addRequirements(subsystem);
                     setName("PID Controlled Heading");
                     headingPID.enableContinuousInput(-Math.PI, Math.PI);  // since gyro angle is not limited to [-pi, pi]
-                    headingPID.setTolerance(DriveConstants.headingTolerance);
+                    headingPID.setTolerance(DriveConstants.headingTolerance, DriveConstants.omegaTolerance);
                 }
                 private Rotation2d desiredHeading;
                 private boolean headingSet;
@@ -416,7 +414,11 @@ public class Drive extends VirtualSubsystem {
                     heading.ifPresent((r) -> desiredHeading = r);
                     double turnInput = headingPID.calculate(drive.getRotation().getRadians(), desiredHeading.getRadians());
                     turnInput = headingPID.atSetpoint() ? 0 : turnInput;
-                    turnInput = MathUtil.clamp(turnInput, -0.5, +0.5);
+                    turnInput = MathUtil.clamp(
+                        turnInput, 
+                        -0.5 * DriveConstants.maxTurnRateEnvCoef.getAsDouble(), 
+                        +0.5 * DriveConstants.maxTurnRateEnvCoef.getAsDouble()
+                    );
                     driveVelocity(turnInput * DriveConstants.maxTurnRateRadiansPerSec);
                 }
                 @Override
@@ -444,8 +446,7 @@ public class Drive extends VirtualSubsystem {
                             preciseTurnTimer.restart();
                             return Optional.empty();
                         }
-                        var joyVec = SpectatorType.getCurrentType().toField(joystick.toVector());
-                        Rotation2d joyHeading = AllianceFlipUtil.apply(MathExtraUtil.rotationFromVector(joyVec), FieldFlipType.CenterPointFlip);
+                        var joyHeading = MathExtraUtil.rotationFromVector(PerspectiveType.getCurrentType().toField(joystick.toVector()));
                         if(preciseTurnTimer.hasElapsed(preciseTurnTimeThreshold)) {
                             return outputMap(joyHeading);
                         }
@@ -487,9 +488,12 @@ public class Drive extends VirtualSubsystem {
 
     public void drivePercent(ChassisSpeeds speeds) {
         driveVelocity(new ChassisSpeeds(
-                speeds.vxMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec,
-                speeds.vyMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec,
-                speeds.omegaRadiansPerSecond * DriveConstants.maxTurnRateRadiansPerSec));
+                speeds.vxMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble(),
+                speeds.vyMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble(),
+                speeds.omegaRadiansPerSecond * DriveConstants.maxTurnRateRadiansPerSec * 
+                        DriveConstants.maxTurnRateEnvCoef.getAsDouble()));
     }
 
     public void setCenterOfRotation(Translation2d cor) {
@@ -530,12 +534,14 @@ public class Drive extends VirtualSubsystem {
 
     /** Returns the maximum linear speed in meters per sec. */
     public double getMaxLinearSpeedMetersPerSec() {
-        return DriveConstants.maxDriveSpeedMetersPerSec;
+        return DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble();
     }
 
     /** Returns the maximum angular speed in radians per sec. */
     public double getMaxAngularSpeedRadiansPerSec() {
-        return DriveConstants.maxTurnRateRadiansPerSec;
+        return DriveConstants.maxTurnRateRadiansPerSec * 
+                        DriveConstants.maxTurnRateEnvCoef.getAsDouble();
     }
 
     /**
@@ -669,7 +675,8 @@ public class Drive extends VirtualSubsystem {
                 rI.get(),
                 rD.get()
             ),
-            DriveConstants.maxDriveSpeedMetersPerSec,
+            DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble(),
             DriveConstants.driveBaseRadius,
             new ReplanningConfig()
         );

@@ -27,7 +27,7 @@ public class Climber extends SubsystemBase {
     @Override
     public void periodic() {
         climberIO.updateInputs(inputs);
-        Logger.processInputs("Climber", inputs);
+        Logger.processInputs("Inputs/Climber", inputs);
         
         Leds.getInstance().climberPos = getClimberPos();
     }

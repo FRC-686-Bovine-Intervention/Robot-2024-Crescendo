@@ -135,6 +135,15 @@ public class ShooterIOFalcon implements ShooterIO {
     }
 
     @Override
+    public void setLeftVoltage(double volts) {
+        leftMotor.setVoltage(volts);
+    }
+    @Override
+    public void setRightVoltage(double volts) {
+        rightMotor.setVoltage(volts);
+    }
+
+    @Override
     public void stop() {
         leftMotor.disable();
         rightMotor.disable();

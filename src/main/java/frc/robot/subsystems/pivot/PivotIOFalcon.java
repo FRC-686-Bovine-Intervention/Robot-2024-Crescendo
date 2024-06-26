@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems.pivot;
 
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Rotations;
+
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -63,7 +66,7 @@ public class PivotIOFalcon implements PivotIO {
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0;
         motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Units.radiansToRotations(Pivot.Goal.AMP.getRads());
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Pivot.ampAltitude.in(Rotations);
         pivotLeftMotor.getConfigurator().apply(motorConfig);
         motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         pivotRightMotor.getConfigurator().apply(motorConfig);
@@ -132,7 +135,7 @@ public class PivotIOFalcon implements PivotIO {
 
         inputs.atGoal = 
             MathUtil.isNear(0, accel, 0.1) && 
-            MathUtil.isNear(0, error, Units.degreesToRadians(Pivot.toleranceDeg.get()))
+            MathUtil.isNear(0, error, Pivot.tolerance.in(Radians))
         ;
 
         Logger.recordOutput("Pivot/Profile Position", Units.rotationsToRadians(pivotLeftMotor.getClosedLoopReference().getValueAsDouble()));

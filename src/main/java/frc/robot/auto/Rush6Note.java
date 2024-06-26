@@ -126,7 +126,7 @@ public class Rush6Note extends AutoRoutine {
         if(noteCount >= 2) {
             var startToSpike = AutoPaths.loadPath("R6N Amp Start to Spike");
             commands.add(
-                AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, rollers)
+                AutoCommons.spikeNoteSOTM(startToSpike, 0.5, drive, shooter, pivot, rollers)
             );
         }
 
