@@ -5,6 +5,7 @@
 package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import java.util.function.Supplier;
 
@@ -71,12 +72,12 @@ public class Shooter extends SubsystemBase {
                     shooterIO.setRightVoltage(volts.in(Units.Volts));
                 },
                 (log) -> {
-                    Logger.recordOutput("SysID/Shooter/Left Position", inputs.leftMotor.positionRad);
-                    Logger.recordOutput("SysID/Shooter/Right Position", inputs.rightMotor.positionRad);
-                    Logger.recordOutput("SysID/Shooter/Left Velocity", inputs.leftMotor.velocityRadPerSec);
-                    Logger.recordOutput("SysID/Shooter/Right Velocity", inputs.rightMotor.velocityRadPerSec);
-                    Logger.recordOutput("SysID/Shooter/Left Voltage", inputs.leftMotor.appliedVolts);
-                    Logger.recordOutput("SysID/Shooter/Right Voltage", inputs.rightMotor.appliedVolts);
+                    Logger.recordOutput("SysID/Shooter/Left Position", inputs.leftMotor.position);
+                    Logger.recordOutput("SysID/Shooter/Right Position", inputs.rightMotor.position);
+                    Logger.recordOutput("SysID/Shooter/Left Velocity", inputs.leftMotor.velocity);
+                    Logger.recordOutput("SysID/Shooter/Right Velocity", inputs.rightMotor.velocity);
+                    Logger.recordOutput("SysID/Shooter/Left Voltage", inputs.leftMotor.appliedVoltage);
+                    Logger.recordOutput("SysID/Shooter/Right Voltage", inputs.rightMotor.appliedVoltage);
                 },
                 this
             )
@@ -99,7 +100,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public double getAverageSurfaceSpeed() {
-        return MathExtraUtil.average(inputs.leftMotor.velocityRadPerSec, inputs.rightMotor.velocityRadPerSec);
+        return MathExtraUtil.average(inputs.leftMotor.velocity, inputs.rightMotor.velocity).in(RadiansPerSecond);
     }
 
     private void applyShooterSpeed(Supplier<Measure<Velocity<Distance>>> targetSpeed) {

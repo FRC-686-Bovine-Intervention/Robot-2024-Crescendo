@@ -36,7 +36,7 @@ public class Pivot extends SubsystemBase {
     public static final LoggedTunableMeasure<Angle> ampAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Amp", Degrees.of(100));
     public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50+5.09765625));
 
-    public final Trigger atPos = new Trigger(() -> AimingParameters.withinAltitudeTolerance(Radians.of(inputs.pivotEncoder.positionRad)));
+    public final Trigger atPos = new Trigger(() -> AimingParameters.withinAltitudeTolerance(inputs.pivotEncoder.position));
 
     public static final Translation3d robotToPivotTranslation = 
         new Translation3d(
@@ -94,7 +94,7 @@ public class Pivot extends SubsystemBase {
     }
 
     public Transform3d getRobotToPivot() {
-        return getRobotToPivot(inputs.pivotEncoder.positionRad);
+        return getRobotToPivot(inputs.pivotEncoder.position.in(Radians));
     }
 
     public void setCoast(boolean coast) {

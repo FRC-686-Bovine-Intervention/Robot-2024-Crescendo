@@ -28,7 +28,7 @@ public class ModuleIOSim implements ModuleIO {
         turnAbsolutePositionRad = MathUtil.angleModulus(turnAbsolutePositionRad);
 
         if (zeroEncodersFlag) {
-          inputs.driveMotor.positionRad = 0.0;
+          inputs.driveMotor.position.mut_setBaseUnitMagnitude(0.0);
           turnAbsolutePositionRad -= turnRelativePositionRad;
           turnRelativePositionRad = 0.0;
           zeroEncodersFlag = false;
@@ -37,7 +37,7 @@ public class ModuleIOSim implements ModuleIO {
         inputs.driveMotor.updateFrom(driveSim, turnAppliedVolts);
     
         inputs.turnMotor.updateFrom(turnSim, turnAppliedVolts);
-        inputs.turnMotor.positionRad = turnRelativePositionRad;
+        inputs.turnMotor.position.mut_setBaseUnitMagnitude(turnRelativePositionRad);
       }
     
       public void setDriveVoltage(double volts) {

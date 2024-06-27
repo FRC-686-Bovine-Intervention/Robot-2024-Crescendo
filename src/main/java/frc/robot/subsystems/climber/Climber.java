@@ -1,5 +1,7 @@
 package frc.robot.subsystems.climber;
 
+import static edu.wpi.first.units.Units.Radians;
+
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -33,7 +35,7 @@ public class Climber extends SubsystemBase {
     }
 
     public double getClimberPos() {
-        return inputs.climberMotor.positionRad;
+        return inputs.climberMotor.position.in(Radians);
     }
 
     public Command windDown() {

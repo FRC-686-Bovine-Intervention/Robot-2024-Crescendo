@@ -1,5 +1,11 @@
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Celsius;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.NeutralOut;
@@ -74,18 +80,16 @@ public class ModuleIOFalcon550 implements ModuleIO {
     private final Alert tempAlert;
 
     public void updateInputs(ModuleIOInputs inputs) {
-        inputs.driveMotor.positionRad =       Units.rotationsToRadians(driveMotor.getPosition().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveMotor.velocityRadPerSec = Units.rotationsToRadians(driveMotor.getVelocity().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveMotor.appliedVolts =      driveMotor.getMotorVoltage().getValue();
-        inputs.driveMotor.currentAmps =       driveMotor.getSupplyCurrent().getValue();
-        inputs.driveMotor.tempCelsius =       driveMotor.getDeviceTemp().getValue();
+        inputs.driveMotor.updateFrom(driveMotor);
+        inputs.driveMotor.position.mut_divide(DriveConstants.driveWheelGearReduction);
+        inputs.driveMotor.velocity.mut_divide(DriveConstants.driveWheelGearReduction);
 
-        inputs.turnMotor.positionRad =        MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians;
-        inputs.turnMotor.velocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
-        inputs.turnMotor.appliedVolts =       turnMotor.getAppliedOutput();
-        inputs.turnMotor.currentAmps =        turnMotor.getOutputCurrent();
+        inputs.turnMotor.position.mut_replace(MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians, Radians);
+        inputs.turnMotor.velocity.mut_replace(turnAbsoluteEncoder.getVelocity(), RotationsPerSecond);
+        inputs.turnMotor.appliedVoltage.mut_replace(turnMotor.getAppliedOutput() * 12, Volts);
+        inputs.turnMotor.current.mut_replace(turnMotor.getOutputCurrent(), Amps);
 
-        tempWarning.set(inputs.driveMotor.tempCelsius > 70);
+        tempWarning.set(inputs.driveMotor.temperature.in(Celsius) > 70);
         tempAlert.set(driveMotor.getFault_DeviceTemp().getValue());
     }
 

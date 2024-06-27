@@ -1,11 +1,25 @@
 package frc.robot.util.loggerUtil;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Celsius;
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
 import java.nio.ByteBuffer;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Current;
+import edu.wpi.first.units.MutableMeasure;
+import edu.wpi.first.units.Temperature;
+import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -14,55 +28,55 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.Constants;
 
 public class LoggedMotor implements StructSerializable {
-    public double positionRad = Double.NaN;
-    public double velocityRadPerSec = Double.NaN;
-    public double appliedVolts = Double.NaN;
-    public double currentAmps = Double.NaN;
-    public double tempCelsius = Double.NaN;
+    public final MutableMeasure<Angle> position = MutableMeasure.zero(Radians);
+    public final MutableMeasure<Velocity<Angle>> velocity = MutableMeasure.zero(RadiansPerSecond);
+    public final MutableMeasure<Voltage> appliedVoltage = MutableMeasure.zero(Volts);
+    public final MutableMeasure<Current> current = MutableMeasure.zero(Amps);
+    public final MutableMeasure<Temperature> temperature = MutableMeasure.zero(Celsius);
 
     public void updateFrom(TalonFX talon) {
-        this.positionRad = Units.rotationsToRadians(talon.getPosition().getValueAsDouble());
-        this.velocityRadPerSec = talon.getVelocity().getValueAsDouble();
-        this.appliedVolts = talon.getMotorVoltage().getValueAsDouble();
-        this.currentAmps = talon.getStatorCurrent().getValueAsDouble();
-        this.tempCelsius = talon.getDeviceTemp().getValueAsDouble();
+        this.position.mut_replace(talon.getPosition().getValueAsDouble(), Rotations);
+        this.velocity.mut_replace(talon.getVelocity().getValueAsDouble(), RotationsPerSecond);
+        this.appliedVoltage.mut_replace(talon.getMotorVoltage().getValueAsDouble(), Volts);
+        this.current.mut_replace(talon.getStatorCurrent().getValueAsDouble(), Amps);
+        this.temperature.mut_replace(talon.getDeviceTemp().getValueAsDouble(), Celsius);
     }
 
     public void updateFrom(CANSparkMax spark) {
-        this.positionRad = Units.rotationsToRadians(spark.getEncoder().getPosition());
-        this.velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(spark.getEncoder().getVelocity());
-        this.appliedVolts = spark.getAppliedOutput() * 12;
-        this.currentAmps = spark.getOutputCurrent();
+        this.position.mut_replace(spark.getEncoder().getPosition(), Rotations);
+        this.velocity.mut_replace(spark.getEncoder().getVelocity(), RPM);
+        this.appliedVoltage.mut_replace(spark.getAppliedOutput() * 12, Volts);
+        this.current.mut_replace(spark.getOutputCurrent(), Amps);
     }
 
     public void updateFrom(DCMotorSim sim) {
-        this.positionRad = sim.getAngularPositionRad();
-        this.velocityRadPerSec = sim.getAngularVelocityRadPerSec();
-        this.currentAmps = sim.getCurrentDrawAmps();
+        this.position.mut_replace(sim.getAngularPositionRad(), Radians);
+        this.velocity.mut_replace(sim.getAngularVelocityRadPerSec(), RadiansPerSecond);
+        this.current.mut_replace(sim.getCurrentDrawAmps(), Amps);
     }
     public void updateFrom(DCMotorSim sim, double appliedVolts) {
         updateFrom(sim);
-        this.appliedVolts = appliedVolts;
+        this.appliedVoltage.mut_replace(appliedVolts, Volts);
     }
 
     public void updateFrom(FlywheelSim sim) {
-        this.positionRad += sim.getAngularVelocityRadPerSec() * Constants.dtSeconds;
-        this.velocityRadPerSec = sim.getAngularVelocityRadPerSec();
-        this.currentAmps = sim.getCurrentDrawAmps();
+        this.position.mut_acc(sim.getAngularVelocityRadPerSec() * Constants.dtSeconds);
+        this.velocity.mut_replace(sim.getAngularVelocityRadPerSec(), RadiansPerSecond);
+        this.current.mut_replace(sim.getCurrentDrawAmps(), Amps);
     }
     public void updateFrom(FlywheelSim sim, double appliedVolts) {
         updateFrom(sim);
-        this.appliedVolts = appliedVolts;
+        this.appliedVoltage.mut_replace(appliedVolts, Volts);
     }
 
     public void updateFrom(SingleJointedArmSim sim) {
-        this.positionRad = sim.getAngleRads();
-        this.velocityRadPerSec = sim.getVelocityRadPerSec();
-        this.currentAmps = sim.getCurrentDrawAmps();
+        this.position.mut_replace(sim.getAngleRads(), Radians);
+        this.velocity.mut_replace(sim.getVelocityRadPerSec(), RadiansPerSecond);
+        this.current.mut_replace(sim.getCurrentDrawAmps(), Amps);
     }
     public void updateFrom(SingleJointedArmSim sim, double appliedVolts) {
         updateFrom(sim);
-        this.appliedVolts = appliedVolts;
+        this.appliedVoltage.mut_replace(appliedVolts, Volts);
     }
 
     public static final LoggedMotorStruct struct = new LoggedMotorStruct();
@@ -91,21 +105,21 @@ public class LoggedMotor implements StructSerializable {
         @Override
         public LoggedMotor unpack(ByteBuffer bb) {
             var motor = new LoggedMotor();
-            motor.positionRad = bb.getDouble();
-            motor.velocityRadPerSec = bb.getDouble();
-            motor.appliedVolts = bb.getDouble();
-            motor.currentAmps = bb.getDouble();
-            motor.tempCelsius = bb.getDouble();
+            motor.position.mut_setBaseUnitMagnitude(bb.getDouble());
+            motor.velocity.mut_setBaseUnitMagnitude(bb.getDouble());
+            motor.appliedVoltage.mut_setBaseUnitMagnitude(bb.getDouble());
+            motor.current.mut_setBaseUnitMagnitude(bb.getDouble());
+            motor.temperature.mut_setBaseUnitMagnitude(bb.getDouble());
             return motor;
         }
 
         @Override
         public void pack(ByteBuffer bb, LoggedMotor value) {
-            bb.putDouble(value.positionRad);
-            bb.putDouble(value.velocityRadPerSec);
-            bb.putDouble(value.appliedVolts);
-            bb.putDouble(value.currentAmps);
-            bb.putDouble(value.tempCelsius);
+            bb.putDouble(value.position.baseUnitMagnitude());
+            bb.putDouble(value.velocity.baseUnitMagnitude());
+            bb.putDouble(value.appliedVoltage.baseUnitMagnitude());
+            bb.putDouble(value.current.baseUnitMagnitude());
+            bb.putDouble(value.temperature.baseUnitMagnitude());
         }
     }
 }

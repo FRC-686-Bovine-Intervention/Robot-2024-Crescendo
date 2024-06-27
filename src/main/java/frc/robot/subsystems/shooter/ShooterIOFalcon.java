@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.Celsius;
+
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -96,8 +98,8 @@ public class ShooterIOFalcon implements ShooterIO {
 
         updateTunables();
 
-        leftTempWarning.set(inputs.leftMotor.tempCelsius > 70);
-        rightTempWarning.set(inputs.rightMotor.tempCelsius > 70);
+        leftTempWarning.set(inputs.leftMotor.temperature.in(Celsius) > 70);
+        rightTempWarning.set(inputs.rightMotor.temperature.in(Celsius) > 70);
         leftTempAlert.set(leftMotor.getFault_DeviceTemp().getValue());
         rightTempAlert.set(rightMotor.getFault_DeviceTemp().getValue());
 

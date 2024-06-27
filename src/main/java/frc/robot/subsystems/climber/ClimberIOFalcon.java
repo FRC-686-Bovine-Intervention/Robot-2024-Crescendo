@@ -92,7 +92,6 @@ public class ClimberIOFalcon implements ClimberIO {
     @Override
     public void updateInputs(ClimberIOInputs inputs) {
         inputs.climberMotor.updateFrom(climberMotor);
-        inputs.climberMotor.positionRad = climberMotor.getPosition().getValueAsDouble();
 
         updateTunables();
 
