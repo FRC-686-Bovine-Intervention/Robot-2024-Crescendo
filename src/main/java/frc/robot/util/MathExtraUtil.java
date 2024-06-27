@@ -19,6 +19,10 @@ public class MathExtraUtil {
         return Arrays.stream(a).average().orElse(0);
     }
 
+    public static Rotation2d backwards(Rotation2d rotation) {
+        return new Rotation2d(-rotation.getCos(), -rotation.getSin());
+    }
+
     public static Rotation2d rotationFromVector(Vector<N2> vec) {
         return new Rotation2d(vec.get(0), vec.get(1));
     }
@@ -55,6 +59,9 @@ public class MathExtraUtil {
     public static boolean isNear(ChassisSpeeds expected, ChassisSpeeds actual, double linearTolerance, double angularTolerance) {
         var bol = isNear(new Translation2d(expected.vxMetersPerSecond, expected.vyMetersPerSecond), new Translation2d(actual.vxMetersPerSecond, actual.vyMetersPerSecond), linearTolerance) && MathUtil.isNear(expected.omegaRadiansPerSecond, actual.omegaRadiansPerSecond, angularTolerance);
         return bol;
+    }
+    public static <U extends Unit<U>> boolean isNear(Measure<U> expected, Measure<U> actual, Measure<U> tolerance) {
+        return MathUtil.isNear(expected.baseUnitMagnitude(), actual.baseUnitMagnitude(), tolerance.baseUnitMagnitude());
     }
 
     public static boolean isWithin(double value, double min, double max) {

@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.pivot;
 
-import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
 
 import org.littletonrobotics.junction.Logger;
@@ -147,14 +146,6 @@ public class PivotIOFalcon implements PivotIO {
         }
 
         updateTunables();
-
-        var accel = Units.rotationsToRadians(pivotLeftMotor.getClosedLoopReferenceSlope().getValueAsDouble());
-        var error = Units.rotationsToRadians(pivotLeftMotor.getClosedLoopError().getValueAsDouble());
-
-        inputs.atGoal = 
-            MathUtil.isNear(0, accel, 0.1) && 
-            MathUtil.isNear(0, error, Pivot.tolerance.in(Radians))
-        ;
 
         Logger.recordOutput("Pivot/Profile Position", Units.rotationsToRadians(pivotLeftMotor.getClosedLoopReference().getValueAsDouble()));
         Logger.recordOutput("Pivot/P Out", pivotLeftMotor.getClosedLoopProportionalOutput().getValueAsDouble());

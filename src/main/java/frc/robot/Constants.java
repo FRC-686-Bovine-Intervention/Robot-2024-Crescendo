@@ -517,7 +517,7 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(648);
         public static final double fieldWidth =  Units.inchesToMeters(324);
 
-        public static final Translation2d speakerAimPoint = new Translation2d(0.240581, 5.547755);
+        public static final Translation3d speakerAimPoint = new Translation3d(0.240581, 5.547755, 2);
 
         public static final Pose2d subwooferFront =     new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(+180));
         public static final Pose2d subwooferAmp =       new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(-120));
@@ -529,8 +529,8 @@ public final class Constants {
         public static final Pose2d pathfindSpeaker =    new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(+180));
         public static final Pose2d pathfindSource =     new Pose2d(new Translation2d(13.41, 1.54), Rotation2d.fromDegrees(+180));
 
-        public static final double podiumToSpeakerDist =    speakerAimPoint.getDistance(podium.getTranslation());
-        public static final double subwooferToSpeakerDist = speakerAimPoint.getDistance(subwooferFront.getTranslation());
+        public static final double podiumToSpeakerDist =    speakerAimPoint.toTranslation2d().getDistance(podium.getTranslation());
+        public static final double subwooferToSpeakerDist = speakerAimPoint.toTranslation2d().getDistance(subwooferFront.getTranslation());
     }
 
     // Not the robot main function. This is called by Gradle when deploying to
