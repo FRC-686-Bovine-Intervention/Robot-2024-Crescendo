@@ -11,7 +11,6 @@ import static edu.wpi.first.units.Units.Radians;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -33,14 +32,13 @@ public class Pivot extends SubsystemBase {
     private final PivotIO pivotIO;
     private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
-    public static final LoggedTunableMeasure<Angle> tolerance = new LoggedTunableMeasure<>("Pivot/PID/Position Tolerance Deg", Degrees.of(1));
     public static final LoggedTunableMeasure<Angle> idleAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Zero", Degrees.of(0));
     public static final LoggedTunableMeasure<Angle> ampAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Amp", Degrees.of(100));
     public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50+5.09765625));
 
-    public final Trigger atPos = new Trigger(() -> inputs.atGoal);
+    public final Trigger atPos = new Trigger(() -> AimingParameters.withinAltitudeTolerance(Radians.of(inputs.pivotEncoder.positionRad)));
 
-    private static final Translation3d robotToPivotTranslation = 
+    public static final Translation3d robotToPivotTranslation = 
         new Translation3d(
             Inches.of(-7.5),
             Inches.of(0),
@@ -51,8 +49,7 @@ public class Pivot extends SubsystemBase {
     private final SuppliedEdgeDetector increaseEdgeDetector;
     private final SuppliedEdgeDetector decreaseEdgeDetector;
 
-    @AutoLogOutput(key = "Pivot/Runtime Offset")
-    private MutableMeasure<Angle> runtimeOffset = MutableMeasure.zero(Degrees);
+    private final MutableMeasure<Angle> runtimeOffset = MutableMeasure.zero(Degrees);
 
     public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
         System.out.println("[Init Pivot] Instantiating Pivot");
@@ -81,6 +78,8 @@ public class Pivot extends SubsystemBase {
         if(increaseEdgeDetector.risingEdge() || decreaseEdgeDetector.risingEdge()) {
             pivotIO.setRotorOffset(runtimeOffset.in(Radians));
         }
+
+        Logger.recordOutput("Pivot/Runtime Offset", runtimeOffset);
     }
 
     public static Transform3d getRobotToPivot(double angle) {

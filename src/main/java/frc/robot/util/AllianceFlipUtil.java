@@ -5,6 +5,7 @@ import java.util.Optional;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -26,6 +27,18 @@ public class AllianceFlipUtil {
       default:
       case CenterPointFlip: return new Translation2d(FieldConstants.fieldLength - translation.getX(), FieldConstants.fieldWidth - translation.getY());
       case MirrorFlip:      return new Translation2d(FieldConstants.fieldLength - translation.getX(), translation.getY());
+    }
+  }
+
+  public static Translation3d apply(Translation3d translation) {
+    return apply(translation, defaultFlipType);
+  }
+  public static Translation3d apply(Translation3d translation, FieldFlipType flipType) {
+    if(!shouldFlip()) return translation;
+    switch(flipType) {
+      default:
+      case CenterPointFlip: return new Translation3d(FieldConstants.fieldLength - translation.getX(), FieldConstants.fieldWidth - translation.getY(), translation.getZ());
+      case MirrorFlip:      return new Translation3d(FieldConstants.fieldLength - translation.getX(), translation.getY(), translation.getZ());
     }
   }
 

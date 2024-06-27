@@ -73,7 +73,6 @@ import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.Environment;
-import frc.robot.util.MathExtraUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.controllers.XboxController;
@@ -375,15 +374,11 @@ public class RobotContainer {
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
         
         // Auto Fire
-        shooter.readyToAutoShoot
+        new Trigger(
+            () -> AimingParameters.withinAzimuthTolerance(drive.getPose())
+        )
+            .and(shooter.readyToAutoShoot)
             .and(pivot.atPos)
-            .and(
-                () -> MathExtraUtil.isNear(
-                    AimingParameters.shotPose().getRotation(),
-                    drive.getRotation(),
-                    Units.degreesToRadians(3)
-                )
-            )
             .and(DriverStation::isTeleopEnabled)
             .onTrue(rollers.kicker.kick().until(rollers::noteExited).withName("Auto Kick"))
         ;
