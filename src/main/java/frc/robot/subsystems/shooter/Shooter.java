@@ -103,10 +103,12 @@ public class Shooter extends SubsystemBase {
         return MathExtraUtil.average(inputs.leftMotor.velocity, inputs.rightMotor.velocity).in(RadiansPerSecond);
     }
 
-    private void applyShooterSpeed(Supplier<Measure<Velocity<Distance>>> targetSpeed) {
-        var goalSpeed = targetSpeed.get().in(MetersPerSecond) * ShooterConstants.shooterSpeedEnvCoef.getAsDouble();
-        shooterIO.setLeftSurfaceSpeed(goalSpeed);
-        shooterIO.setRightSurfaceSpeed(goalSpeed);
+    private void applySurfaceSpeed(Supplier<Measure<Velocity<Distance>>> surfaceSpeed) {
+        var goalSpeed = surfaceSpeed.get().in(MetersPerSecond) * ShooterConstants.shooterSpeedEnvCoef.getAsDouble();
+        var motorSpeed = ShooterConstants.motorToSurface.surfaceToRots(goalSpeed);
+        Logger.recordOutput("Shooter/Goal Speed", motorSpeed);
+        shooterIO.setLeftVelocity(motorSpeed);
+        shooterIO.setRightVelocity(motorSpeed);
     }
 
     private void setReadyToShoot(Supplier<Measure<Velocity<Distance>>> minimum, Supplier<Measure<Velocity<Distance>>> maximum) {
@@ -135,7 +137,7 @@ public class Shooter extends SubsystemBase {
 
             @Override
             public void execute() {
-                applyShooterSpeed(targetSpeed);
+                applySurfaceSpeed(targetSpeed);
                 setReadyToShoot(minimumSpeed, maximumSpeed);
                 Leds.getInstance().shooterTarget = targetSpeed.get().in(MetersPerSecond);
                 Leds.getInstance().shooterBarGraph.set(enableLEDs);
