@@ -3,8 +3,6 @@ package frc.robot.subsystems.leds;
 import java.util.Optional;
 import java.util.function.DoubleFunction;
 
-import org.littletonrobotics.junction.Logger;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -14,14 +12,14 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.GameState;
 import frc.robot.RobotType;
-import frc.robot.Constants.AutoConstants;
 import frc.robot.RobotType.Mode;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.util.VirtualSubsystem;
-import frc.robot.util.led.functions.Gradient.InterpolationStyle;
 import frc.robot.util.led.functions.Gradient;
+import frc.robot.util.led.functions.Gradient.InterpolationStyle;
 import frc.robot.util.led.functions.TilingFunction;
 import frc.robot.util.led.strips.LEDStrip;
 import frc.robot.util.led.strips.hardware.AddressableStrip;

@@ -11,7 +11,6 @@ import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.DriverStation;
-import frc.robot.Environment;
 import frc.robot.util.Alert.AlertType;
 
 public enum PerspectiveType {

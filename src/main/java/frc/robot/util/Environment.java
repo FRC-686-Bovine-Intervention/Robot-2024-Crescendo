@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.util;
 
 import java.util.LinkedHashMap;
 import java.util.function.DoubleSupplier;
@@ -8,9 +8,6 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardInput;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import frc.robot.util.Alert;
-import frc.robot.util.MappedSwitchableChooser;
-import frc.robot.util.SuppliedEdgeDetector;
 import frc.robot.util.Alert.AlertType;
 
 public enum Environment {

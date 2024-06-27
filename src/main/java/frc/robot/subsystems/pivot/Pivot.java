@@ -23,8 +23,9 @@ import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.AimingParameters;
 import frc.robot.NoteVisualizer;
-import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableMeasure;
 import frc.robot.util.SuppliedEdgeDetector;
 
@@ -36,6 +37,8 @@ public class Pivot extends SubsystemBase {
     public static final LoggedTunableMeasure<Angle> idleAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Zero", Degrees.of(0));
     public static final LoggedTunableMeasure<Angle> ampAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Amp", Degrees.of(100));
     public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50+5.09765625));
+
+    public final Trigger atPos = new Trigger(() -> inputs.atGoal);
 
     private static final Translation3d robotToPivotTranslation = 
         new Translation3d(
@@ -95,10 +98,6 @@ public class Pivot extends SubsystemBase {
         return getRobotToPivot(inputs.pivotEncoder.positionRad);
     }
 
-    public boolean atPos() {
-        return inputs.atGoal;
-    }
-
     public void setCoast(boolean coast) {
         pivotIO.setCoast(coast);
     }
@@ -127,7 +126,7 @@ public class Pivot extends SubsystemBase {
     public Command aim() {
         return genCommand(
             "Aim",
-            () -> Degrees.of(RobotState.getInstance().aimingParameters.pivotAltitude())
+            AimingParameters::pivotAltitude
         );
     }
     public Command amp() {

@@ -28,7 +28,6 @@ import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
-import frc.robot.RobotState.AimingParameters;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoManager;
 import frc.robot.auto.AutoSelector;
@@ -73,6 +72,7 @@ import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.Environment;
 import frc.robot.util.MathExtraUtil;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
@@ -315,10 +315,10 @@ public class RobotContainer {
         // Auto Aim
         driveController.rightBumper().toggleOnTrue(
             Commands.parallel(
-                Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds())),
+                Commands.run(() -> AimingParameters.setFrom(drive)),
                 pivot.aim(),
                 shooter.aimWithAutoShoot(),
-                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()))
+                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
             )
             .until(rollers::noNote)
             .withName("Auto Aim")
@@ -327,7 +327,7 @@ public class RobotContainer {
         // Aim from Subwoofer
         driveController.leftBumper().toggleOnTrue(
             Commands.parallel(
-                Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
+                Commands.run(() -> AimingParameters.setFrom(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
                 pivot.aim(),
                 shooter.aimWithoutAutoShoot()
             )
@@ -376,10 +376,10 @@ public class RobotContainer {
         
         // Auto Fire
         shooter.readyToAutoShoot
-            .and(pivot::atPos)
+            .and(pivot.atPos)
             .and(
                 () -> MathExtraUtil.isNear(
-                    RobotState.getInstance().aimingParameters.drivePose().getRotation(),
+                    AimingParameters.shotPose().getRotation(),
                     drive.getRotation(),
                     Units.degreesToRadians(3)
                 )
@@ -497,7 +497,6 @@ public class RobotContainer {
         Camera.logCameraOverrides();
         xboxConnect.set(!driveController.isConnected());
         buttonBoardConnect.set(!buttonBoard.isConnected());
-        Logger.recordOutput("Ready to shoot", pivot.atPos() && shooter.readyToAutoShoot.getAsBoolean());
     }
 
     public void enabledInit() {
