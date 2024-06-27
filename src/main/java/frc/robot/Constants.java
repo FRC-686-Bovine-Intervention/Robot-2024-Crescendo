@@ -35,10 +35,12 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.util.function.BooleanConsumer;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
+import frc.robot.util.Environment;
 import frc.robot.util.GearRatio;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.GearRatio.Wheel;
@@ -280,8 +282,6 @@ public final class Constants {
     }
 
     public static final class ShooterConstants {
-        public static final double exitVelocity = 5;
-
         public static final double wheelRadius = Inches.of(2).in(Meters);
 
         public static final Wheel motorToSurface = new GearRatio()
@@ -294,6 +294,10 @@ public final class Constants {
             () -> 1,
             new LoggedTunableNumber("Demo Constraints/Shooter Demo Speed", 0.5)
         );
+    }
+
+    public static final class AimingConstants {
+        public static final Measure<Velocity<Distance>> exitVelocity = MetersPerSecond.of(5);
 
         public static final InterpolatingDoubleTreeMap targetShooterSpeed = new InterpolatingDoubleTreeMap();
         static {
