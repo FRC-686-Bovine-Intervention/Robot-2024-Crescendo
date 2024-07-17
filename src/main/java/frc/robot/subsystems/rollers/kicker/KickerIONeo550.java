@@ -17,6 +17,8 @@ public class KickerIONeo550 implements KickerIO {
     public KickerIONeo550() {
         leftMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
         rightMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
+        leftMotor.setSmartCurrentLimit(20);
+        rightMotor.setSmartCurrentLimit(20);
         rightMotor.follow(leftMotor, true);
     }
 
