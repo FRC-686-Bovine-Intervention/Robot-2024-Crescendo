@@ -119,8 +119,8 @@ public final class Constants {
         public static final int kickerSensorPort = 1;
 
         // Pivot
-        public static final int pivotLeftLimitSwitchPort = 2;
-        public static final int pivotRightLimitSwitchPort = 3;
+        public static final int pivotLeftLimitSwitchPort = 8;
+        public static final int pivotRightLimitSwitchPort = 9;
     }
 
     public static final class RobotConstants {

@@ -20,12 +20,15 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.MutableMeasure;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.NoteVisualizer;
 import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableMeasure;
+import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.SuppliedEdgeDetector;
 
 public class Pivot extends SubsystemBase {
@@ -36,6 +39,8 @@ public class Pivot extends SubsystemBase {
     public static final LoggedTunableMeasure<Angle> idleAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Zero", Degrees.of(0));
     public static final LoggedTunableMeasure<Angle> ampAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Amp", Degrees.of(100));
     public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50+5.09765625));
+
+    public static final LoggedTunableNumber recalVoltage = new LoggedTunableNumber("Pivot/Volts/Recal", 1);
 
     private static final Translation3d robotToPivotTranslation = 
         new Translation3d(
@@ -143,26 +148,25 @@ public class Pivot extends SubsystemBase {
         );
     }
 
-    // public Command recal() {
-    //   var subsystem = this;
-    //   return new Command() {
-    //     {
-    //       addRequirements(subsystem);
-    //       setName("Recal");
-    //     }
-    //     @Override
-    //     public void initialize() {
-    //       pivotIO.enableSoftLimits(false);
-    //     }
-    //     @Override
-    //     public void execute() {
-    //       pivotIO.setPivotVoltage(-1);
-    //     }
-    //     @Override
-    //     public void end(boolean interrupted) {
-    //       pivotIO.enableSoftLimits(true);
-    //       pivotIO.stop();
-    //     }
-    //   };
-    // }
+    public Command recal() {
+      var subsystem = this;
+      return new Command() {
+        {
+          addRequirements(subsystem);
+          setName("Recal");
+        }
+        @Override
+        public void execute() {
+          pivotIO.setPivotVoltage(-Pivot.recalVoltage.getAsDouble());
+        }
+        @Override
+        public boolean isFinished() {
+            return inputs.leftLimitSwitch || inputs.rightLimitSwitch; 
+        }
+        @Override
+        public void end(boolean interrupted) {
+          pivotIO.stop();
+        }
+      };
+    }
 }

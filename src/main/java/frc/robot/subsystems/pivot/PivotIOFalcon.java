@@ -39,6 +39,7 @@ import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DIOPorts;
 import frc.robot.Constants.PivotConstants;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.SuppliedEdgeDetector;
 
 public class PivotIOFalcon implements PivotIO {
     protected final TalonFX pivotLeftMotor = new TalonFX(CANDevices.pivotLeftMotorID);
@@ -46,6 +47,9 @@ public class PivotIOFalcon implements PivotIO {
     protected final CANcoder pivotEncoder = new CANcoder(CANDevices.pivotEncoderID);
     protected final DigitalInput leftLimitSwitch = new DigitalInput(DIOPorts.pivotLeftLimitSwitchPort);
     protected final DigitalInput rightLimitSwitch = new DigitalInput(DIOPorts.pivotRightLimitSwitchPort);
+
+    protected final SuppliedEdgeDetector leftEdgeDetector = new SuppliedEdgeDetector(() -> !leftLimitSwitch.get());
+    protected final SuppliedEdgeDetector rightEdgeDetector = new SuppliedEdgeDetector(() -> !rightLimitSwitch.get());
 
     private final LoggedTunableNumber kP = new LoggedTunableNumber("Pivot/PID/kP", 5);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Pivot/PID/kI", 0); 
@@ -68,17 +72,8 @@ public class PivotIOFalcon implements PivotIO {
         motorConfig.Feedback.FeedbackRemoteSensorID = pivotEncoder.getDeviceID();
         motorConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         motorConfig.Feedback.FeedbackRotorOffset = 0;
-        /*
-        motorConfig.HardwareLimitSwitch.ReverseLimitEnable = true;
-        motorConfig.HardwareLimitSwitch.ReverseLimitSource = ReverseLimitSourceValue.LimitSwitchPin;
-        motorConfig.HardwareLimitSwitch.ReverseLimitType = ReverseLimitTypeValue.NormallyOpen;
-        motorConfig.HardwareLimitSwitch.ReverseLimitAutosetPositionEnable = true;        
-        motorConfig.HardwareLimitSwitch.ReverseLimitAutosetPositionValue = 0;
-        */
         motorConfig.HardwareLimitSwitch.ReverseLimitEnable = true;
         motorConfig.HardwareLimitSwitch.ReverseLimitSource = ReverseLimitSourceValue.Disabled;
-        motorConfig.HardwareLimitSwitch.ReverseLimitAutosetPositionEnable = true;
-        motorConfig.HardwareLimitSwitch.ReverseLimitAutosetPositionValue = 0;
         motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Pivot.ampAltitude.in(Rotations);
         pivotLeftMotor.getConfigurator().apply(motorConfig);
@@ -141,6 +136,15 @@ public class PivotIOFalcon implements PivotIO {
         inputs.pivotLeftMotor.updateFrom(pivotLeftMotor);
         inputs.pivotRightMotor.updateFrom(pivotRightMotor);
         inputs.pivotEncoder.updateFrom(pivotLeftMotor);
+        inputs.leftLimitSwitch = !leftLimitSwitch.get();
+        inputs.rightLimitSwitch = !rightLimitSwitch.get();
+
+        leftEdgeDetector.update();
+        rightEdgeDetector.update();
+
+        if (leftEdgeDetector.risingEdge() || rightEdgeDetector.risingEdge()) {
+            pivotEncoder.setPosition(0);
+        }
 
         updateTunables();
 
@@ -180,7 +184,8 @@ public class PivotIOFalcon implements PivotIO {
         if(!(pivotRightMotor.getAppliedControl() instanceof StrictFollower)) {
             pivotRightMotor.setControl(new StrictFollower(pivotLeftMotor.getDeviceID()));
         }
-        pivotLeftMotor.setControl(request.withPosition(Units.radiansToRotations(pos)).withLimitReverseMotion(leftLimitSwitch.get() || rightLimitSwitch.get()));
+        pivotLeftMotor.setControl(request.withPosition(Units.radiansToRotations(pos))
+            .withLimitReverseMotion(!leftLimitSwitch.get() || !rightLimitSwitch.get()));
     }
 
     @Override

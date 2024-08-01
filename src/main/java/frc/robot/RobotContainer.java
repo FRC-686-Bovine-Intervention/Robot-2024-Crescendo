@@ -16,6 +16,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -347,9 +348,9 @@ public class RobotContainer {
             )
         ;
 
-        // SmartDashboard.putData("Recal Pivot", pivot.recal());
+        SmartDashboard.putData("Recal Pivot", pivot.recal());
         SmartDashboard.putData("Reset pos", Commands.runOnce(() -> drive.setPose(new Pose2d(AllianceFlipUtil.apply(FieldConstants.subwooferFront).getTranslation(), drive.getRotation()))));
-
+        
         // Auto Drive
         // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
         // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));

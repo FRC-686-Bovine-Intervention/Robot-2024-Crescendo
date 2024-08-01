@@ -15,6 +15,8 @@ public interface PivotIO {
         public LoggedMotor pivotLeftMotor = new LoggedMotor();
         public LoggedMotor pivotRightMotor = new LoggedMotor();
         public LoggedEncoder pivotEncoder = new LoggedEncoder();
+        public boolean leftLimitSwitch = false;
+        public boolean rightLimitSwitch = false;
         public boolean atGoal = false;
     }
 
