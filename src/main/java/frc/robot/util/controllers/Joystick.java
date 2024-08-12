@@ -70,6 +70,9 @@ public class Joystick {
     public Joystick multiply(double xCoef, double yCoef) {
         return new Joystick(x.multiply(xCoef), y.multiply(yCoef));
     }
+    public Joystick invert() {
+        return new Joystick(x.invert(), y.invert());
+    }
 
     public double magnitude() {
         return Math.hypot(x.getAsDouble(), y.getAsDouble());

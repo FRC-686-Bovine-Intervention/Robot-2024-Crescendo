@@ -76,7 +76,7 @@ import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.Environment;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
-import frc.robot.util.controllers.XboxController;
+import frc.robot.util.controllers.Thrustmaster;
 
 public class RobotContainer {
     // Subsystems
@@ -90,7 +90,7 @@ public class RobotContainer {
     public final ManualOverrides manualOverrides;
 
     // Controller
-    private final XboxController driveController = new XboxController(0);
+    private final Thrustmaster driveController = new Thrustmaster(0);
     private final Joystick driveJoystick;
     private final Supplier<ChassisSpeeds> joystickTranslational;
     private final ButtonBoard3x3 buttonBoard = new ButtonBoard3x3(1);
@@ -166,7 +166,7 @@ public class RobotContainer {
             break;
         }
         manualOverrides = new ManualOverrides(pivot::setCoast);
-        driveJoystick = driveController.leftStick
+        driveJoystick = driveController.joystick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)
             .radialSlewRateLimit(DriveConstants.joystickSlewRateLimit)
@@ -222,6 +222,8 @@ public class RobotContainer {
             .onTrue(rollers.kicker.idle())
         ;
 
+        drive.rotationalSubsystem.setDefaultCommand(drive.rotationalSubsystem.spin(driveController.twist.roughDeadband(0.1)::getAsDouble));
+
         shooter.setDefaultCommand(shooter.idle());
 
         pivot.setDefaultCommand(pivot.idle());
@@ -232,58 +234,58 @@ public class RobotContainer {
     private void configureControls() {
         DriverStation.silenceJoystickConnectionWarning(true);
         // Rotation
-        new Trigger(() -> driveController.rightStick.magnitude() > 0.85 && drive.rotationalSubsystem.getCurrentCommand() == null).onTrue(
-            Commands.either(
-                drive.rotationalSubsystem.headingFromJoystick(
-                    driveController.rightStick.smoothRadialDeadband(0.85),
-                    new Rotation2d[]{
-                        // Center Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+150))),
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-150))),
-                        // Up Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-90))),
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-30))),
-                        // Down Stage
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+90))),
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+30))),
-                    },
-                    () -> Rotation2d.fromDegrees(-90)
-                )
-                .withName("Climbing")
-                .asProxy(),
-                drive.rotationalSubsystem.headingFromJoystick(
-                    driveController.rightStick.smoothRadialDeadband(0.85),
-                    new Rotation2d[]{
-                        // Cardinals
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
-                        // Subwoofer
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
-                        // Source
-                        Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
-                    },
-                    () -> (rollers.noNote() ? RobotConstants.intakeForward : RobotConstants.shooterForward)
-                )
-                .withName("DriveCustomFlick")
-                .asProxy(),
-                () -> climber.getCurrentCommand() != climber.getDefaultCommand()
-            )
-        );
-        driveController.rightStickButton().toggleOnTrue(
-            drive.rotationalSubsystem.defenseSpin(
-                driveController.rightStick
-                .smoothRadialDeadband(0.1)
-                .radialSensitivity(0.75)
-            )
-        );
+        // new Trigger(() -> drive.rotationalSubsystem.getCurrentCommand() == null).onTrue(
+        //     Commands.either(
+        //         drive.rotationalSubsystem.headingFromJoystick(
+        //             driveController.rightStick.smoothRadialDeadband(0.85),
+        //             new Rotation2d[]{
+        //                 // Center Stage
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+150))),
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-150))),
+        //                 // Up Stage
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-90))),
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(-30))),
+        //                 // Down Stage
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+90))),
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(+30))),
+        //             },
+        //             () -> Rotation2d.fromDegrees(-90)
+        //         )
+        //         .withName("Climbing")
+        //         .asProxy(),
+        //         drive.rotationalSubsystem.headingFromJoystick(
+        //             driveController.rightStick.smoothRadialDeadband(0.85),
+        //             new Rotation2d[]{
+        //                 // Cardinals
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(0))),
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(90))),
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(180))),
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(270))),
+        //                 // Subwoofer
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(120))),
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(240))),
+        //                 // Source
+        //                 Rotation2d.fromRadians(MathUtil.angleModulus(Units.degreesToRadians(300))),
+        //             },
+        //             () -> (rollers.noNote() ? RobotConstants.intakeForward : RobotConstants.shooterForward)
+        //         )
+        //         .withName("DriveCustomFlick")
+        //         .asProxy(),
+        //         () -> climber.getCurrentCommand() != climber.getDefaultCommand()
+        //     )
+        // );
+        // driveController.rightStickButton().toggleOnTrue(
+        //     drive.rotationalSubsystem.defenseSpin(
+        //         driveController.rightStick
+        //         .smoothRadialDeadband(0.1)
+        //         .radialSensitivity(0.75)
+        //     )
+        // );
         // driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake
-        driveController.a().and(() -> !rollers.noteInKicker()).whileTrue(rollers.intake.intake());
-        driveController.b()
+        driveController.leftTopLeft().and(() -> !rollers.noteInKicker()).whileTrue(rollers.intake.intake());
+        driveController.leftBottomLeft()
             .and(() -> Math.abs(drive.getRobotRelativeSpeeds().vxMetersPerSecond) >= 0.25)
             .whileTrue(
                 rollers.eject().withInterruptBehavior(InterruptionBehavior.kCancelIncoming)
@@ -291,10 +293,10 @@ public class RobotContainer {
         ;
         
         // Kicker
-        driveController.x().whileTrue(rollers.kicker.kick());
+        driveController.stickTrigger().whileTrue(rollers.kicker.kick());
 
         // Amp
-        driveController.y().toggleOnTrue(
+        driveController.leftBottomRight().toggleOnTrue(
             Commands.either(
                 Commands.parallel(
                     pivot.amp(),
@@ -310,10 +312,10 @@ public class RobotContainer {
         );
 
         // Shooter
-        driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.pass());
+        driveController.rightTopCenter().whileTrue(shooter.pass());
 
         // Auto Aim
-        driveController.rightBumper().toggleOnTrue(
+        driveController.stickRight().toggleOnTrue(
             Commands.parallel(
                 Commands.run(() -> AimingParameters.setFrom(drive)),
                 pivot.aim(),
@@ -325,7 +327,7 @@ public class RobotContainer {
         );
 
         // Aim from Subwoofer
-        driveController.leftBumper().toggleOnTrue(
+        driveController.rightBottomCenter().toggleOnTrue(
             Commands.parallel(
                 Commands.run(() -> AimingParameters.setFrom(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
                 pivot.aim(),
@@ -336,7 +338,7 @@ public class RobotContainer {
         );
 
         // Auto Intake
-        driveController.leftTrigger.aboveThreshold(0.25)
+        driveController.stickBottom()
             .and(noteVision::hasTarget)
             .whileTrue(
                 noteVision.autoIntake(
@@ -356,8 +358,8 @@ public class RobotContainer {
         // driveController.povLeft().or(driveController.povRight()).onTrue(drive.driveToFlipped(FieldConstants.amp));
 
         // Climber
-        driveController.start().toggleOnTrue(climber.deploy());
-        driveController.back().toggleOnTrue(climber.retract());
+        driveController.rightTopRight().toggleOnTrue(climber.deploy());
+        driveController.rightBottomRight().toggleOnTrue(climber.retract());
 
         // Pre-emptive Spinup
         // new Trigger(() -> 
@@ -385,7 +387,7 @@ public class RobotContainer {
         ;
         
         // Cancel Auto Drive
-        new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
+        new Trigger(() -> driveController.joystick.magnitude() > 0.1)
             .and(
                 () -> drive.translationSubsystem.getCurrentCommand() != null
                 && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix)
@@ -399,11 +401,11 @@ public class RobotContainer {
         new Trigger(rollers::noteInIntake)
             .onTrue(Leds.getInstance().noteAcquired.setCommand().withTimeout(1))
             .and(DriverStation::isTeleopEnabled)
-            .whileTrue(driveController.rumble(RumbleType.kBothRumble, 0.4))
+            // .whileTrue(driveController.rumble(RumbleType.kBothRumble, 0.4))
         ;
         
         // Human Player Notification
-        driveController.leftStickButton().onTrue(Leds.getInstance().humanPlayerFlash.setCommand().withTimeout(1));
+        driveController.leftTopRight().onTrue(Leds.getInstance().humanPlayerFlash.setCommand().withTimeout(1));
     }
 
     private void configureAutos() {
