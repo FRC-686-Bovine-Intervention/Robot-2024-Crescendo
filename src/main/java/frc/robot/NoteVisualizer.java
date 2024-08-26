@@ -37,7 +37,7 @@ public class NoteVisualizer {
                 new Translation3d(
                     Meters.of(0.2),
                     Inches.of(0),
-                    Inches.of(3)
+                    Inches.of(2.875)
                 ),
                 new Rotation3d(
                     +0,

@@ -7,11 +7,11 @@ package frc.robot.subsystems.pivot;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -20,11 +20,13 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.MutableMeasure;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.AimingParameters;
 import frc.robot.NoteVisualizer;
-import frc.robot.RobotState;
 import frc.robot.util.LoggedTunableMeasure;
 import frc.robot.util.SuppliedEdgeDetector;
 
@@ -32,12 +34,15 @@ public class Pivot extends SubsystemBase {
     private final PivotIO pivotIO;
     private final PivotIOInputsAutoLogged inputs = new PivotIOInputsAutoLogged();
 
-    public static final LoggedTunableMeasure<Angle> tolerance = new LoggedTunableMeasure<>("Pivot/PID/Position Tolerance Deg", Degrees.of(1));
     public static final LoggedTunableMeasure<Angle> idleAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Zero", Degrees.of(0));
     public static final LoggedTunableMeasure<Angle> ampAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Amp", Degrees.of(100));
     public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50+5.09765625));
 
-    private static final Translation3d robotToPivotTranslation = 
+    public static final LoggedTunableMeasure<Voltage> recalVoltage = new LoggedTunableMeasure<>("Pivot/Volts/Recal", Volts.of(1));
+
+    public final Trigger atPos = new Trigger(() -> AimingParameters.withinAltitudeTolerance(Radians.of(inputs.pivotEncoder.positionRad)));
+
+    public static final Translation3d robotToPivotTranslation = 
         new Translation3d(
             Inches.of(-7.5),
             Inches.of(0),
@@ -48,8 +53,7 @@ public class Pivot extends SubsystemBase {
     private final SuppliedEdgeDetector increaseEdgeDetector;
     private final SuppliedEdgeDetector decreaseEdgeDetector;
 
-    @AutoLogOutput(key = "Pivot/Runtime Offset")
-    private MutableMeasure<Angle> runtimeOffset = MutableMeasure.zero(Degrees);
+    private final MutableMeasure<Angle> runtimeOffset = MutableMeasure.zero(Degrees);
 
     public Pivot(PivotIO pivotIO, BooleanSupplier increaseRuntimeOffset, BooleanSupplier decreaseRuntimeOffset) {
         System.out.println("[Init Pivot] Instantiating Pivot");
@@ -78,6 +82,8 @@ public class Pivot extends SubsystemBase {
         if(increaseEdgeDetector.risingEdge() || decreaseEdgeDetector.risingEdge()) {
             pivotIO.setRotorOffset(runtimeOffset.in(Radians));
         }
+
+        Logger.recordOutput("Pivot/Runtime Offset", runtimeOffset);
     }
 
     public static Transform3d getRobotToPivot(double angle) {
@@ -93,10 +99,6 @@ public class Pivot extends SubsystemBase {
 
     public Transform3d getRobotToPivot() {
         return getRobotToPivot(inputs.pivotEncoder.positionRad);
-    }
-
-    public boolean atPos() {
-        return inputs.atGoal;
     }
 
     public void setCoast(boolean coast) {
@@ -127,7 +129,7 @@ public class Pivot extends SubsystemBase {
     public Command aim() {
         return genCommand(
             "Aim",
-            () -> Degrees.of(RobotState.getInstance().aimingParameters.pivotAltitude())
+            AimingParameters::pivotAltitude
         );
     }
     public Command amp() {
@@ -143,26 +145,25 @@ public class Pivot extends SubsystemBase {
         );
     }
 
-    // public Command recal() {
-    //   var subsystem = this;
-    //   return new Command() {
-    //     {
-    //       addRequirements(subsystem);
-    //       setName("Recal");
-    //     }
-    //     @Override
-    //     public void initialize() {
-    //       pivotIO.enableSoftLimits(false);
-    //     }
-    //     @Override
-    //     public void execute() {
-    //       pivotIO.setPivotVoltage(-1);
-    //     }
-    //     @Override
-    //     public void end(boolean interrupted) {
-    //       pivotIO.enableSoftLimits(true);
-    //       pivotIO.stop();
-    //     }
-    //   };
-    // }
+    public Command recal() {
+      var subsystem = this;
+      return new Command() {
+        {
+          addRequirements(subsystem);
+          setName("Recal");
+        }
+        @Override
+        public void execute() {
+          pivotIO.setPivotVoltage(-recalVoltage.in(Volts));
+        }
+        @Override
+        public boolean isFinished() {
+            return inputs.leftLimitSwitch || inputs.rightLimitSwitch; 
+        }
+        @Override
+        public void end(boolean interrupted) {
+          pivotIO.stop();
+        }
+      };
+    }
 }

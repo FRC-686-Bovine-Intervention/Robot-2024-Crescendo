@@ -35,10 +35,12 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.util.function.BooleanConsumer;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
+import frc.robot.util.Environment;
 import frc.robot.util.GearRatio;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.GearRatio.Wheel;
@@ -117,6 +119,10 @@ public final class Constants {
 
         // Kicker
         public static final int kickerSensorPort = 1;
+
+        // Pivot
+        public static final int pivotLeftLimitSwitchPort = 8;
+        public static final int pivotRightLimitSwitchPort = 9;
     }
 
     public static final class RobotConstants {
@@ -276,8 +282,6 @@ public final class Constants {
     }
 
     public static final class ShooterConstants {
-        public static final double exitVelocity = 5;
-
         public static final double wheelRadius = Inches.of(2).in(Meters);
 
         public static final Wheel motorToSurface = new GearRatio()
@@ -290,6 +294,10 @@ public final class Constants {
             () -> 1,
             new LoggedTunableNumber("Demo Constraints/Shooter Demo Speed", 0.5)
         );
+    }
+
+    public static final class AimingConstants {
+        public static final Measure<Velocity<Distance>> exitVelocity = MetersPerSecond.of(5);
 
         public static final InterpolatingDoubleTreeMap targetShooterSpeed = new InterpolatingDoubleTreeMap();
         static {
@@ -509,7 +517,7 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(648);
         public static final double fieldWidth =  Units.inchesToMeters(324);
 
-        public static final Translation2d speakerAimPoint = new Translation2d(0.240581, 5.547755);
+        public static final Translation3d speakerAimPoint = new Translation3d(0.240581, 5.547755, 2);
 
         public static final Pose2d subwooferFront =     new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(+180));
         public static final Pose2d subwooferAmp =       new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(-120));
@@ -521,8 +529,8 @@ public final class Constants {
         public static final Pose2d pathfindSpeaker =    new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(+180));
         public static final Pose2d pathfindSource =     new Pose2d(new Translation2d(13.41, 1.54), Rotation2d.fromDegrees(+180));
 
-        public static final double podiumToSpeakerDist =    speakerAimPoint.getDistance(podium.getTranslation());
-        public static final double subwooferToSpeakerDist = speakerAimPoint.getDistance(subwooferFront.getTranslation());
+        public static final double podiumToSpeakerDist =    speakerAimPoint.toTranslation2d().getDistance(podium.getTranslation());
+        public static final double subwooferToSpeakerDist = speakerAimPoint.toTranslation2d().getDistance(subwooferFront.getTranslation());
     }
 
     // Not the robot main function. This is called by Gradle when deploying to

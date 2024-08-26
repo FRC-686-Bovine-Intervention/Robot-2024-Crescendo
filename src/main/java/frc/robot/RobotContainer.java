@@ -16,6 +16,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -28,7 +29,6 @@ import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
-import frc.robot.RobotState.AimingParameters;
 import frc.robot.auto.AutoCommons.AutoPaths;
 import frc.robot.auto.AutoManager;
 import frc.robot.auto.AutoSelector;
@@ -73,7 +73,7 @@ import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.AllianceFlipUtil;
-import frc.robot.util.MathExtraUtil;
+import frc.robot.util.Environment;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
 import frc.robot.util.controllers.XboxController;
@@ -315,10 +315,10 @@ public class RobotContainer {
         // Auto Aim
         driveController.rightBumper().toggleOnTrue(
             Commands.parallel(
-                Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds())),
+                Commands.run(() -> AimingParameters.setFrom(drive)),
                 pivot.aim(),
                 shooter.aimWithAutoShoot(),
-                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()))
+                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
             )
             .until(rollers::noNote)
             .withName("Auto Aim")
@@ -327,7 +327,7 @@ public class RobotContainer {
         // Aim from Subwoofer
         driveController.leftBumper().toggleOnTrue(
             Commands.parallel(
-                Commands.run(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
+                Commands.run(() -> AimingParameters.setFrom(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
                 pivot.aim(),
                 shooter.aimWithoutAutoShoot()
             )
@@ -347,9 +347,9 @@ public class RobotContainer {
             )
         ;
 
-        // SmartDashboard.putData("Recal Pivot", pivot.recal());
+        SmartDashboard.putData("Recal Pivot", pivot.recal());
         SmartDashboard.putData("Reset pos", Commands.runOnce(() -> drive.setPose(new Pose2d(AllianceFlipUtil.apply(FieldConstants.subwooferFront).getTranslation(), drive.getRotation()))));
-
+        
         // Auto Drive
         // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
         // driveController.povDown().onTrue(drive.driveToFlipped(FieldConstants.pathfindSpeaker));
@@ -375,15 +375,11 @@ public class RobotContainer {
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
         
         // Auto Fire
-        shooter.readyToAutoShoot
-            .and(pivot::atPos)
-            .and(
-                () -> MathExtraUtil.isNear(
-                    RobotState.getInstance().aimingParameters.drivePose().getRotation(),
-                    drive.getRotation(),
-                    Units.degreesToRadians(3)
-                )
-            )
+        new Trigger(
+            () -> AimingParameters.withinAzimuthTolerance(drive.getPose())
+        )
+            .and(shooter.readyToAutoShoot)
+            .and(pivot.atPos)
             .and(DriverStation::isTeleopEnabled)
             .onTrue(rollers.kicker.kick().until(rollers::noteExited).withName("Auto Kick"))
         ;
@@ -497,7 +493,6 @@ public class RobotContainer {
         Camera.logCameraOverrides();
         xboxConnect.set(!driveController.isConnected());
         buttonBoardConnect.set(!buttonBoard.isConnected());
-        Logger.recordOutput("Ready to shoot", pivot.atPos() && shooter.readyToAutoShoot.getAsBoolean());
     }
 
     public void enabledInit() {

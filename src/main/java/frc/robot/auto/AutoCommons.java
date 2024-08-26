@@ -20,9 +20,9 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.AimingParameters;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.RobotState;
-import frc.robot.RobotState.AimingParameters;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.rollers.Rollers;
@@ -103,9 +103,9 @@ public class AutoCommons {
     public static Command shootWhenReady(double angularTolerance, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
         BooleanSupplier condition = () -> {
             var shooterReady = shooter.readyToAutoShoot.getAsBoolean();
-            var pivotReady = pivot.atPos();
-            var poseReady = MathExtraUtil.isNear(RobotState.getInstance().aimingParameters.drivePose(), drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
-            var speedReady = MathExtraUtil.isNear(RobotState.getInstance().aimingParameters.chassisSpeeds(), drive.getRobotRelativeSpeeds(), 0.75, 1);
+            var pivotReady = pivot.atPos.getAsBoolean();
+            var poseReady = MathExtraUtil.isNear(AimingParameters.shotPose(), drive.getPose(), 0.75, Units.degreesToRadians(angularTolerance));
+            var speedReady = MathExtraUtil.isNear(AimingParameters.shotSpeeds(), drive.getFieldRelativeSpeeds(), 0.75, 1);
 
             Logger.recordOutput("DEBUG/Shooter Ready", shooterReady);
             Logger.recordOutput("DEBUG/Pivot Ready", pivotReady);
@@ -118,7 +118,7 @@ public class AutoCommons {
     }
 
     public static Command autoAim(Drive.Rotational rotation) {
-        return rotation.pidControlledHeading(() -> Optional.of(RobotState.getInstance().aimingParameters.drivePose().getRotation()));
+        return rotation.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()));
     }
     public static Command autoAim(Shooter shooter) {
         return shooter.aimWithAutoShoot().asProxy();
@@ -152,21 +152,20 @@ public class AutoCommons {
             .deadlineWith(
                 AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem)
             )
-            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
+            .beforeStarting(() -> AimingParameters.setFrom(shotPos))
         ;
     }
 
-    public static AimingParameters aimingFromPath(double samplePoint, PathPlannerPath path) {
+    public static void aimingFromPath(double samplePoint, PathPlannerPath path) {
         var traj = path.getTrajectory(new ChassisSpeeds(), new Rotation2d());
         System.out.println("YO IDIOT                      " + samplePoint * traj.getTotalTimeSeconds());
         System.out.println("YO IDIOT                      " + traj.getTotalTimeSeconds());
         var sampleState = traj.sample(samplePoint * traj.getTotalTimeSeconds());
         var velo = MathExtraUtil.vectorFromRotation(sampleState.heading).times(sampleState.velocityMps);
-        return AimingParameters.from(sampleState.positionMeters, new ChassisSpeeds(velo.get(0), velo.get(1), 0));
+        AimingParameters.setFrom(sampleState.positionMeters, new ChassisSpeeds(velo.get(0), velo.get(1), 0));
     }
 
     public static Command spikeNoteSOTM(PathPlannerPath toSpike, double samplePoint, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
-        var shotPos = getLastPoint(toSpike);
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
@@ -175,7 +174,7 @@ public class AutoCommons {
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
             )
             .withTimeout(3)
-            .beforeStarting(() -> RobotState.getInstance().aimingParameters = aimingFromPath(samplePoint, toSpike))
+            .beforeStarting(() -> aimingFromPath(samplePoint, toSpike))
         ;
     }
     public static Command spikeNote(PathPlannerPath toSpike, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
@@ -188,7 +187,7 @@ public class AutoCommons {
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
             )
             .withTimeout(3)
-            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
+            .beforeStarting(() -> AimingParameters.setFrom(shotPos))
         ;
     }
     public static Command spikeNote(PathPlannerPath toSpike, Rotation2d wiggleAngle, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
@@ -206,7 +205,7 @@ public class AutoCommons {
                 )
             )
             .withTimeout(4)
-            .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(shotPos))
+            .beforeStarting(() -> AimingParameters.setFrom(shotPos))
         ;
     }
 
@@ -218,7 +217,7 @@ public class AutoCommons {
         BooleanSupplier isDefault = () -> drive.getPose().getTranslation().nearest(List.of(defaultStartPoint, altStartPoint)).equals(defaultStartPoint);
         return
             Commands.parallel(
-                Commands.runOnce(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(defaultShot)),
+                Commands.runOnce(() -> AimingParameters.setFrom(defaultShot)),
                 Commands.runOnce(noteVision::clearMemory),
                 
                 AutoCommons.followPathFlipped(toCenterLine, drive)
@@ -251,7 +250,7 @@ public class AutoCommons {
                             AutoCommons.autoAim(shooter),
                             returnFromCenter(altReturn, drive, shooter, pivot)
                         )
-                        .beforeStarting(() -> RobotState.getInstance().aimingParameters = AimingParameters.from(altShot))
+                        .beforeStarting(() -> AimingParameters.setFrom(altShot))
                     ),
                     isDefault
                 )
