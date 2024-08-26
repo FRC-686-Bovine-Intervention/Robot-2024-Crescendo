@@ -222,7 +222,7 @@ public class RobotContainer {
             .onTrue(rollers.kicker.idle())
         ;
 
-        drive.rotationalSubsystem.setDefaultCommand(drive.rotationalSubsystem.spin(driveController.twist.roughDeadband(0.1)::getAsDouble));
+        drive.rotationalSubsystem.setDefaultCommand(drive.rotationalSubsystem.spin(driveController.twist.smoothDeadband(0.2)::getAsDouble));
 
         shooter.setDefaultCommand(shooter.idle());
 
@@ -284,8 +284,8 @@ public class RobotContainer {
         // driveController.leftStickButton().onTrue(Commands.runOnce(() -> drive.setPose(new Pose2d(16,8, drive.getRotation()))));
 
         // Intake
-        driveController.leftTopLeft().and(() -> !rollers.noteInKicker()).whileTrue(rollers.intake.intake());
-        driveController.leftBottomLeft()
+        driveController.stickBottom().and(() -> !rollers.noteInKicker()).whileTrue(rollers.intake.intake());
+        driveController.stickRight()
             .and(() -> Math.abs(drive.getRobotRelativeSpeeds().vxMetersPerSecond) >= 0.25)
             .whileTrue(
                 rollers.eject().withInterruptBehavior(InterruptionBehavior.kCancelIncoming)
@@ -293,10 +293,10 @@ public class RobotContainer {
         ;
         
         // Kicker
-        driveController.stickTrigger().whileTrue(rollers.kicker.kick());
+        driveController.stickLeft().whileTrue(rollers.kicker.kick());
 
         // Amp
-        driveController.leftBottomRight().toggleOnTrue(
+        driveController.leftTopRight().toggleOnTrue(
             Commands.either(
                 Commands.parallel(
                     pivot.amp(),
@@ -312,10 +312,10 @@ public class RobotContainer {
         );
 
         // Shooter
-        driveController.rightTopCenter().whileTrue(shooter.pass());
+        driveController.leftTopCenter().whileTrue(shooter.pass());
 
         // Auto Aim
-        driveController.stickRight().toggleOnTrue(
+        driveController.stickTrigger().toggleOnTrue(
             Commands.parallel(
                 Commands.run(() -> AimingParameters.setFrom(drive)),
                 pivot.aim(),
@@ -327,7 +327,7 @@ public class RobotContainer {
         );
 
         // Aim from Subwoofer
-        driveController.rightBottomCenter().toggleOnTrue(
+        driveController.leftTopLeft().toggleOnTrue(
             Commands.parallel(
                 Commands.run(() -> AimingParameters.setFrom(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
                 pivot.aim(),
