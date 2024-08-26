@@ -7,6 +7,7 @@ package frc.robot.subsystems.pivot;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -22,13 +23,11 @@ import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.AimingParameters;
 import frc.robot.NoteVisualizer;
 import frc.robot.util.LoggedTunableMeasure;
-import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.SuppliedEdgeDetector;
 
 public class Pivot extends SubsystemBase {
@@ -39,7 +38,7 @@ public class Pivot extends SubsystemBase {
     public static final LoggedTunableMeasure<Angle> ampAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Amp", Degrees.of(100));
     public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50+5.09765625));
 
-    public static final LoggedTunableNumber recalVoltage = new LoggedTunableNumber("Pivot/Volts/Recal", 1);
+    public static final LoggedTunableMeasure<Voltage> recalVoltage = new LoggedTunableMeasure<>("Pivot/Volts/Recal", Volts.of(1));
 
     public final Trigger atPos = new Trigger(() -> AimingParameters.withinAltitudeTolerance(Radians.of(inputs.pivotEncoder.positionRad)));
 
@@ -155,7 +154,7 @@ public class Pivot extends SubsystemBase {
         }
         @Override
         public void execute() {
-          pivotIO.setPivotVoltage(-Pivot.recalVoltage.getAsDouble());
+          pivotIO.setPivotVoltage(-recalVoltage.in(Volts));
         }
         @Override
         public boolean isFinished() {
