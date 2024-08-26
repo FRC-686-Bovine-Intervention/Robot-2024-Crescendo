@@ -14,11 +14,13 @@ public class KickerIONeo550 implements KickerIO {
     private final CANSparkMax leftMotor = new CANSparkMax(CANDevices.kickerLeftID, MotorType.kBrushless);
     private final CANSparkMax rightMotor = new CANSparkMax(CANDevices.kickerRightID, MotorType.kBrushless);
 
+    public static final int currentLimit = 40;
+
     public KickerIONeo550() {
         leftMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
         rightMotor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 20);
-        leftMotor.setSmartCurrentLimit(20);
-        rightMotor.setSmartCurrentLimit(20);
+        leftMotor.setSmartCurrentLimit(currentLimit);
+        rightMotor.setSmartCurrentLimit(currentLimit);
         rightMotor.follow(leftMotor, true);
     }
 
