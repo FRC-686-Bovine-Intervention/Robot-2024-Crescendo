@@ -131,8 +131,15 @@ public class Leds extends VirtualSubsystem {
     public double shooterSpeed;
     public double climberPos;
 
+    private int skippedFrames = 0;
+    private static final int frameSkipAmount = 15;
+
     @Override
     public synchronized void periodic() {
+        if(skippedFrames < frameSkipAmount) {
+            skippedFrames++;
+            return;
+        }
         loadingNotifier.stop();
 
         // Default alliance color scrolling
