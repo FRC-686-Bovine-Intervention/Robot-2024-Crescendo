@@ -55,21 +55,21 @@ public class Leds extends VirtualSubsystem {
 
     public Leds() {
         System.out.println("[Init Leds] Instantiating Leds");
-        if(RobotType.getMode() == Mode.REAL) {
+        // if(RobotType.getMode() == Mode.REAL) {
             var addressableStrip = new AddressableStrip(0, 57);
             hardwareStrip = addressableStrip;
-        } else {
-            hardwareStrip = new HardwareStrip() {
-                @Override
-                public int getLength() {
-                    return 0;
-                }
-                @Override
-                public void setLED(int ledIndex, Color color) {}
-                @Override
-                public void refresh() {}
-            };
-        }
+        // } else {
+        //     hardwareStrip = new HardwareStrip() {
+        //         @Override
+        //         public int getLength() {
+        //             return 0;
+        //         }
+        //         @Override
+        //         public void setLED(int ledIndex, Color color) {}
+        //         @Override
+        //         public void refresh() {}
+        //     };
+        // }
 
         rightStrip = hardwareStrip.substrip(0, 19);
         backStrip = hardwareStrip.substrip(19, 38);
