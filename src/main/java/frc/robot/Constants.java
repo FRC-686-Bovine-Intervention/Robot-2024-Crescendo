@@ -301,23 +301,29 @@ public final class Constants {
 
         public static final InterpolatingDoubleTreeMap targetShooterSpeed = new InterpolatingDoubleTreeMap();
         static {
-            targetShooterSpeed.put(FieldConstants.subwooferToSpeakerDist, 15.0);
-            targetShooterSpeed.put(FieldConstants.podiumToSpeakerDist, 20.0);
-            targetShooterSpeed.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 30.0);
+            targetShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 14.5);
+            targetShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 16.0);
+            targetShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 21.0);
+            targetShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5);
+            targetShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 31.5);
         }
 
         public static final InterpolatingDoubleTreeMap minimumShooterSpeed = new InterpolatingDoubleTreeMap();
         static {
-            minimumShooterSpeed.put(FieldConstants.subwooferToSpeakerDist, 12.0);
-            minimumShooterSpeed.put(FieldConstants.podiumToSpeakerDist, 18.0);
-            minimumShooterSpeed.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 29.5);
+            targetShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 14.5-2);
+            targetShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 16.0-2);
+            targetShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 21.0-2);
+            targetShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5-2);
+            targetShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 31.5-2);
         }
 
         public static final InterpolatingDoubleTreeMap pivotAltitude = new InterpolatingDoubleTreeMap();
         static {
-            pivotAltitude.put(FieldConstants.subwooferToSpeakerDist, 59.39+5.09765625-4.5+0.5-8.5-8);
-            pivotAltitude.put(FieldConstants.podiumToSpeakerDist, 37.2+5.09765625-2.5+0.5-8.5-5.5);
-            pivotAltitude.put(Centimeters.of(565).plus(RobotConstants.robotLength.divide(2)).in(Meters), 27.2+5.09765625-2.5-0.5-0.5-0.5-1-8.5-3.5);
+            targetShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 43.5);
+            targetShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 37.0);
+            targetShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 29.5);
+            targetShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5);
+            targetShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 20.25);
         }
     }
 
