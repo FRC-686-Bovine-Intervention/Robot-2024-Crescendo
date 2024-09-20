@@ -6,14 +6,17 @@ package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -45,6 +48,7 @@ public class Shooter extends SubsystemBase {
     private static final LoggedTunableMeasure<Velocity<Distance>> customTargetSpeed = new LoggedTunableMeasure<>("Shooter/Custom/Target Speed", MetersPerSecond.of(10));
     private static final LoggedTunableMeasure<Velocity<Distance>> customMinimumSpeed = new LoggedTunableMeasure<>("Shooter/Custom/Minimum Speed", MetersPerSecond.of(50));
     private static final LoggedTunableMeasure<Velocity<Distance>> customMaximumSpeed = new LoggedTunableMeasure<>("Shooter/Custom/Maximum Speed", MetersPerSecond.of(50));
+    private static final LoggedTunableMeasure<Velocity<Distance>> customIncrement = new LoggedTunableMeasure<>("Shooter/Custom/Increment", MetersPerSecond.of(1));
 
     public final InternalButton readyToShoot = new LoggedInternalButton("Shooter/Ready to Shoot");
     public final InternalButton autoShootEnabled = new LoggedInternalButton("Shooter/AutoShoot Enabled");
@@ -232,6 +236,40 @@ public class Shooter extends SubsystemBase {
             customTargetSpeed,
             customMinimumSpeed,
             customMaximumSpeed,
+            false,
+            true
+        );
+    }
+    public Command customIncrement(BooleanSupplier increase, BooleanSupplier decrease) {
+        Supplier<Measure<Velocity<Distance>>> speed = new Supplier<Measure<Velocity<Distance>>>() {
+            private final MutableMeasure<Velocity<Distance>> speed = MutableMeasure.mutable(customTargetSpeed.get());
+            private final Timer cooldown = new Timer();
+            {
+                cooldown.start();
+            }
+            @Override
+            public Measure<Velocity<Distance>> get() {
+                Logger.recordOutput("Custom Shoot/Shooter Speed", speed);
+                if(!cooldown.hasElapsed(0.25)) {
+                    return speed;
+                }
+                if(increase.getAsBoolean()) {
+                    cooldown.reset();
+                    speed.mut_acc(customIncrement.get());
+                }
+                if(decrease.getAsBoolean()) {
+                    cooldown.reset();
+                    speed.mut_minus(customIncrement.get());
+                }
+
+                return speed;
+            }
+        };
+        return genCommand(
+            "Custom Increment",
+            speed,
+            speed,
+            speed,
             false,
             true
         );
