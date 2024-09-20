@@ -45,10 +45,10 @@ public class Shooter extends SubsystemBase {
     private static final LoggedTunableMeasure<Velocity<Distance>> ampTargetSpeed = new LoggedTunableMeasure<>("Shooter/Amp/Target Speed", MetersPerSecond.of(2));
     private static final LoggedTunableMeasure<Velocity<Distance>> ampMinimumSpeed = new LoggedTunableMeasure<>("Shooter/Amp/Minimum Speed", MetersPerSecond.of(1.5));
     private static final LoggedTunableMeasure<Velocity<Distance>> ampMaximumSpeed = new LoggedTunableMeasure<>("Shooter/Amp/Maximum Speed", MetersPerSecond.of(3));
-    private static final LoggedTunableMeasure<Velocity<Distance>> customTargetSpeed = new LoggedTunableMeasure<>("Shooter/Custom/Target Speed", MetersPerSecond.of(10));
+    private static final LoggedTunableMeasure<Velocity<Distance>> customTargetSpeed = new LoggedTunableMeasure<>("Shooter/Custom/Target Speed", MetersPerSecond.of(15));
     private static final LoggedTunableMeasure<Velocity<Distance>> customMinimumSpeed = new LoggedTunableMeasure<>("Shooter/Custom/Minimum Speed", MetersPerSecond.of(50));
     private static final LoggedTunableMeasure<Velocity<Distance>> customMaximumSpeed = new LoggedTunableMeasure<>("Shooter/Custom/Maximum Speed", MetersPerSecond.of(50));
-    private static final LoggedTunableMeasure<Velocity<Distance>> customIncrement = new LoggedTunableMeasure<>("Shooter/Custom/Increment", MetersPerSecond.of(1));
+    private static final LoggedTunableMeasure<Velocity<Distance>> customIncrement = new LoggedTunableMeasure<>("Shooter/Custom/Increment", MetersPerSecond.of(0.5));
 
     public final InternalButton readyToShoot = new LoggedInternalButton("Shooter/Ready to Shoot");
     public final InternalButton autoShootEnabled = new LoggedInternalButton("Shooter/AutoShoot Enabled");

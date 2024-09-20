@@ -315,14 +315,21 @@ public class RobotContainer {
         // Auto Aim
         driveController.rightBumper().toggleOnTrue(
             Commands.parallel(
-                Commands.run(() -> AimingParameters.setFrom(drive)),
-                pivot.aim(),
-                shooter.aimWithAutoShoot(),
-                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
+                pivot.customIncremented(driveController.povUp(), driveController.povDown()),
+                shooter.customIncrement(driveController.povLeft(), driveController.povRight())
             )
             .until(rollers::noNote)
-            .withName("Auto Aim")
         );
+        // driveController.rightBumper().toggleOnTrue(
+        //     Commands.parallel(
+        //         Commands.run(() -> AimingParameters.setFrom(drive)),
+        //         pivot.aim(),
+        //         shooter.aimWithAutoShoot(),
+        //         drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
+        //     )
+        //     .until(rollers::noNote)
+        //     .withName("Auto Aim")
+        // );
 
         // Aim from Subwoofer
         driveController.leftBumper().toggleOnTrue(
@@ -347,10 +354,6 @@ public class RobotContainer {
             )
         ;
 
-        SmartDashboard.putData("Custom Shoot", Commands.parallel(
-            pivot.customIncremented(driveController.povUp(), driveController.povDown()),
-            shooter.customIncrement(driveController.povLeft(), driveController.povRight())
-        ));
         SmartDashboard.putData("Recal Pivot", pivot.recal());
         SmartDashboard.putData("Reset pos", Commands.runOnce(() -> drive.setPose(new Pose2d(AllianceFlipUtil.apply(FieldConstants.subwooferFront).getTranslation(), drive.getRotation()))));
         
