@@ -310,20 +310,20 @@ public final class Constants {
 
         public static final InterpolatingDoubleTreeMap minimumShooterSpeed = new InterpolatingDoubleTreeMap();
         static {
-            targetShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 14.5-2);
-            targetShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 16.0-2);
-            targetShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 21.0-2);
-            targetShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5-2);
-            targetShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 31.5-2);
+            minimumShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 14.5-2);
+            minimumShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 16.0-2);
+            minimumShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 21.0-2);
+            minimumShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5-2);
+            minimumShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 31.5-2);
         }
 
         public static final InterpolatingDoubleTreeMap pivotAltitude = new InterpolatingDoubleTreeMap();
         static {
-            targetShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 43.5);
-            targetShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 37.0);
-            targetShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 29.5);
-            targetShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5);
-            targetShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 20.25);
+            pivotAltitude.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 43.5-2);
+            pivotAltitude.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 37.0-2);
+            pivotAltitude.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 29.5-2);
+            pivotAltitude.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5-1);
+            pivotAltitude.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 20.25);
         }
     }
 
