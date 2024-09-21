@@ -351,7 +351,9 @@ public class RobotContainer {
                     drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
                 )
                 .withName("Auto Aim")
+                .asProxy()
             )
+            .onlyIf(rollers::noteInKicker)
         );
 
         // Aim from Subwoofer
