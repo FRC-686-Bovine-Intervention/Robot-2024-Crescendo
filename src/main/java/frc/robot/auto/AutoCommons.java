@@ -166,12 +166,13 @@ public class AutoCommons {
     }
 
     public static Command spikeNoteSOTM(PathPlannerPath toSpike, double samplePoint, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
+        var pathName = AutoPaths.getName(toSpike);
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
                 rollers.intake.intake().asProxy(),
-                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem),
-                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
+                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem).withName("Aim Path: " + pathName).asProxy(),
+                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem).withName("Aim Path: " + pathName).asProxy()
             )
             .withTimeout(3)
             .beforeStarting(() -> aimingFromPath(samplePoint, toSpike))

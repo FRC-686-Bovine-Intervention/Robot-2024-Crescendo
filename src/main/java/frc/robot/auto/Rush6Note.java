@@ -65,7 +65,7 @@ public class Rush6Note extends AutoRoutine {
         );
     });
 
-    private static final AutoQuestion<CenterNote> thirdCenterNote = new AutoQuestion<>("Second Center Note", () -> {
+    private static final AutoQuestion<CenterNote> thirdCenterNote = new AutoQuestion<>("Third Center Note", () -> {
         var c1 = CenterNote.Note1.toEntry();
         var c2 = CenterNote.Note2.toEntry();
         var c3 = CenterNote.Note3.toEntry();
@@ -126,7 +126,7 @@ public class Rush6Note extends AutoRoutine {
         if(noteCount >= 2) {
             var startToSpike = AutoPaths.loadPath("R6N Amp Start to Spike");
             commands.add(
-                AutoCommons.spikeNoteSOTM(startToSpike, 0.5, drive, shooter, pivot, rollers)
+                AutoCommons.spikeNote(startToSpike, drive, shooter, pivot, rollers)
             );
         }
 
