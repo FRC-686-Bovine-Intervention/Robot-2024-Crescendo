@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.AimingParameters;
 import frc.robot.NoteVisualizer;
+import frc.robot.util.Cooldown;
 import frc.robot.util.LoggedTunableMeasure;
 import frc.robot.util.SuppliedEdgeDetector;
 
@@ -127,21 +128,18 @@ public class Pivot extends SubsystemBase {
             "Custom",
             new Supplier<Measure<Angle>>() {
                 private final MutableMeasure<Angle> angle = MutableMeasure.zero(Degrees);
-                private final Timer cooldown = new Timer();
-                {
-                    cooldown.start();
-                }
+                private final Cooldown cooldown = new Cooldown();
                 public Measure<Angle> get() {
                     Logger.recordOutput("Custom Shoot/Pivot Angle", angle);
-                    if(!cooldown.hasElapsed(0.125)) {
+                    if(!cooldown.hasExpired()) {
                         return angle;
                     }
                     if(increase.getAsBoolean()) {
-                        cooldown.reset();
+                        cooldown.reset(0.125);
                         angle.mut_acc(customIncrementAngle.get());
                     }
                     if(decrease.getAsBoolean() && angle.gt(Degrees.zero())) {
-                        cooldown.reset();
+                        cooldown.reset(0.125);
                         angle.mut_minus(customIncrementAngle.get());
                     }
 

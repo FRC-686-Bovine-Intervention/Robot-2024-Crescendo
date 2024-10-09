@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.AimingParameters;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.leds.Leds;
+import frc.robot.util.Cooldown;
 import frc.robot.util.LoggedInternalButton;
 import frc.robot.util.LoggedTunableMeasure;
 import frc.robot.util.MathExtraUtil;
@@ -243,22 +244,19 @@ public class Shooter extends SubsystemBase {
     public Command customIncrement(BooleanSupplier increase, BooleanSupplier decrease) {
         Supplier<Measure<Velocity<Distance>>> speed = new Supplier<Measure<Velocity<Distance>>>() {
             private final MutableMeasure<Velocity<Distance>> speed = MutableMeasure.mutable(customTargetSpeed.get());
-            private final Timer cooldown = new Timer();
-            {
-                cooldown.start();
-            }
+            private final Cooldown cooldown = new Cooldown();
             @Override
             public Measure<Velocity<Distance>> get() {
                 Logger.recordOutput("Custom Shoot/Shooter Speed", speed);
-                if(!cooldown.hasElapsed(0.25)) {
+                if(!cooldown.hasExpired()) {
                     return speed;
                 }
                 if(increase.getAsBoolean()) {
-                    cooldown.reset();
+                    cooldown.reset(0.25);
                     speed.mut_acc(customIncrement.get());
                 }
                 if(decrease.getAsBoolean()) {
-                    cooldown.reset();
+                    cooldown.reset(0.25);
                     speed.mut_minus(customIncrement.get());
                 }
 

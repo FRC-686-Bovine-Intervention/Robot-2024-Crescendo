@@ -312,6 +312,13 @@ public class RobotContainer {
         // Shooter
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.pass());
 
+        SmartDashboard.putData("Custom Shoot",
+            Commands.parallel(
+                pivot.customIncremented(driveController.povUp(), driveController.povDown()),
+                shooter.customIncrement(driveController.povLeft(), driveController.povRight())
+            )
+            .withName("Custom Shoot")
+        );
         // Auto Aim
         // driveController.rightBumper().toggleOnTrue(
         //     Commands.parallel(
