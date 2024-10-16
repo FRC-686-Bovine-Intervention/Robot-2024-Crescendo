@@ -312,16 +312,55 @@ public class RobotContainer {
         // Shooter
         driveController.rightTrigger.aboveThreshold(0.25).whileTrue(shooter.pass());
 
-        // Auto Aim
-        driveController.rightBumper().toggleOnTrue(
+        SmartDashboard.putData("Custom Shoot",
             Commands.parallel(
-                Commands.run(() -> AimingParameters.setFrom(drive)),
-                pivot.aim(),
-                shooter.aimWithAutoShoot(),
-                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
+                pivot.customIncremented(driveController.povUp(), driveController.povDown()),
+                shooter.customIncrement(driveController.povLeft(), driveController.povRight())
             )
-            .until(rollers::noNote)
-            .withName("Auto Aim")
+            .withName("Custom Shoot")
+        );
+        // Auto Aim
+        // driveController.rightBumper().toggleOnTrue(
+        //     Commands.parallel(
+        //         pivot.customIncremented(driveController.povUp(), driveController.povDown()),
+        //         shooter.customIncrement(driveController.povLeft(), driveController.povRight())
+        //     )
+        //     .until(rollers::noNote)
+        // );
+        // driveController.rightBumper().toggleOnTrue(
+        //     Commands.parallel(
+        //         Commands.run(() -> AimingParameters.setFrom(drive)),
+        //         pivot.aim(),
+        //         shooter.aimWithAutoShoot(),
+        //         drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
+        //     )
+        //     .until(rollers::noNote)
+        //     .withName("Auto Aim")
+        // );
+        driveController.rightBumper().toggleOnTrue(
+            Commands.waitUntil(
+                () -> AimingParameters.withinAzimuthTolerance(drive.getPose())
+                && shooter.readyToAutoShoot.getAsBoolean()
+                && pivot.atPos.getAsBoolean()
+            )
+            .andThen(
+                rollers.kicker
+                    .kick()
+                    .until(rollers::noteExited)
+                    .withName("Auto Kick")
+                    .asProxy()
+            )
+            .deadlineWith(
+                Commands.parallel(
+                    Commands.run(() -> AimingParameters.setFrom(drive)),
+                    pivot.aim(),
+                    shooter.aimWithAutoShoot(),
+                    drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
+                )
+                .withName("Auto Aim")
+                .asProxy()
+            )
+            .onlyIf(rollers::noteInKicker)
         );
 
         // Aim from Subwoofer
@@ -375,14 +414,14 @@ public class RobotContainer {
         // ).whileTrue(shooter.preemptiveSpinup().asProxy().onlyIf(() -> shooter.getCurrentCommand() == null));
         
         // Auto Fire
-        new Trigger(
-            () -> AimingParameters.withinAzimuthTolerance(drive.getPose())
-        )
-            .and(shooter.readyToAutoShoot)
-            .and(pivot.atPos)
-            .and(DriverStation::isTeleopEnabled)
-            .onTrue(rollers.kicker.kick().until(rollers::noteExited).withName("Auto Kick"))
-        ;
+        // new Trigger(
+        //     () -> AimingParameters.withinAzimuthTolerance(drive.getPose())
+        // )
+        //     .and(shooter.readyToAutoShoot)
+        //     .and(pivot.atPos)
+        //     .and(DriverStation::isTeleopEnabled)
+        //     .onTrue(rollers.kicker.kick().until(rollers::noteExited).withName("Auto Kick"))
+        // ;
         
         // Cancel Auto Drive
         new Trigger(() -> driveController.leftStick.magnitude() > 0.1)

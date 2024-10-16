@@ -21,12 +21,14 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.AimingParameters;
 import frc.robot.NoteVisualizer;
+import frc.robot.util.Cooldown;
 import frc.robot.util.LoggedTunableMeasure;
 import frc.robot.util.SuppliedEdgeDetector;
 
@@ -37,7 +39,8 @@ public class Pivot extends SubsystemBase {
     public static final LoggedTunableMeasure<Angle> idleAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Zero", Degrees.of(0));
     public static final LoggedTunableMeasure<Angle> ampAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Amp", Degrees.of(100));
     public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50+5.09765625));
-
+    public static final LoggedTunableMeasure<Angle> customIncrementAngle = new LoggedTunableMeasure<>("Pivot/Angles/Custom Increment", Degrees.of(0.5));
+    
     public static final LoggedTunableMeasure<Voltage> recalVoltage = new LoggedTunableMeasure<>("Pivot/Volts/Recal", Volts.of(1));
 
     public final Trigger atPos = new Trigger(() -> AimingParameters.withinAltitudeTolerance(Radians.of(inputs.pivotEncoder.positionRad)));
@@ -118,6 +121,32 @@ public class Pivot extends SubsystemBase {
                 pivotIO.setPivotPos(angleSupplier.get().in(Radians));
             }
         };
+    }
+
+    public Command customIncremented(BooleanSupplier increase, BooleanSupplier decrease) {
+        return genCommand(
+            "Custom",
+            new Supplier<Measure<Angle>>() {
+                private final MutableMeasure<Angle> angle = MutableMeasure.zero(Degrees);
+                private final Cooldown cooldown = new Cooldown();
+                public Measure<Angle> get() {
+                    Logger.recordOutput("Custom Shoot/Pivot Angle", angle);
+                    if(!cooldown.hasExpired()) {
+                        return angle;
+                    }
+                    if(increase.getAsBoolean()) {
+                        cooldown.reset(0.125);
+                        angle.mut_acc(customIncrementAngle.get());
+                    }
+                    if(decrease.getAsBoolean() && angle.gt(Degrees.zero())) {
+                        cooldown.reset(0.125);
+                        angle.mut_minus(customIncrementAngle.get());
+                    }
+
+                    return angle;
+                }
+            }
+        );
     }
 
     public Command idle() {

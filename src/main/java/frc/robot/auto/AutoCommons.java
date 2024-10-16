@@ -121,10 +121,10 @@ public class AutoCommons {
         return rotation.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()));
     }
     public static Command autoAim(Shooter shooter) {
-        return shooter.aimWithAutoShoot().asProxy();
+        return shooter.aimWithAutoShoot();
     }
     public static Command autoAim(Pivot pivot) {
-        return pivot.aim().asProxy();
+        return pivot.aim();
     }
     public static Command autoAim(Shooter shooter, Pivot pivot) {
         return autoAim(shooter).alongWith(autoAim(pivot));
@@ -150,7 +150,7 @@ public class AutoCommons {
         return 
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem)
+                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem).withName("Aim from Preload: " + shotPos.toString()).asProxy()
             )
             .beforeStarting(() -> AimingParameters.setFrom(shotPos))
         ;
@@ -166,12 +166,13 @@ public class AutoCommons {
     }
 
     public static Command spikeNoteSOTM(PathPlannerPath toSpike, double samplePoint, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
+        var pathName = AutoPaths.getName(toSpike);
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
                 rollers.intake.intake().asProxy(),
-                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem),
-                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
+                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem).withName("Aim Path: " + pathName).asProxy(),
+                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem).withName("Aim Path: " + pathName).asProxy()
             )
             .withTimeout(3)
             .beforeStarting(() -> aimingFromPath(samplePoint, toSpike))
@@ -179,12 +180,13 @@ public class AutoCommons {
     }
     public static Command spikeNote(PathPlannerPath toSpike, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
         var shotPos = getLastPoint(toSpike);
+        var pathName = AutoPaths.getName(toSpike);
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
                 rollers.intake.intake().asProxy(),
-                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem),
-                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem)
+                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem).withName("Aim Path: " + pathName).asProxy(),
+                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem).withName("Follow Path: " + pathName).asProxy()
             )
             .withTimeout(3)
             .beforeStarting(() -> AimingParameters.setFrom(shotPos))
@@ -192,16 +194,17 @@ public class AutoCommons {
     }
     public static Command spikeNote(PathPlannerPath toSpike, Rotation2d wiggleAngle, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
         var shotPos = getLastPoint(toSpike);
+        var pathName = AutoPaths.getName(toSpike);
         return
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
                 rollers.intake.intake().asProxy(),
-                AutoCommons.autoAim(shooter, pivot),
-                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem),
-                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle)))
+                AutoCommons.autoAim(shooter, pivot).withName("Aim Path: " + pathName).asProxy(),
+                AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem).withName("Follow Path: " + pathName).asProxy(),
+                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle))).withName("Wiggle: " + pathName).asProxy()
                 .onlyWhile(rollers::noNote)
                 .andThen(
-                    AutoCommons.autoAim(drive.rotationalSubsystem)
+                    AutoCommons.autoAim(drive.rotationalSubsystem).withName("Aim Path: " + pathName).asProxy()
                 )
             )
             .withTimeout(4)
@@ -210,8 +213,11 @@ public class AutoCommons {
     }
 
     public static Command centerNote(PathPlannerPath toCenterLine, PathPlannerPath defaultReturn, PathPlannerPath altReturn, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers, NoteVision noteVision) {
+        var centerName = AutoPaths.getName(toCenterLine);
         var defaultShot = getLastPoint(defaultReturn);
+        var defaultName = AutoPaths.getName(defaultReturn);
         var altShot = getLastPoint(altReturn);
+        var altName = AutoPaths.getName(altReturn);
         var defaultStartPoint = getFirstPoint(defaultReturn);
         var altStartPoint = getFirstPoint(altReturn);
         BooleanSupplier isDefault = () -> drive.getPose().getTranslation().nearest(List.of(defaultStartPoint, altStartPoint)).equals(defaultStartPoint);
@@ -220,34 +226,34 @@ public class AutoCommons {
                 Commands.runOnce(() -> AimingParameters.setFrom(defaultShot)),
                 Commands.runOnce(noteVision::clearMemory),
                 
-                AutoCommons.followPathFlipped(toCenterLine, drive)
+                AutoCommons.followPathFlipped(toCenterLine, drive).withName("Follow Path: " + centerName).asProxy()
                 .until(noteVision::hasTarget)
                 .andThen(
                     rollers.intake.intake().asProxy()
                     .raceWith(
-                        noteVision.autoIntake(() -> 2, rollers::noNote, drive)
+                        noteVision.autoIntake(() -> 2, rollers::noNote, drive).withName("Auto Intake").asProxy()
                     )
                     .withTimeout(3)
                 )
                 .onlyWhile(rollers::noNote)
                 .deadlineWith(
                     isStagePath(toCenterLine) ? (
-                        AutoCommons.autoAim(shooter)
+                        AutoCommons.autoAim(shooter).withName("Aim Path: " + defaultName).asProxy()
                     ) : (
-                        AutoCommons.autoAim(shooter, pivot)
+                        AutoCommons.autoAim(shooter, pivot).withName("Aim Path: " + defaultName).asProxy()
                     )
                 )
                 .andThen(
                     Commands.either((
                         AutoCommons.shootWhenReady(3, drive, shooter, pivot, rollers)
                         .deadlineWith(
-                            AutoCommons.autoAim(shooter),
+                            AutoCommons.autoAim(shooter).withName("Aim Path: " + defaultName).asProxy(),
                             returnFromCenter(defaultReturn, drive, shooter, pivot)
                         )
                     ),(
                         AutoCommons.shootWhenReady(3, drive, shooter, pivot, rollers)
                         .deadlineWith(
-                            AutoCommons.autoAim(shooter),
+                            AutoCommons.autoAim(shooter).withName("Aim Path: " + altName).asProxy(),
                             returnFromCenter(altReturn, drive, shooter, pivot)
                         )
                         .beforeStarting(() -> AimingParameters.setFrom(altShot))
@@ -261,15 +267,16 @@ public class AutoCommons {
     }
 
     private static Command returnFromCenter(PathPlannerPath path, Drive drive, Shooter shooter, Pivot pivot) {
+        var pathName = AutoPaths.getName(path);
         return
-            AutoCommons.autoAim(drive.rotationalSubsystem)
+            AutoCommons.autoAim(drive.rotationalSubsystem).withName("Aim Path: " + pathName).asProxy()
             .alongWith(
                 isStagePath(path) ? (
-                    AutoCommons.followPathFlipped(path, drive.translationSubsystem)
-                    .andThen(AutoCommons.autoAim(pivot))
+                    AutoCommons.followPathFlipped(path, drive.translationSubsystem).withName("Follow Path: " + pathName).asProxy()
+                    .andThen(AutoCommons.autoAim(pivot).withName("Aim Path: " + pathName).asProxy())
                 ) : (
-                    AutoCommons.followPathFlipped(path, drive.translationSubsystem)
-                    .alongWith(AutoCommons.autoAim(pivot))
+                    AutoCommons.followPathFlipped(path, drive.translationSubsystem).withName("Follow Path: " + pathName).asProxy()
+                    .alongWith(AutoCommons.autoAim(pivot).withName("Aim Path: " + pathName).asProxy())
                 )
             )
         ;
