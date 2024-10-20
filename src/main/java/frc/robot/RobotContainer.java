@@ -363,7 +363,7 @@ public class RobotContainer {
                     .asProxy()
                 ),
                 Commands.parallel(
-                    Commands.run(() -> AimingParameters.setFrom(drive, FieldConstants.passAimPoint)),
+                    Commands.run(() -> AimingParameters.setFrom(drive, AllianceFlipUtil.apply(FieldConstants.passAimPoint))),
                     pivot.superPass(),
                     shooter.superPass(),
                     drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
@@ -371,7 +371,7 @@ public class RobotContainer {
                 .until(rollers::noNote)
                 .withName("Super Pass")
                 .asProxy(),
-                () -> RobotState.getInstance().getPose().getTranslation().getDistance(FieldConstants.passAimPoint.toTranslation2d()) < 5.5
+                () -> RobotState.getInstance().getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.passAimPoint.toTranslation2d())) < 5.5
             )
             .onlyIf(rollers::noteInKicker)
         );
