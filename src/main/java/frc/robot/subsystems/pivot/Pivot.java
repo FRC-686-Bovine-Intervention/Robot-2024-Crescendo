@@ -38,7 +38,7 @@ public class Pivot extends SubsystemBase {
 
     public static final LoggedTunableMeasure<Angle> idleAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Zero", Degrees.of(0));
     public static final LoggedTunableMeasure<Angle> ampAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Amp", Degrees.of(100));
-    public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50+5.09765625));
+    public static final LoggedTunableMeasure<Angle> superPassAltitude = new LoggedTunableMeasure<>("Pivot/Angles/Super Pass", Degrees.of(50));
     public static final LoggedTunableMeasure<Angle> customIncrementAngle = new LoggedTunableMeasure<>("Pivot/Angles/Custom Increment", Degrees.of(0.5));
     
     public static final LoggedTunableMeasure<Voltage> recalVoltage = new LoggedTunableMeasure<>("Pivot/Volts/Recal", Volts.of(1));

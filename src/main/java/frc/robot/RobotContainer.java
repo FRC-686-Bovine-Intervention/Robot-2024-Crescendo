@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants.AimingConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
@@ -338,30 +339,53 @@ public class RobotContainer {
         //     .withName("Auto Aim")
         // );
         driveController.rightBumper().toggleOnTrue(
-            Commands.waitUntil(
-                () -> AimingParameters.withinAzimuthTolerance(drive.getPose())
-                && shooter.readyToAutoShoot.getAsBoolean()
-                && pivot.atPos.getAsBoolean()
-            )
-            .andThen(
-                rollers.kicker
-                    .kick()
-                    .until(rollers::noteExited)
-                    .withName("Auto Kick")
+            Commands.either(
+                Commands.waitUntil(
+                    () -> AimingParameters.withinAzimuthTolerance(drive.getPose())
+                    && shooter.readyToAutoShoot.getAsBoolean()
+                    && pivot.atPos.getAsBoolean()
+                )
+                .andThen(
+                    rollers.kicker
+                        .kick()
+                        .until(rollers::noteExited)
+                        .withName("Auto Kick")
+                        .asProxy()
+                )
+                .deadlineWith(
+                    Commands.parallel(
+                        Commands.run(() -> AimingParameters.setFrom(drive)),
+                        pivot.aim(),
+                        shooter.aimWithAutoShoot(),
+                        drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
+                    )
+                    .withName("Auto Aim")
                     .asProxy()
-            )
-            .deadlineWith(
+                ),
                 Commands.parallel(
-                    Commands.run(() -> AimingParameters.setFrom(drive)),
-                    pivot.aim(),
-                    shooter.aimWithAutoShoot(),
+                    Commands.run(() -> AimingParameters.setFrom(drive, FieldConstants.passAimPoint)),
+                    pivot.superPass(),
+                    shooter.superPass(),
                     drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
                 )
-                .withName("Auto Aim")
-                .asProxy()
+                .until(rollers::noNote)
+                .withName("Super Pass")
+                .asProxy(),
+                () -> RobotState.getInstance().getPose().getTranslation().getDistance(FieldConstants.passAimPoint.toTranslation2d()) < 5.5
             )
             .onlyIf(rollers::noteInKicker)
         );
+
+        // SmartDashboard.putData(
+        //     "Super Pass",
+        //     Commands.parallel(
+        //         Commands.run(() -> AimingParameters.setFrom(drive, FieldConstants.passAimPoint)),
+        //         pivot.superPass(),
+        //         shooter.superPass(),
+        //         drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
+        //     )
+        //     .withName("Super Pass")
+        // );
 
         // Aim from Subwoofer
         driveController.leftBumper().toggleOnTrue(

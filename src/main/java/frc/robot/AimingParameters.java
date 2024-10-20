@@ -56,6 +56,9 @@ public class AimingParameters {
     public static void setFrom(Drive drive) {
         setFrom(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds());
     }
+    public static void setFrom(Drive drive, Translation3d aimPoint) {
+        setFrom(drive.getPose().getTranslation(), drive.getFieldRelativeSpeeds(), aimPoint);
+    }
     public static void setFrom(Translation2d robotPos) {
         setFrom(robotPos, new ChassisSpeeds());
     }
@@ -120,5 +123,6 @@ public class AimingParameters {
         Logger.recordOutput("AimingParameters/Minimum Shooter Speed", minimumShooterSpeed());
         Logger.recordOutput("AimingParameters/Predicted Pose", new Pose2d(predictedRobotPos, driveAzimuth));
         Logger.recordOutput("AimingParameters/Effective Distance", effectiveDistance);
+        Logger.recordOutput("AimingParameters/Shooter Mech3d", Pivot.getRobotToPivot(pivotAltitude().in(Radians)));
     }
 }
