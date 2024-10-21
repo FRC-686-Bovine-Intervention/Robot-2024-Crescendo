@@ -119,7 +119,7 @@ public class Rush6Note extends AutoRoutine {
 
         if(noteCount >= 1) {
             commands.add(
-                AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
+                AutoCommons.preload(startPosition.startPose.getOurs().getTranslation(), drive, shooter, pivot, rollers)
             );
         }
 

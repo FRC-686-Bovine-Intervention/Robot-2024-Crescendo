@@ -9,8 +9,6 @@ package frc.robot.subsystems.drive;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -114,7 +112,7 @@ public class Drive extends VirtualSubsystem {
         }
 
         // initialize pose estimator
-        Pose2d initialPoseMeters = FieldConstants.subwooferFront;
+        Pose2d initialPoseMeters = FieldConstants.subwooferFront.getOurs();
         RobotState.getInstance().initializePoseEstimator(kinematics, getGyroRotation(), getModulePositions(), initialPoseMeters);
         prevGyroYaw = getPose().getRotation();
 
@@ -693,23 +691,23 @@ public class Drive extends VirtualSubsystem {
         kMaxAngularAcceleration.get()
     );
 
-    private static final Map<Pose2d, String> locationNames = new HashMap<>(Map.of(
-        FieldConstants.amp, "Amp",
-        FieldConstants.subwooferFront, "Subwoofer Front",
-        FieldConstants.podium, "Podium",
-        FieldConstants.pathfindSource, "Source",
-        FieldConstants.pathfindSpeaker, "Speaker Offset"
-    ));
+    // private static final Map<Pose2d, String> locationNames = new HashMap<>(Map.of(
+    //     FieldConstants.amp, "Amp",
+    //     FieldConstants.subwooferFront, "Subwoofer Front",
+    //     FieldConstants.podium, "Podium",
+    //     FieldConstants.pathfindSource, "Source",
+    //     FieldConstants.pathfindSpeaker, "Speaker Offset"
+    // ));
 
-    public static final String autoDrivePrefix = "AutoDrive";
+    // public static final String autoDrivePrefix = "AutoDrive";
 
-    public Command driveToFlipped(Pose2d pos) {
-        String name = locationNames.entrySet().stream()
-            .filter(e -> e.getKey().equals(pos))
-            .findFirst()
-            .map(Map.Entry::getValue)
-            .orElse(pos.toString());
+    // public Command driveToFlipped(Pose2d pos) {
+    //     String name = locationNames.entrySet().stream()
+    //         .filter(e -> e.getKey().equals(pos))
+    //         .findFirst()
+    //         .map(Map.Entry::getValue)
+    //         .orElse(pos.toString());
 
-        return AutoBuilder.pathfindToPoseFlipped(pos, pathConstraints, 0, 0).withName(String.format("%s (%s)", autoDrivePrefix, name));
-    }
+    //     return AutoBuilder.pathfindToPoseFlipped(pos, pathConstraints, 0, 0).withName(String.format("%s (%s)", autoDrivePrefix, name));
+    // }
 }

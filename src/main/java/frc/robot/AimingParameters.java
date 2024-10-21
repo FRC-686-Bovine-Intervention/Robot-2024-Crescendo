@@ -63,7 +63,7 @@ public class AimingParameters {
         setFrom(robotPos, new ChassisSpeeds());
     }
     public static void setFrom(Translation2d robotPos, ChassisSpeeds fieldRelativeSpeed) {
-        setFrom(robotPos, fieldRelativeSpeed, AllianceFlipUtil.apply(FieldConstants.speakerAimPoint));
+        setFrom(robotPos, fieldRelativeSpeed, FieldConstants.speakerAimPoint.getOurs());
     }
     public static void setFrom(Translation2d robotPos, ChassisSpeeds fieldRelativeSpeed, Translation3d aimPoint) {
         calculate(robotPos, fieldRelativeSpeed, aimPoint);

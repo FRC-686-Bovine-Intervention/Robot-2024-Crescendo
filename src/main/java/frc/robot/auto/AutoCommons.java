@@ -30,6 +30,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
+import frc.robot.util.AllianceFlipUtil.FlippedPose2d;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.MathExtraUtil;
 
@@ -38,30 +39,30 @@ public class AutoCommons {
         SubwooferFront(FieldConstants.subwooferFront),
         SubwooferAmp(FieldConstants.subwooferAmp),
         SubwooferSource(FieldConstants.subwooferSource),
-        Amp(new Pose2d(
+        Amp(FlippedPose2d.fromBlue(new Pose2d(
             new Translation2d(
                 1.40,
                 6.80
             ),
             Rotation2d.fromDegrees(180)
-        )),
-        Podium(new Pose2d(
+        ))),
+        Podium(FlippedPose2d.fromBlue(new Pose2d(
             new Translation2d(
                 1.40,
                 4.20
             ),
             Rotation2d.fromDegrees(180)
-        )),
-        Source(new Pose2d(
+        ))),
+        Source(FlippedPose2d.fromBlue(new Pose2d(
             new Translation2d(
                 1.40,
                 3.30
             ),
             Rotation2d.fromDegrees(180)
-        ))
+        )))
         ;
-        public final Pose2d startPose;
-        StartPosition(Pose2d startPose) {
+        public final FlippedPose2d startPose;
+        StartPosition(FlippedPose2d startPose) {
             this.startPose = startPose;
         }
         public Map.Entry<String, StartPosition> toEntry() {
@@ -81,8 +82,8 @@ public class AutoCommons {
         }
     }
 
-    public static Command setOdometryFlipped(Pose2d pose, Drive drive) {
-        return Commands.runOnce(() -> RobotState.getInstance().setPose(drive.getGyroRotation(), drive.getModulePositions(), AllianceFlipUtil.apply(pose)));
+    public static Command setOdometryFlipped(FlippedPose2d pose, Drive drive) {
+        return Commands.runOnce(() -> RobotState.getInstance().setPose(drive.getGyroRotation(), drive.getModulePositions(), pose.getOurs()));
     }
 
     public static Command followPathFlipped(PathPlannerPath path, Drive drive) {
@@ -146,13 +147,12 @@ public class AutoCommons {
     }
 
     public static Command preload(Translation2d startPos, Drive drive, Shooter shooter, Pivot pivot, Rollers rollers) {
-        var shotPos = AllianceFlipUtil.apply(startPos);
         return 
             AutoCommons.shootWhenReady(10, drive, shooter, pivot, rollers)
             .deadlineWith(
-                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem).withName("Aim from Preload: " + shotPos.toString()).asProxy()
+                AutoCommons.autoAim(shooter, pivot, drive.rotationalSubsystem).withName("Aim from Preload: " + startPos.toString()).asProxy()
             )
-            .beforeStarting(() -> AimingParameters.setFrom(shotPos))
+            .beforeStarting(() -> AimingParameters.setFrom(startPos))
         ;
     }
 
@@ -201,7 +201,7 @@ public class AutoCommons {
                 rollers.intake.intake().asProxy(),
                 AutoCommons.autoAim(shooter, pivot).withName("Aim Path: " + pathName).asProxy(),
                 AutoCommons.followPathFlipped(toSpike, drive.translationSubsystem).withName("Follow Path: " + pathName).asProxy(),
-                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AllianceFlipUtil.apply(wiggleAngle))).withName("Wiggle: " + pathName).asProxy()
+                drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(wiggleAngle)).withName("Wiggle: " + pathName).asProxy()
                 .onlyWhile(rollers::noNote)
                 .andThen(
                     AutoCommons.autoAim(drive.rotationalSubsystem).withName("Aim Path: " + pathName).asProxy()

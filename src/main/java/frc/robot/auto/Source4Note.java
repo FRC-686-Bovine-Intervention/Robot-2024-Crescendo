@@ -140,7 +140,7 @@ public class Source4Note extends AutoRoutine {
 
         if(noteCount >= 1 && !skipPreload) {
             commands.add(
-                AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
+                AutoCommons.preload(startPosition.startPose.getOurs().getTranslation(), drive, shooter, pivot, rollers)
             );
         }
 

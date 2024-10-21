@@ -16,7 +16,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,7 +23,6 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Constants.AimingConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
@@ -73,7 +71,6 @@ import frc.robot.subsystems.vision.note.NoteVisionIO;
 import frc.robot.subsystems.vision.note.NoteVisionIOPhotonVision;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
-import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.Environment;
 import frc.robot.util.controllers.ButtonBoard3x3;
 import frc.robot.util.controllers.Joystick;
@@ -300,7 +297,7 @@ public class RobotContainer {
                 Commands.parallel(
                     pivot.amp(),
                     shooter.amp(),
-                    drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(FieldConstants.amp.getRotation()))
+                    drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(FieldConstants.amp.getOurs().getRotation()))
                 ).withName("Amp").asProxy(),
                 Commands.parallel(
                     pivot.amp(),
@@ -363,7 +360,7 @@ public class RobotContainer {
                     .asProxy()
                 ),
                 Commands.parallel(
-                    Commands.run(() -> AimingParameters.setFrom(drive, AllianceFlipUtil.apply(FieldConstants.passAimPoint))),
+                    Commands.run(() -> AimingParameters.setFrom(drive, FieldConstants.passAimPoint.getOurs())),
                     pivot.superPass(),
                     shooter.superPass(),
                     drive.rotationalSubsystem.pidControlledHeading(() -> Optional.of(AimingParameters.shotPose().getRotation()))
@@ -371,7 +368,7 @@ public class RobotContainer {
                 .until(rollers::noNote)
                 .withName("Super Pass")
                 .asProxy(),
-                () -> RobotState.getInstance().getPose().getTranslation().getDistance(AllianceFlipUtil.apply(FieldConstants.passAimPoint.toTranslation2d())) < 5.5
+                () -> RobotState.getInstance().getPose().getTranslation().getDistance(FieldConstants.passAimPoint.getOurs().toTranslation2d()) < 5.5
             )
             .onlyIf(rollers::noteInKicker)
         );
@@ -390,7 +387,7 @@ public class RobotContainer {
         // Aim from Subwoofer
         driveController.leftBumper().toggleOnTrue(
             Commands.parallel(
-                Commands.run(() -> AimingParameters.setFrom(AllianceFlipUtil.apply(FieldConstants.subwooferFront.getTranslation()))),
+                Commands.run(() -> AimingParameters.setFrom(FieldConstants.subwooferFront.getOurs().getTranslation())),
                 pivot.aim(),
                 shooter.aimWithoutAutoShoot()
             )
@@ -411,7 +408,7 @@ public class RobotContainer {
         ;
 
         SmartDashboard.putData("Recal Pivot", pivot.recal());
-        SmartDashboard.putData("Reset pos", Commands.runOnce(() -> drive.setPose(new Pose2d(AllianceFlipUtil.apply(FieldConstants.subwooferFront).getTranslation(), drive.getRotation()))));
+        SmartDashboard.putData("Reset pos", Commands.runOnce(() -> drive.setPose(new Pose2d(FieldConstants.subwooferFront.getOurs().getTranslation(), drive.getRotation()))));
         
         // Auto Drive
         // driveController.povUp().onTrue(drive.driveToFlipped(FieldConstants.pathfindSource));
@@ -448,13 +445,13 @@ public class RobotContainer {
         // ;
         
         // Cancel Auto Drive
-        new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
-            .and(
-                () -> drive.translationSubsystem.getCurrentCommand() != null
-                && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix)
-            )
-            .onTrue(drive.translationSubsystem.getDefaultCommand())
-        ;
+        // new Trigger(() -> driveController.leftStick.magnitude() > 0.1)
+        //     .and(
+        //         () -> drive.translationSubsystem.getCurrentCommand() != null
+        //         && drive.translationSubsystem.getCurrentCommand().getName().startsWith(Drive.autoDrivePrefix)
+        //     )
+        //     .onTrue(drive.translationSubsystem.getDefaultCommand())
+        // ;
     }
 
     private void configureNotifications() {

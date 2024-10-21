@@ -14,8 +14,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.GameState;
-import frc.robot.RobotType;
-import frc.robot.RobotType.Mode;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.util.VirtualSubsystem;
 import frc.robot.util.led.functions.Gradient;

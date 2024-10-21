@@ -40,10 +40,12 @@ import edu.wpi.first.util.function.BooleanConsumer;
 import frc.robot.subsystems.leds.Leds;
 import frc.robot.subsystems.vision.apriltag.ApriltagCamera;
 import frc.robot.subsystems.vision.apriltag.ApriltagCameraIO;
+import frc.robot.util.AllianceFlipUtil.FlippedPose2d;
+import frc.robot.util.AllianceFlipUtil.FlippedTranslation3d;
 import frc.robot.util.Environment;
 import frc.robot.util.GearRatio;
-import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.GearRatio.Wheel;
+import frc.robot.util.LoggedTunableNumber;
 
 public final class Constants {
 
@@ -523,21 +525,21 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(648);
         public static final double fieldWidth =  Units.inchesToMeters(324);
 
-        public static final Translation3d speakerAimPoint = new Translation3d(0.240581, 5.547755, 2);
-        public static final Translation3d passAimPoint = speakerAimPoint.interpolate(new Translation3d(1.83,7.61,2), 0.7);
+        public static final FlippedTranslation3d speakerAimPoint = FlippedTranslation3d.fromBlue(new Translation3d(0.240581, 5.547755, 2));
+        public static final FlippedTranslation3d passAimPoint =    FlippedTranslation3d.fromBlue(speakerAimPoint.getBlue().interpolate(new Translation3d(1.83,7.61,2), 0.7));
 
-        public static final Pose2d subwooferFront =     new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(+180));
-        public static final Pose2d subwooferAmp =       new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(-120));
-        public static final Pose2d subwooferSource =    new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(+120));
+        public static final FlippedPose2d subwooferFront =  FlippedPose2d.fromBlue(new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(+180)));
+        public static final FlippedPose2d subwooferAmp =    FlippedPose2d.fromBlue(new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(-120)));
+        public static final FlippedPose2d subwooferSource = FlippedPose2d.fromBlue(new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(+120)));
         
-        public static final Pose2d amp =                new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(-90));
-        public static final Pose2d podium =             new Pose2d(new Translation2d(2.76, 4.44), Rotation2d.fromDegrees(+157.47));
+        public static final FlippedPose2d amp =    FlippedPose2d.fromBlue(new Pose2d(new Translation2d(1.83, 7.61), Rotation2d.fromDegrees(-90)));
+        public static final FlippedPose2d podium = FlippedPose2d.fromBlue(new Pose2d(new Translation2d(2.76, 4.44), Rotation2d.fromDegrees(+157.47)));
 
-        public static final Pose2d pathfindSpeaker =    new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(+180));
-        public static final Pose2d pathfindSource =     new Pose2d(new Translation2d(13.41, 1.54), Rotation2d.fromDegrees(+180));
+        public static final FlippedPose2d pathfindSpeaker = FlippedPose2d.fromBlue(new Pose2d(new Translation2d(3.45, 5.55), Rotation2d.fromDegrees(+180)));
+        public static final FlippedPose2d pathfindSource =  FlippedPose2d.fromBlue(new Pose2d(new Translation2d(13.41, 1.54), Rotation2d.fromDegrees(+180)));
 
-        public static final double podiumToSpeakerDist =    speakerAimPoint.toTranslation2d().getDistance(podium.getTranslation());
-        public static final double subwooferToSpeakerDist = speakerAimPoint.toTranslation2d().getDistance(subwooferFront.getTranslation());
+        public static final double podiumToSpeakerDist =    speakerAimPoint.getBlue().toTranslation2d().getDistance(podium.getBlue().getTranslation());
+        public static final double subwooferToSpeakerDist = speakerAimPoint.getBlue().toTranslation2d().getDistance(subwooferFront.getBlue().getTranslation());
     }
 
     // Not the robot main function. This is called by Gradle when deploying to

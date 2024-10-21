@@ -18,6 +18,7 @@ import frc.robot.subsystems.pivot.Pivot;
 import frc.robot.subsystems.rollers.Rollers;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.note.NoteVision;
+import frc.robot.util.AllianceFlipUtil.FlippedRotation2d;
 
 public class MASpikeWiggle extends AutoRoutine {
     private static final AutoQuestion<StartPosition> startPosition = new AutoQuestion<>("Start Position", () -> {
@@ -101,18 +102,18 @@ public class MASpikeWiggle extends AutoRoutine {
         var firstCenterNote = MASpikeWiggle.firstCenterNote.getResponse();
         var secondCenterNote = MASpikeWiggle.secondCenterNote.getResponse();
 
-        var wiggleAngle = Rotation2d.fromDegrees(
+        var wiggleAngle = FlippedRotation2d.fromBlue(Rotation2d.fromDegrees(
             switch(startPosition) {
                 case Amp, SubwooferAmp -> 135;
                 default -> -135;
             }
-        );
+        ));
         
         var commands = new ArrayList<Command>();
 
         if(noteCount >= 1) {
             commands.add(
-                AutoCommons.preload(startPosition.startPose.getTranslation(), drive, shooter, pivot, rollers)
+                AutoCommons.preload(startPosition.startPose.getOurs().getTranslation(), drive, shooter, pivot, rollers)
             );
         }
 
@@ -136,7 +137,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 }
             );
             commands.add(
-                AutoCommons.spikeNote(spike1ToSpike2, wiggleAngle, drive, shooter, pivot, rollers)
+                AutoCommons.spikeNote(spike1ToSpike2, wiggleAngle.getOurs(), drive, shooter, pivot, rollers)
             );
         }
 
@@ -148,7 +149,7 @@ public class MASpikeWiggle extends AutoRoutine {
                 }
             );
             commands.add(
-                AutoCommons.spikeNote(spike2ToSpike3, wiggleAngle, drive, shooter, pivot, rollers)
+                AutoCommons.spikeNote(spike2ToSpike3, wiggleAngle.getOurs(), drive, shooter, pivot, rollers)
             );
         }
         
