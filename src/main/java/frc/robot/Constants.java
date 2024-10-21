@@ -524,6 +524,7 @@ public final class Constants {
         public static final double fieldWidth =  Units.inchesToMeters(324);
 
         public static final Translation3d speakerAimPoint = new Translation3d(0.240581, 5.547755, 2);
+        public static final Translation3d passAimPoint = speakerAimPoint.interpolate(new Translation3d(1.83,7.61,2), 0.7);
 
         public static final Pose2d subwooferFront =     new Pose2d(new Translation2d(1.45, 5.55), Rotation2d.fromDegrees(+180));
         public static final Pose2d subwooferAmp =       new Pose2d(new Translation2d(0.71, 6.72), Rotation2d.fromDegrees(-120));
