@@ -158,6 +158,8 @@ public class Drive extends VirtualSubsystem {
             currentSpikeTimer.reset();
         }
 
+        Logger.recordOutput("Drive/Chassis Speeds/Setpoint", setpoint);
+
         // Run modules
         if (DriverStation.isDisabled()) {
             // Stop moving while disabled

@@ -12,8 +12,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.FieldConstants;
-import frc.robot.util.AllianceFlipUtil.FieldFlipType;
-import frc.robot.util.AllianceFlipUtil.FlippedTranslation2d;
 
 public class AllianceFlipUtil {
     public static enum FieldFlipType {
