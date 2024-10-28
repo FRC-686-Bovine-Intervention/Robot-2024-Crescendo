@@ -163,7 +163,8 @@ public class RobotContainer {
                 apriltagVision = new ApriltagVision(Camera.LeftApriltag.toApriltagCamera(), Camera.RightApriltag.toApriltagCamera());
             break;
         }
-        manualOverrides = new ManualOverrides(pivot::setCoast);
+        manualOverrides = new ManualOverrides();
+        manualOverrides.redButton.and(DriverStation::isDisabled).toggleOnTrue(pivot.coast().until(DriverStation::isEnabled).withName("Pivot Button Coast"));
         driveJoystick = driveController.leftStick
             .smoothRadialDeadband(DriveConstants.driveJoystickDeadbandPercent)
             .radialSensitivity(0.75)

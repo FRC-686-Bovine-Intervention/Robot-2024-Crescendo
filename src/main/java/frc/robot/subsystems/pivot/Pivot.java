@@ -103,8 +103,29 @@ public class Pivot extends SubsystemBase {
         return getRobotToPivot(inputs.pivotEncoder.positionRad);
     }
 
-    public void setCoast(boolean coast) {
-        pivotIO.setCoast(coast);
+    public Command coast() {
+        var subsystem = this;
+        return new Command() {
+            {
+                setName("Coast");
+                addRequirements(subsystem);
+            }
+
+            @Override
+            public void initialize() {
+                pivotIO.setCoast(true);
+            }
+
+            @Override
+            public void end(boolean interrupted) {
+                pivotIO.setCoast(false);
+            }
+
+            @Override
+            public boolean runsWhenDisabled() {
+                return true;
+            }
+        };
     }
 
     private Command genCommand(String name, Supplier<Measure<Angle>> angleSupplier) {
