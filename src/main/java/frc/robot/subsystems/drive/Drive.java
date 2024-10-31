@@ -207,10 +207,26 @@ public class Drive extends VirtualSubsystem {
 
         // Log measured states
         SwerveModuleState[] measuredStates = new SwerveModuleState[DriveConstants.numDriveModules];
+        SwerveModuleState[] rotationalStates = new SwerveModuleState[DriveConstants.numDriveModules];
+        SwerveModuleState[] translationalStates = new SwerveModuleState[DriveConstants.numDriveModules];
         for (int i = 0; i < DriveConstants.numDriveModules; i++) {
-            measuredStates[i] = modules[i].getState();
+            var measuredState = modules[i].getState();
+            var measuredVec = new Translation2d(measuredState.speedMetersPerSecond, measuredState.angle);
+            var positiveRotationAngle = DriveConstants.DriveModulePosition.moduleTranslations[i].getAngle().plus(Rotation2d.fromDegrees(90));
+            var rotationalAngle = positiveRotationAngle.minus(measuredVec.getAngle());
+            Logger.recordOutput("Drive/SwerveStates/Debug/" + i, rotationalAngle);
+            var rotationalComponent = measuredVec.getNorm() * rotationalAngle.getCos();
+            var rotationalState = new SwerveModuleState(rotationalComponent, positiveRotationAngle);
+            rotationalStates[i] = rotationalState;
+            var rotationalVec = new Translation2d(rotationalComponent, positiveRotationAngle);
+            var translationalVec = measuredVec.minus(rotationalVec);
+            var translationalState = new SwerveModuleState(translationalVec.getNorm(), translationalVec.getAngle());
+            translationalStates[i] = translationalState;
+            measuredStates[i] = measuredState;
         }
         Logger.recordOutput("Drive/SwerveStates/Measured", measuredStates);
+        Logger.recordOutput("Drive/SwerveStates/Rotational States", rotationalStates);
+        Logger.recordOutput("Drive/SwerveStates/Translational States", translationalStates);
         lastMeasuredStates = measuredStates;
 
         // Update odometry
