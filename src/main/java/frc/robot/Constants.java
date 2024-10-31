@@ -14,6 +14,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Rotations;
 
 import java.util.Arrays;
 import java.util.function.DoubleSupplier;
@@ -33,6 +34,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
@@ -151,7 +153,7 @@ public final class Constants {
             FRONT_LEFT(
                 CANDevices.frontLeftDriveMotorID, CANDevices.frontLeftTurnMotorID,
                 InvertedValue.CounterClockwise_Positive,
-                0.75,
+                Rotations.of(0.75),
                 new Translation2d(
                     RobotConstants.trackWidthX.divide(+2),
                     RobotConstants.trackWidthY.divide(+2)
@@ -160,7 +162,7 @@ public final class Constants {
             FRONT_RIGHT(
                 CANDevices.frontRightDriveMotorID, CANDevices.frontRightTurnMotorID,
                 InvertedValue.Clockwise_Positive,
-                0.5,
+                Rotations.of(0.5),
                 new Translation2d(
                     RobotConstants.trackWidthX.divide(+2),
                     RobotConstants.trackWidthY.divide(-2)
@@ -169,7 +171,7 @@ public final class Constants {
             BACK_LEFT(
                 CANDevices.backLeftDriveMotorID, CANDevices.backLeftTurnMotorID,
                 InvertedValue.CounterClockwise_Positive,
-                0.5,
+                Rotations.of(0.5),
                 new Translation2d(
                     RobotConstants.trackWidthX.divide(-2),
                     RobotConstants.trackWidthY.divide(+2)
@@ -178,7 +180,7 @@ public final class Constants {
             BACK_RIGHT(
                 CANDevices.backRightDriveMotorID, CANDevices.backRightTurnMotorID,
                 InvertedValue.Clockwise_Positive,
-                0.75,
+                Rotations.of(0.75),
                 new Translation2d(
                     RobotConstants.trackWidthX.divide(-2),
                     RobotConstants.trackWidthY.divide(-2)
@@ -190,13 +192,13 @@ public final class Constants {
             // motor direction to drive 'forward' (cancoders at angles given in cancoderOffsetRotations)
             public final InvertedValue driveInverted;
             // absolute position of cancoder when drive wheel is facing 'forward'
-            public final double cancoderOffsetRotations;
+            public final Measure<Angle> cancoderOffset;
             public final Translation2d moduleTranslation;
-            DriveModulePosition(int driveMotorID, int turnMotorID, InvertedValue driveInverted, double cancoderOffsetRotations, Translation2d moduleTranslation) {
+            DriveModulePosition(int driveMotorID, int turnMotorID, InvertedValue driveInverted, Measure<Angle> cancoderOffset, Translation2d moduleTranslation) {
                 this.driveMotorID = driveMotorID;
                 this.turnMotorID = turnMotorID;
                 this.driveInverted = driveInverted;
-                this.cancoderOffsetRotations = cancoderOffsetRotations;
+                this.cancoderOffset = cancoderOffset;
                 this.moduleTranslation = moduleTranslation;
             }
 
@@ -209,13 +211,13 @@ public final class Constants {
         
         public static final double driveBaseRadius = Arrays.stream(DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
         private static final double correctionVal = 314.0 / 320.55;
-        public static final double wheelRadiusMeters = Inches.of(1.5).in(Meters) * correctionVal;
+        public static final Measure<Distance> wheelRadius = Inches.of(1.5 * correctionVal);
 
         public static final GearRatio driveWheelGearRatio = new GearRatio()
             .gear(14).gear(22).axle()
             .gear(15).gear(45).axle()
         ;
-        public static final Wheel driveWheel = driveWheelGearRatio.wheelRadius(wheelRadiusMeters);
+        public static final Wheel driveWheel = Wheel.radius(wheelRadius);
         public static final GearRatio turnWheelGearRatio = new GearRatio()
             .gear(15).gear(32).axle()
             .gear(10).gear(60).axle()
@@ -278,13 +280,12 @@ public final class Constants {
     }
 
     public static final class ShooterConstants {
-        public static final double wheelRadius = Inches.of(2).in(Meters);
+        public static final Measure<Distance> wheelRadius = Inches.of(2);
 
-        public static final Wheel motorToSurface = new GearRatio()
-            // .sprocket(+48).sprocket(+24)
+        public static final GearRatio motorToMechRatio = new GearRatio()
             .sprocket(+24).sprocket(+24)
-            .wheelRadius(wheelRadius)
         ;
+        public static final Wheel flywheel = Wheel.radius(wheelRadius);
 
         public static final DoubleSupplier shooterSpeedEnvCoef = Environment.switchVar(
             () -> 1,
@@ -318,11 +319,11 @@ public final class Constants {
     }
 
     public static final class ClimberConstants {
-        public static final Wheel motorToSurface = new GearRatio()
+        public static final GearRatio motorToWinch = new GearRatio()
             .planetary(1.0/5.0)
             .planetary(1.0/5.0)
-            .wheelDiameter(Inches.of(1).in(Meters))
         ;
+        public static final Wheel winch = Wheel.diameter(Inches.of(1));
     }
 
     public static final class VisionConstants {

@@ -5,7 +5,7 @@
 package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import java.util.function.Supplier;
 
@@ -96,23 +96,22 @@ public class Shooter extends SubsystemBase {
         Logger.recordOutput("Shooter/Average MPS", getAverageSurfaceSpeed());
 
         Leds.getInstance().shooterReady = readyToShoot.getAsBoolean();
-        Leds.getInstance().shooterSpeed = getAverageSurfaceSpeed();
+        Leds.getInstance().shooterSpeed = getAverageSurfaceSpeed().in(MetersPerSecond);
     }
 
-    public double getAverageSurfaceSpeed() {
-        return MathExtraUtil.average(inputs.leftMotor.velocity, inputs.rightMotor.velocity).in(RadiansPerSecond);
+    public Measure<Velocity<Distance>> getAverageSurfaceSpeed() {
+        return ShooterConstants.flywheel.angularVelocityToSurfaceVelocity(MathExtraUtil.average(inputs.leftMotor.velocity, inputs.rightMotor.velocity));
     }
 
     private void applySurfaceSpeed(Supplier<Measure<Velocity<Distance>>> surfaceSpeed) {
-        var goalSpeed = surfaceSpeed.get().in(MetersPerSecond) * ShooterConstants.shooterSpeedEnvCoef.getAsDouble();
-        var motorSpeed = ShooterConstants.motorToSurface.surfaceToRots(goalSpeed);
-        Logger.recordOutput("Shooter/Goal Speed", motorSpeed);
-        shooterIO.setLeftVelocity(motorSpeed);
-        shooterIO.setRightVelocity(motorSpeed);
+        var goalSpeed = ShooterConstants.flywheel.surfaceVelocityToAngularVelocity(surfaceSpeed.get().times(ShooterConstants.shooterSpeedEnvCoef.getAsDouble()));
+        Logger.recordOutput("Shooter/Goal Speed", goalSpeed.in(RotationsPerSecond));
+        shooterIO.setLeftVelocity(goalSpeed);
+        shooterIO.setRightVelocity(goalSpeed);
     }
 
     private void setReadyToShoot(Supplier<Measure<Velocity<Distance>>> minimum, Supplier<Measure<Velocity<Distance>>> maximum) {
-        readyToShoot.setPressed(MathExtraUtil.isWithin(MetersPerSecond.of(getAverageSurfaceSpeed()), minimum.get(), maximum.get()));
+        readyToShoot.setPressed(MathExtraUtil.isWithin(getAverageSurfaceSpeed(), minimum.get(), maximum.get()));
     }
 
     private Command genCommand(

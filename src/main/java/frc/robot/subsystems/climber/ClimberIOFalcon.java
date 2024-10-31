@@ -1,5 +1,7 @@
 package frc.robot.subsystems.climber;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -13,6 +15,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.ReverseLimitSourceValue;
 import com.ctre.phoenix6.signals.ReverseLimitTypeValue;
 
+import edu.wpi.first.math.util.Units;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.util.LoggedTunableNumber;
@@ -36,7 +39,7 @@ public class ClimberIOFalcon implements ClimberIO {
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-        config.Feedback.SensorToMechanismRatio = ClimberConstants.motorToSurface.rotPerSurface();
+        config.Feedback.SensorToMechanismRatio = Units.radiansToRotations(ClimberConstants.motorToWinch.inverse().ratio() / ClimberConstants.winch.radius().in(Meters));
 
         config.CurrentLimits.StatorCurrentLimit = 40;
         config.CurrentLimits.StatorCurrentLimitEnable = true;
