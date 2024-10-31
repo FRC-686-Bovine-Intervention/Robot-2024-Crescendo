@@ -18,6 +18,10 @@ public class MathExtraUtil {
     public static double average(double... a) {
         return Arrays.stream(a).average().orElse(0);
     }
+    @SafeVarargs
+    public static <U extends Unit<U>> Measure<U> average(Measure<U>... a) {
+        return a[0].unit().ofBaseUnits(Arrays.stream(a).mapToDouble((measure) -> measure.baseUnitMagnitude()).average().orElse(0));
+    }
 
     public static Rotation2d backwards(Rotation2d rotation) {
         return new Rotation2d(-rotation.getCos(), -rotation.getSin());

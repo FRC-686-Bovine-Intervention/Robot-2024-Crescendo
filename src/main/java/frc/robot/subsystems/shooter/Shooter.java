@@ -75,12 +75,12 @@ public class Shooter extends SubsystemBase {
                     shooterIO.setRightVoltage(volts.in(Units.Volts));
                 },
                 (log) -> {
-                    Logger.recordOutput("SysID/Shooter/Left Position", inputs.leftMotor.positionRad);
-                    Logger.recordOutput("SysID/Shooter/Right Position", inputs.rightMotor.positionRad);
-                    Logger.recordOutput("SysID/Shooter/Left Velocity", inputs.leftMotor.velocityRadPerSec);
-                    Logger.recordOutput("SysID/Shooter/Right Velocity", inputs.rightMotor.velocityRadPerSec);
-                    Logger.recordOutput("SysID/Shooter/Left Voltage", inputs.leftMotor.appliedVolts);
-                    Logger.recordOutput("SysID/Shooter/Right Voltage", inputs.rightMotor.appliedVolts);
+                    Logger.recordOutput("SysID/Shooter/Left Position", inputs.leftMotor.position);
+                    Logger.recordOutput("SysID/Shooter/Right Position", inputs.rightMotor.position);
+                    Logger.recordOutput("SysID/Shooter/Left Velocity", inputs.leftMotor.velocity);
+                    Logger.recordOutput("SysID/Shooter/Right Velocity", inputs.rightMotor.velocity);
+                    Logger.recordOutput("SysID/Shooter/Left Voltage", inputs.leftMotor.appliedVoltage);
+                    Logger.recordOutput("SysID/Shooter/Right Voltage", inputs.rightMotor.appliedVoltage);
                 },
                 this
             )
@@ -99,21 +99,23 @@ public class Shooter extends SubsystemBase {
         Logger.recordOutput("Shooter/Average MPS", getAverageSurfaceSpeed());
 
         Leds.getInstance().shooterReady = readyToShoot.getAsBoolean();
-        Leds.getInstance().shooterSpeed = getAverageSurfaceSpeed();
+        Leds.getInstance().shooterSpeed = getAverageSurfaceSpeed().in(MetersPerSecond);
     }
 
-    public double getAverageSurfaceSpeed() {
-        return MathExtraUtil.average(inputs.leftMotor.velocityRadPerSec, inputs.rightMotor.velocityRadPerSec);
+    public Measure<Velocity<Distance>> getAverageSurfaceSpeed() {
+        return ShooterConstants.flywheel.angularVelocityToSurfaceVelocity(MathExtraUtil.average(inputs.leftMotor.velocity, inputs.rightMotor.velocity));
     }
 
-    private void applyShooterSpeed(Supplier<Measure<Velocity<Distance>>> targetSpeed) {
-        var goalSpeed = targetSpeed.get().in(MetersPerSecond) * ShooterConstants.shooterSpeedEnvCoef.getAsDouble();
-        shooterIO.setLeftSurfaceSpeed(goalSpeed);
-        shooterIO.setRightSurfaceSpeed(goalSpeed);
+    private void applySurfaceSpeed(Measure<Velocity<Distance>> surfaceSpeed) {
+        var goalSpeed = surfaceSpeed.times(ShooterConstants.shooterSpeedEnvCoef.getAsDouble());
+        var motorSpeed = ShooterConstants.flywheel.surfaceVelocityToAngularVelocity(goalSpeed).divide(ShooterConstants.motorToMechRatio.ratio());
+        Logger.recordOutput("Shooter/Goal Speed", motorSpeed);
+        shooterIO.setLeftVelocity(motorSpeed);
+        shooterIO.setRightVelocity(motorSpeed);
     }
 
-    private void setReadyToShoot(Supplier<Measure<Velocity<Distance>>> minimum, Supplier<Measure<Velocity<Distance>>> maximum) {
-        readyToShoot.setPressed(MathExtraUtil.isWithin(MetersPerSecond.of(getAverageSurfaceSpeed()), minimum.get(), maximum.get()));
+    private void setReadyToShoot(Measure<Velocity<Distance>> minimum, Measure<Velocity<Distance>> maximum) {
+        readyToShoot.setPressed(MathExtraUtil.isWithin(getAverageSurfaceSpeed(), minimum, maximum));
     }
 
     private Command genCommand(
@@ -138,8 +140,8 @@ public class Shooter extends SubsystemBase {
 
             @Override
             public void execute() {
-                applyShooterSpeed(targetSpeed);
-                setReadyToShoot(minimumSpeed, maximumSpeed);
+                applySurfaceSpeed(targetSpeed.get());
+                setReadyToShoot(minimumSpeed.get(), maximumSpeed.get());
                 Leds.getInstance().shooterTarget = targetSpeed.get().in(MetersPerSecond);
                 Leds.getInstance().shooterBarGraph.set(enableLEDs);
             }

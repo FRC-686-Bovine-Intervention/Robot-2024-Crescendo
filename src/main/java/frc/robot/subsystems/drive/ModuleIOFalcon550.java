@@ -1,12 +1,14 @@
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.Celsius;
+import static edu.wpi.first.units.Units.Radians;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
@@ -17,6 +19,8 @@ import com.revrobotics.SparkAbsoluteEncoder;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
 import frc.robot.Constants;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DriveConstants;
@@ -28,22 +32,18 @@ public class ModuleIOFalcon550 implements ModuleIO {
     private final TalonFX  driveMotor;
     private final CANSparkMax turnMotor;
     private final AbsoluteEncoder turnAbsoluteEncoder;
-    // private final RelativeEncoder turnRelativeEncoder;
-    private final double initialOffsetRadians;
-    private final InvertedValue driveInverted;
+    private final Measure<Angle> initialTurnOffset;
 
     public ModuleIOFalcon550(DriveModulePosition position) {
         driveMotor = new TalonFX(position.driveMotorID, CANDevices.driveCanBusName);
         turnMotor = new CANSparkMax(position.turnMotorID, MotorType.kBrushless);
         turnAbsoluteEncoder = turnMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
-        // turnRelativeEncoder = turnMotor.getAlternateEncoder(SparkMaxAlternateEncoder.Type.kQuadrature, 8192);
-        driveInverted = position.driveInverted;
-        initialOffsetRadians = Units.rotationsToRadians(position.cancoderOffsetRotations);
+        initialTurnOffset = position.cancoderOffset;
 
         /** Configure Drive Motors */
         var driveConfig = new TalonFXConfiguration();
         // change factory defaults here
-        driveConfig.MotorOutput.Inverted = driveInverted;
+        driveConfig.MotorOutput.Inverted = position.driveInverted;
         driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         driveConfig.MotorOutput.DutyCycleNeutralDeadband = 0.0;
         driveConfig.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.1875;
@@ -74,18 +74,14 @@ public class ModuleIOFalcon550 implements ModuleIO {
     private final Alert tempAlert;
 
     public void updateInputs(ModuleIOInputs inputs) {
-        inputs.driveMotor.positionRad =       Units.rotationsToRadians(driveMotor.getPosition().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveMotor.velocityRadPerSec = Units.rotationsToRadians(driveMotor.getVelocity().getValue()) / DriveConstants.driveWheelGearReduction;
-        inputs.driveMotor.appliedVolts =      driveMotor.getMotorVoltage().getValue();
-        inputs.driveMotor.currentAmps =       driveMotor.getSupplyCurrent().getValue();
-        inputs.driveMotor.tempCelsius =       driveMotor.getDeviceTemp().getValue();
+        inputs.driveMotor.updateFrom(driveMotor);
+        inputs.driveMotor.position.mut_divide(DriveConstants.driveWheelGearReduction);
+        inputs.driveMotor.velocity.mut_divide(DriveConstants.driveWheelGearReduction);
 
-        inputs.turnMotor.positionRad =        MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialOffsetRadians;
-        inputs.turnMotor.velocityRadPerSec =  Units.rotationsToRadians(turnAbsoluteEncoder.getVelocity());
-        inputs.turnMotor.appliedVolts =       turnMotor.getAppliedOutput();
-        inputs.turnMotor.currentAmps =        turnMotor.getOutputCurrent();
+        inputs.turnMotor.updateFrom(turnMotor);
+        inputs.turnMotor.position.mut_replace(MathUtil.angleModulus(Units.rotationsToRadians(turnAbsoluteEncoder.getPosition())) - initialTurnOffset.in(Radians), Radians);
 
-        tempWarning.set(inputs.driveMotor.tempCelsius > 70);
+        tempWarning.set(inputs.driveMotor.temperature.in(Celsius) > 70);
         tempAlert.set(driveMotor.getFault_DeviceTemp().getValue());
     }
 

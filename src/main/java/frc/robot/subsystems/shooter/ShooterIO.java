@@ -6,6 +6,9 @@ package frc.robot.subsystems.shooter;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Velocity;
 import frc.robot.util.loggerUtil.LoggedMotor;
 
 public interface ShooterIO {
@@ -21,9 +24,9 @@ public interface ShooterIO {
 
     public default void setRightVoltage(double volts) {}
 
-    public default void setLeftSurfaceSpeed(double rps) {}
+    public default void setLeftVelocity(Measure<Velocity<Angle>> velocity) {}
 
-    public default void setRightSurfaceSpeed(double rps) {}
+    public default void setRightVelocity(Measure<Velocity<Angle>> velocity) {}
 
     public default void stop() {}
 }

@@ -4,8 +4,16 @@
 
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.Celsius;
+import static edu.wpi.first.units.Units.Meter;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Rotation;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import org.littletonrobotics.junction.Logger;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -14,15 +22,19 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Velocity;
+import frc.robot.Constants;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.util.Alert;
-import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.Alert.AlertType;
+import frc.robot.util.LoggedTunableNumber;
 
 public class ShooterIOFalcon implements ShooterIO {
-    private final TalonFX leftMotor = new TalonFX(CANDevices.shooterLeftID);
-    private final TalonFX rightMotor = new TalonFX(CANDevices.shooterRightID);
+    protected final TalonFX leftMotor = new TalonFX(CANDevices.shooterLeftID);
+    protected final TalonFX rightMotor = new TalonFX(CANDevices.shooterRightID);
 
     private final LoggedTunableNumber kP = new LoggedTunableNumber("Shooter/PID/kP", 1);
     private final LoggedTunableNumber kI = new LoggedTunableNumber("Shooter/PID/kI", 0);
@@ -36,7 +48,7 @@ public class ShooterIOFalcon implements ShooterIO {
 
     public ShooterIOFalcon() {
         var config = new TalonFXConfiguration();
-        config.Feedback.SensorToMechanismRatio = ShooterConstants.motorToSurface.rotPerSurface();
+        // config.Feedback.SensorToMechanismRatio = ShooterConstants.motorToSurface.rotPerSurface();
         config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         leftMotor.getConfigurator().apply(config);
@@ -44,38 +56,31 @@ public class ShooterIOFalcon implements ShooterIO {
         rightMotor.getConfigurator().apply(config);
         updateTunables();
 
-        leftMotor.getRotorVelocity().setUpdateFrequency(50);
-        leftMotor.getClosedLoopOutput().setUpdateFrequency(50);
-        leftMotor.getClosedLoopReference().setUpdateFrequency(50);
-        rightMotor.getRotorVelocity().setUpdateFrequency(50);
-        leftMotor.getStatorCurrent().setUpdateFrequency(50);
-        rightMotor.getStatorCurrent().setUpdateFrequency(50);
-        leftMotor.getClosedLoopReferenceSlope().setUpdateFrequency(50);
+        BaseStatusSignal.setUpdateFrequencyForAll(
+            Constants.loopFrequencyHz,
+            leftMotor.getRotorVelocity(),
+            leftMotor.getClosedLoopOutput(),
+            leftMotor.getClosedLoopReference(),
+            rightMotor.getRotorVelocity(),
+            leftMotor.getStatorCurrent(),
+            rightMotor.getStatorCurrent(),
+            leftMotor.getClosedLoopReferenceSlope()
+        );
     }
 
     private void updateTunables() {
-        if(
-            kP.hasChanged(hashCode()) |
-            kI.hasChanged(hashCode()) |
-            kD.hasChanged(hashCode()) |
-            kA.hasChanged(hashCode()) |
-            kJ.hasChanged(hashCode()) |
-            ffkV.hasChanged(hashCode()) |
-            ffkA.hasChanged(hashCode()) |
-            ffkG.hasChanged(hashCode()) |
-            ffkS.hasChanged(hashCode())
-        ) {
+        if(LoggedTunableNumber.hasChanged(hashCode(), kP,kI,kD,kA,kJ,ffkV,ffkA,ffkG,ffkS)) {
             var pidConfig = new Slot0Configs();
             var profileConfig = new MotionMagicConfigs();
-            pidConfig.kP = kP.get();
-            pidConfig.kI = kI.get();
-            pidConfig.kD = kD.get();
-            profileConfig.MotionMagicAcceleration = kA.get();
-            profileConfig.MotionMagicJerk = kJ.get();
-            pidConfig.kV = ffkV.get();
-            pidConfig.kA = ffkA.get();
-            pidConfig.kG = ffkG.get();
-            pidConfig.kS = ffkS.get();
+            pidConfig.kP = kP.get() * ShooterConstants.flywheel.surfacePer(Rotation).in(Meters) * ShooterConstants.motorToMechRatio.ratio();
+            pidConfig.kI = kI.get() * ShooterConstants.flywheel.surfacePer(Rotation).in(Meters) * ShooterConstants.motorToMechRatio.ratio();
+            pidConfig.kD = kD.get() * ShooterConstants.flywheel.surfacePer(Rotation).in(Meters) * ShooterConstants.motorToMechRatio.ratio();
+            profileConfig.MotionMagicAcceleration = kA.get() * ShooterConstants.flywheel.anglePer(Meter).in(Rotations) * ShooterConstants.motorToMechRatio.inverse().ratio();
+            profileConfig.MotionMagicJerk = kJ.get() * ShooterConstants.flywheel.anglePer(Meter).in(Rotations) * ShooterConstants.motorToMechRatio.inverse().ratio();
+            pidConfig.kV = ffkV.get() * ShooterConstants.flywheel.surfacePer(Rotation).in(Meters) * ShooterConstants.motorToMechRatio.ratio();
+            pidConfig.kA = ffkA.get() * ShooterConstants.flywheel.surfacePer(Rotation).in(Meters) * ShooterConstants.motorToMechRatio.ratio();
+            pidConfig.kG = ffkG.get() * ShooterConstants.flywheel.surfacePer(Rotation).in(Meters) * ShooterConstants.motorToMechRatio.ratio();
+            pidConfig.kS = ffkS.get() * ShooterConstants.flywheel.surfacePer(Rotation).in(Meters) * ShooterConstants.motorToMechRatio.ratio();
 
             leftMotor.getConfigurator().apply(pidConfig);
             rightMotor.getConfigurator().apply(pidConfig);
@@ -96,8 +101,8 @@ public class ShooterIOFalcon implements ShooterIO {
 
         updateTunables();
 
-        leftTempWarning.set(inputs.leftMotor.tempCelsius > 70);
-        rightTempWarning.set(inputs.rightMotor.tempCelsius > 70);
+        leftTempWarning.set(inputs.leftMotor.temperature.in(Celsius) > 70);
+        rightTempWarning.set(inputs.rightMotor.temperature.in(Celsius) > 70);
         leftTempAlert.set(leftMotor.getFault_DeviceTemp().getValue());
         rightTempAlert.set(rightMotor.getFault_DeviceTemp().getValue());
 
@@ -125,13 +130,13 @@ public class ShooterIOFalcon implements ShooterIO {
     );
 
     @Override
-    public void setLeftSurfaceSpeed(double rps) {
-        leftMotor.setControl(request.withVelocity(rps));
+    public void setLeftVelocity(Measure<Velocity<Angle>> velocity) {
+        leftMotor.setControl(request.withVelocity(velocity.in(RotationsPerSecond)));
     }
 
     @Override
-    public void setRightSurfaceSpeed(double rps) {
-        rightMotor.setControl(request.withVelocity(rps));
+    public void setRightVelocity(Measure<Velocity<Angle>> velocity) {
+        rightMotor.setControl(request.withVelocity(velocity.in(RotationsPerSecond)));
     }
 
     @Override
