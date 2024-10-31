@@ -24,7 +24,7 @@ import edu.wpi.first.units.Measure;
 import frc.robot.Constants;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.DriveConstants.DriveModulePosition;
+import frc.robot.Constants.DriveConstants.ModuleConfig;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
 
@@ -34,16 +34,16 @@ public class ModuleIOFalcon550 implements ModuleIO {
     private final AbsoluteEncoder turnAbsoluteEncoder;
     private final Measure<Angle> initialTurnOffset;
 
-    public ModuleIOFalcon550(DriveModulePosition position) {
-        driveMotor = new TalonFX(position.driveMotorID, CANDevices.driveCanBusName);
-        turnMotor = new CANSparkMax(position.turnMotorID, MotorType.kBrushless);
+    public ModuleIOFalcon550(ModuleConfig config) {
+        driveMotor = new TalonFX(config.driveMotorID, CANDevices.driveCanBusName);
+        turnMotor = new CANSparkMax(config.turnMotorID, MotorType.kBrushless);
         turnAbsoluteEncoder = turnMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
-        initialTurnOffset = position.cancoderOffset;
+        initialTurnOffset = config.cancoderOffset;
 
         /** Configure Drive Motors */
         var driveConfig = new TalonFXConfiguration();
         // change factory defaults here
-        driveConfig.MotorOutput.Inverted = position.driveInverted;
+        driveConfig.MotorOutput.Inverted = config.driveInverted;
         driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         driveConfig.MotorOutput.DutyCycleNeutralDeadband = 0.0;
         driveConfig.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.1875;
@@ -66,8 +66,8 @@ public class ModuleIOFalcon550 implements ModuleIO {
 
         zeroEncoders();
 
-        tempWarning = new Alert(position.name() + " Module has exceeded 70C", AlertType.WARNING);
-        tempAlert = new Alert(position.name() + " Module has exceeded 100C", AlertType.ERROR);
+        tempWarning = new Alert(config.name + " Module has exceeded 70C", AlertType.WARNING);
+        tempAlert = new Alert(config.name + " Module has exceeded 100C", AlertType.ERROR);
     }
 
     private final Alert tempWarning;

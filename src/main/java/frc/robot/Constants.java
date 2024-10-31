@@ -25,6 +25,7 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -32,7 +33,8 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
@@ -48,6 +50,7 @@ import frc.robot.util.Environment;
 import frc.robot.util.GearRatio;
 import frc.robot.util.GearRatio.Wheel;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.MathExtraUtil;
 
 public final class Constants {
 
@@ -135,28 +138,42 @@ public final class Constants {
 
         /**Distance between the front and back wheels*/
         public static final Measure<Distance> trackWidthX = Inches.of(25.5);
-        /**Distance between the front and back wheels*/
-        public static final double trackWidthXMeters = trackWidthX.in(Meters);
         /**Distance between the left and right wheels*/
         public static final Measure<Distance> trackWidthY = Inches.of(25.5);
-        /**Distance between the left and right wheels*/
-        public static final double trackWidthYMeters = trackWidthY.in(Meters);
 
         /**Distance between back bumper and front bumper, aka in the X axis */
         public static final Measure<Distance> robotLength = Centimeters.of(90);
-        /**Distance between back bumper and front bumper, aka in the X axis */
-        public static final double robotLengthMeters = robotLength.in(Meters);
         /**Distance between left bumper and right bumper, aka in the Y axis */
         public static final Measure<Distance> robotWidth = Centimeters.of(90);
-        /**Distance between left bumper and right bumper, aka in the Y axis */
-        public static final double robotWidthMeters = robotWidth.in(Meters);
 
-        public static final double centerToBumperCornerMeters = Math.hypot(robotLengthMeters/2, robotWidthMeters/2);
+        public static final Measure<Distance> centerToBumperCorner = Meters.of(new Translation2d(robotLength, robotWidth).getNorm());
     }
 
     public static final class DriveConstants {
-        public static enum DriveModulePosition {
-            FRONT_LEFT(
+        public static class ModuleConfig {
+            public final String name;
+            public final int driveMotorID;
+            public final int turnMotorID;
+            // motor direction to drive 'forward' (cancoders at angles given in cancoderOffsetRotations)
+            public final InvertedValue driveInverted;
+            // absolute position of cancoder when drive wheel is facing 'forward'
+            public final Measure<Angle> cancoderOffset;
+            public final Translation2d moduleTranslation;
+            public final Vector<N2> positiveRotVec;
+            ModuleConfig(String name, int driveMotorID, int turnMotorID, InvertedValue driveInverted, Measure<Angle> cancoderOffset, Translation2d moduleTranslation) {
+                this.name = name;
+                this.driveMotorID = driveMotorID;
+                this.turnMotorID = turnMotorID;
+                this.driveInverted = driveInverted;
+                this.cancoderOffset = cancoderOffset;
+                this.moduleTranslation = moduleTranslation;
+                this.positiveRotVec = MathExtraUtil.vectorFromRotation(this.moduleTranslation.getAngle().plus(Rotation2d.fromDegrees(90)));
+            }
+        }
+
+        public static final ModuleConfig[] modules = {
+            new ModuleConfig(
+                "Front Left",
                 CANDevices.frontLeftDriveMotorID, CANDevices.frontLeftTurnMotorID,
                 InvertedValue.CounterClockwise_Positive,
                 Rotations.of(0.75),
@@ -165,7 +182,8 @@ public final class Constants {
                     RobotConstants.trackWidthY.divide(+2)
                 )
             ),
-            FRONT_RIGHT(
+            new ModuleConfig(
+                "Front Right",
                 CANDevices.frontRightDriveMotorID, CANDevices.frontRightTurnMotorID,
                 InvertedValue.Clockwise_Positive,
                 Rotations.of(0.5),
@@ -174,7 +192,8 @@ public final class Constants {
                     RobotConstants.trackWidthY.divide(-2)
                 )
             ),
-            BACK_LEFT(
+            new ModuleConfig(
+                "Back Left",
                 CANDevices.backLeftDriveMotorID, CANDevices.backLeftTurnMotorID,
                 InvertedValue.CounterClockwise_Positive,
                 Rotations.of(0.5),
@@ -183,7 +202,8 @@ public final class Constants {
                     RobotConstants.trackWidthY.divide(+2)
                 )
             ),
-            BACK_RIGHT(
+            new ModuleConfig(
+                "Back Right",
                 CANDevices.backRightDriveMotorID, CANDevices.backRightTurnMotorID,
                 InvertedValue.Clockwise_Positive,
                 Rotations.of(0.75),
@@ -192,30 +212,13 @@ public final class Constants {
                     RobotConstants.trackWidthY.divide(-2)
                 )
             ),
-            ;
-            public final int driveMotorID;
-            public final int turnMotorID;
-            // motor direction to drive 'forward' (cancoders at angles given in cancoderOffsetRotations)
-            public final InvertedValue driveInverted;
-            // absolute position of cancoder when drive wheel is facing 'forward'
-            public final Measure<Angle> cancoderOffset;
-            public final Translation2d moduleTranslation;
-            DriveModulePosition(int driveMotorID, int turnMotorID, InvertedValue driveInverted, Measure<Angle> cancoderOffset, Translation2d moduleTranslation) {
-                this.driveMotorID = driveMotorID;
-                this.turnMotorID = turnMotorID;
-                this.driveInverted = driveInverted;
-                this.cancoderOffset = cancoderOffset;
-                this.moduleTranslation = moduleTranslation;
-            }
-
-            public static final Translation2d[] moduleTranslations = Arrays.stream(values()).map((a) -> a.moduleTranslation).toArray(Translation2d[]::new);
-        }
-        public static final int numDriveModules = DriveModulePosition.values().length;
+        };
+        public static final Translation2d[] moduleTranslations = Arrays.stream(modules).map((a) -> a.moduleTranslation).toArray(Translation2d[]::new);
 
         /**Weight with battery and bumpers*/
         public static final double weightKg = Pounds.of(58.0).in(Kilograms);
         
-        public static final double driveBaseRadius = Arrays.stream(DriveModulePosition.moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5);
+        public static final Measure<Distance> driveBaseRadius = Meters.of(Arrays.stream(moduleTranslations).mapToDouble((t) -> t.getNorm()).max().orElse(0.5));
         private static final double correctionVal = 314.0 / 320.55;
         public static final Measure<Distance> wheelRadius = Inches.of(1.5 * correctionVal);
 
@@ -239,9 +242,9 @@ public final class Constants {
         public static final double driveSnapKd = 0;
 
 
-        public static final double maxDriveSpeedMetersPerSec = MetersPerSecond.of(6).in(MetersPerSecond);
+        public static final Measure<Velocity<Distance>> maxDriveSpeed = MetersPerSecond.of(6);
         /**Tangential speed (m/s) = radial speed (rad/s) * radius (m)*/
-        public static final double maxTurnRateRadiansPerSec = maxDriveSpeedMetersPerSec / Math.hypot(RobotConstants.trackWidthXMeters/2, RobotConstants.trackWidthYMeters/2);
+        public static final Measure<Velocity<Angle>> maxTurnRate = RadiansPerSecond.of(maxDriveSpeed.in(MetersPerSecond) / new Translation2d(RobotConstants.trackWidthX.divide(2), RobotConstants.trackWidthY.divide(2)).getNorm());
         public static final DoubleSupplier maxDriveSpeedEnvCoef = Environment.switchVar(
             () -> 1,
             new LoggedTunableNumber("Demo Constraints/Max Translational Percentage", 0.25)
@@ -286,12 +289,10 @@ public final class Constants {
     }
 
     public static final class ShooterConstants {
-        public static final Measure<Distance> wheelRadius = Inches.of(2);
-
         public static final GearRatio motorToMechRatio = new GearRatio()
             .sprocket(+24).sprocket(+24)
         ;
-        public static final Wheel flywheel = Wheel.radius(wheelRadius);
+        public static final Wheel flywheel = Wheel.radius(Inches.of(2));
 
         public static final DoubleSupplier shooterSpeedEnvCoef = Environment.switchVar(
             () -> 1,
@@ -302,31 +303,31 @@ public final class Constants {
     public static final class AimingConstants {
         public static final Measure<Velocity<Distance>> exitVelocity = MetersPerSecond.of(5);
 
-        public static final InterpolatingDoubleTreeMap targetShooterSpeed = new InterpolatingDoubleTreeMap();
+        public static final InterpolatingTreeMap<Measure<Distance>, Measure<Velocity<Distance>>> targetShooterSpeed = new InterpolatingTreeMap<>(MathExtraUtil::inverseInterpolate, MathExtraUtil::interpolate);
         static {
-            targetShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 14.5);
-            targetShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 16.0);
-            targetShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 21.0);
-            targetShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5);
-            targetShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 31.5);
+            targetShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(14.5));
+            targetShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(16.0));
+            targetShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(21.0));
+            targetShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(24.5));
+            targetShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(31.5));
         }
 
-        public static final InterpolatingDoubleTreeMap minimumShooterSpeed = new InterpolatingDoubleTreeMap();
+        public static final InterpolatingTreeMap<Measure<Distance>, Measure<Velocity<Distance>>> minimumShooterSpeed = new InterpolatingTreeMap<>(MathExtraUtil::inverseInterpolate, MathExtraUtil::interpolate);
         static {
-            minimumShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 14.5-2);
-            minimumShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 16.0-2);
-            minimumShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 21.0-2);
-            minimumShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5-2);
-            minimumShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 31.5-2);
+            minimumShooterSpeed.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(14.5-2));
+            minimumShooterSpeed.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(16.0-2));
+            minimumShooterSpeed.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(21.0-2));
+            minimumShooterSpeed.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(24.5-2));
+            minimumShooterSpeed.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)), MetersPerSecond.of(31.5-2));
         }
 
-        public static final InterpolatingDoubleTreeMap pivotAltitude = new InterpolatingDoubleTreeMap();
+        public static final InterpolatingTreeMap<Measure<Distance>, Measure<Angle>> pivotAltitude = new InterpolatingTreeMap<>(MathExtraUtil::inverseInterpolate, MathExtraUtil::interpolate);
         static {
-            pivotAltitude.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)).in(Meters), 43.5-2);
-            pivotAltitude.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)).in(Meters), 37.0-2);
-            pivotAltitude.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)).in(Meters), 29.5-2);
-            pivotAltitude.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)).in(Meters), 24.5-1);
-            pivotAltitude.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)).in(Meters), 20.25);
+            pivotAltitude.put(Centimeters.of(118).plus(RobotConstants.robotLength.divide(2)), Degrees.of(43.5-2));
+            pivotAltitude.put(Centimeters.of(190).plus(RobotConstants.robotLength.divide(2)), Degrees.of(37.0-2));
+            pivotAltitude.put(Centimeters.of(280).plus(RobotConstants.robotLength.divide(2)), Degrees.of(29.5-2));
+            pivotAltitude.put(Centimeters.of(370).plus(RobotConstants.robotLength.divide(2)), Degrees.of(24.5-1));
+            pivotAltitude.put(Centimeters.of(500).plus(RobotConstants.robotLength.divide(2)), Degrees.of(20.25));
         }
     }
 
@@ -478,7 +479,8 @@ public final class Constants {
                             )
                             .plus(cam.getRobotToCam())
                     )
-                    .toArray(Transform3d[]::new));
+                    .toArray(Transform3d[]::new)
+                );
             }
         }
 
@@ -523,8 +525,8 @@ public final class Constants {
     }
 
     public static final class FieldConstants {
-        public static final double fieldLength = Units.inchesToMeters(648);
-        public static final double fieldWidth =  Units.inchesToMeters(324);
+        public static final Measure<Distance> fieldLength = Inches.of(648);
+        public static final Measure<Distance> fieldWidth =  Inches.of(324);
 
         public static final FlippedTranslation3d speakerAimPoint = FlippedTranslation3d.fromBlue(new Translation3d(0.240581, 5.547755, 2));
         public static final FlippedTranslation3d passAimPoint =    FlippedTranslation3d.fromBlue(speakerAimPoint.getBlue().interpolate(new Translation3d(1.83,7.61,2), 0.7));

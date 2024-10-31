@@ -74,4 +74,11 @@ public class MathExtraUtil {
     public static <U extends Unit<U>> boolean isWithin(Measure<U> value, Measure<U> min, Measure<U> max) {
         return isWithin(value.baseUnitMagnitude(), min.baseUnitMagnitude(), max.baseUnitMagnitude());
     }
+
+    public static <U extends Unit<U>> Measure<U> interpolate(Measure<U> start, Measure<U> end, double t) {
+        return start.unit().ofBaseUnits(MathUtil.interpolate(start.baseUnitMagnitude(), end.baseUnitMagnitude(), t));
+    }
+    public static <U extends Unit<U>> double inverseInterpolate(Measure<U> start, Measure<U> end, Measure<U> t) {
+        return MathUtil.inverseInterpolate(start.baseUnitMagnitude(), end.baseUnitMagnitude(), t.baseUnitMagnitude());
+    }
 }

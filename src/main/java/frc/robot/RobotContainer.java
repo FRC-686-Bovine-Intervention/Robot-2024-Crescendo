@@ -24,7 +24,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.DriveConstants.DriveModulePosition;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.VisionConstants.Camera;
@@ -101,10 +100,10 @@ public class RobotContainer {
             case REAL:
                 drive = new Drive(
                     new GyroIOPigeon2(),
-                    new ModuleIOFalcon550(DriveModulePosition.FRONT_LEFT),
-                    new ModuleIOFalcon550(DriveModulePosition.FRONT_RIGHT),
-                    new ModuleIOFalcon550(DriveModulePosition.BACK_LEFT),
-                    new ModuleIOFalcon550(DriveModulePosition.BACK_RIGHT)
+                    new ModuleIOFalcon550(DriveConstants.modules[0]),
+                    new ModuleIOFalcon550(DriveConstants.modules[1]),
+                    new ModuleIOFalcon550(DriveConstants.modules[2]),
+                    new ModuleIOFalcon550(DriveConstants.modules[3])
                 );
                 rollers = new Rollers(
                     new Intake(new IntakeIOFalcon550(), drive::getRobotRelativeSpeeds),

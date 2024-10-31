@@ -22,14 +22,14 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Distance;
 import frc.robot.Constants;
-import frc.robot.Constants.DriveConstants.DriveModulePosition;
+import frc.robot.Constants.DriveConstants.ModuleConfig;
 import frc.robot.util.LoggedTunableMeasure;
 import frc.robot.util.LoggedTunableNumber;
 
 public class Module {
     private final ModuleIO io;
     private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
-    private final DriveModulePosition position;
+    private final ModuleConfig config;
 
     private static final LoggedTunableMeasure<Distance> wheelRadius = new LoggedTunableMeasure<>("Drive/Module/WheelRadius", Constants.DriveConstants.wheelRadius);
     private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("Drive/Module/Drive/kP", 0.1);
@@ -47,20 +47,20 @@ public class Module {
     private SwerveModulePosition modulePosition;
     private SwerveModulePosition prevModulePosition;
 
-    public Module(ModuleIO io, DriveModulePosition position) {
+    public Module(ModuleIO io, ModuleConfig config) {
         this.io = io;
-        this.position = position;
-        prevModulePosition = getPosition();
+        this.config = config;
+        prevModulePosition = getConfig();
 
         turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
     }
 
     /** Updates inputs and checks tunable numbers. */
     public void periodic() {
-        prevModulePosition = getPosition();
+        prevModulePosition = getConfig();
 
         io.updateInputs(inputs);
-        Logger.processInputs("Inputs/Drive/Module " + position.name(), inputs);
+        Logger.processInputs("Inputs/Drive/Module " + config.name, inputs);
 
         // Update controllers if tunable numbers have changed
         if (driveKp.hasChanged(hashCode()) | driveKd.hasChanged(hashCode())) {
@@ -96,8 +96,9 @@ public class Module {
         // Run drive controller
         double velocityRadPerSec = optimizedSetpoint.speedMetersPerSecond / wheelRadius.in(Meters);
         io.setDriveVoltage(
-                driveFeedforward.calculate(velocityRadPerSec)
-                        + driveFeedback.calculate(inputs.driveMotor.velocity.in(RadiansPerSecond), velocityRadPerSec));
+            driveFeedforward.calculate(velocityRadPerSec)
+            + driveFeedback.calculate(inputs.driveMotor.velocity.in(RadiansPerSecond), velocityRadPerSec)
+        );
 
         return optimizedSetpoint;
     }
@@ -138,7 +139,7 @@ public class Module {
     }
 
     /** Returns the module position (turn angle and drive position). */
-    public SwerveModulePosition getPosition() {
+    public SwerveModulePosition getConfig() {
         return modulePosition;
     }
 
@@ -149,7 +150,7 @@ public class Module {
 
     /** Returns change in module position since last tick */
     public SwerveModulePosition getPositionDelta() {
-        var currentModulePosition = getPosition();
+        var currentModulePosition = getConfig();
         return new SwerveModulePosition(currentModulePosition.distanceMeters - prevModulePosition.distanceMeters,
                 currentModulePosition.angle);
     }
@@ -169,6 +170,6 @@ public class Module {
         io.zeroEncoders();
         // need to also reset prevModulePosition because drive is driven by deltas in
         // position
-        prevModulePosition = getPosition();
+        prevModulePosition = getConfig();
     }
 }

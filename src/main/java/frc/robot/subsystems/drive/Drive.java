@@ -7,6 +7,10 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -46,7 +50,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.DriveConstants.DriveModulePosition;
+import frc.robot.Constants.DriveConstants.ModuleConfig;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
@@ -65,9 +69,9 @@ public class Drive extends VirtualSubsystem {
     private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
     private Rotation2d prevGyroYaw = new Rotation2d();
 
-    private final Module[] modules = new Module[DriveConstants.numDriveModules]; // FL, FR, BL, BR
+    private final Module[] modules = new Module[DriveConstants.modules.length]; // FL, FR, BL, BR
 
-    private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveModulePosition.moduleTranslations);
+    private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(DriveConstants.moduleTranslations);
     private SwerveModuleState[] lastMeasuredStates = new SwerveModuleState[] {
         new SwerveModuleState(),
         new SwerveModuleState(),
@@ -94,7 +98,6 @@ public class Drive extends VirtualSubsystem {
     private final Timer currentSpikeTimer = new Timer();
     private static final LoggedTunableNumber currentSpikeThreshold = new LoggedTunableNumber("Drive/Current Spike Threshold", 0); 
     private static final LoggedTunableNumber currentSpikeTime = new LoggedTunableNumber("Drive/Current Spike Time", 0);
-    private final ArrayList<Module> spikeModules = new ArrayList<>();
 
     public Drive(GyroIO gyroIO, ModuleIO flModuleIO, ModuleIO frModuleIO, ModuleIO blModuleIO, ModuleIO brModuleIO) {
         System.out.println("[Init Drive] Instantiating Drive");
@@ -102,14 +105,14 @@ public class Drive extends VirtualSubsystem {
         System.out.println("[Init Drive] Gyro IO: " + this.gyroIO.getClass().getSimpleName());
         // SmartDashboard.putData("Subsystems/Drive", this);
         ModuleIO[] moduleIOs = new ModuleIO[]{flModuleIO, frModuleIO, blModuleIO, brModuleIO};
-        for(DriveModulePosition position : DriveModulePosition.values()) {
-            System.out.println("[Init Drive] Instantiating Module " + position.name() + " with Module IO: " + moduleIOs[position.ordinal()].getClass().getSimpleName());
-            modules[position.ordinal()] = new Module(moduleIOs[position.ordinal()], position);
+        for(int i = 0; i < DriveConstants.modules.length; i++) {
+            ModuleConfig config = DriveConstants.modules[i];
+            System.out.println("[Init Drive] Instantiating Module " + config.name + " with Module IO: " + moduleIOs[i].getClass().getSimpleName());
+            var module = new Module(moduleIOs[i], config);
+            module.setBrakeMode(false);
+            modules[i] = module;
         }
         lastMovementTimer.start();
-        for (var module : modules) {
-            module.setBrakeMode(false);
-        }
 
         // initialize pose estimator
         Pose2d initialPoseMeters = FieldConstants.subwooferFront.getOurs();
@@ -141,17 +144,7 @@ public class Drive extends VirtualSubsystem {
             module.periodic();
         }
 
-        for (var module : modules) {
-            if (Math.abs(module.getCurrentAmps()) >= currentSpikeThreshold.get()) {
-                if (!spikeModules.contains(module)) {
-                    spikeModules.add(module);
-                }
-            } else {
-                spikeModules.remove(module);
-            }
-        }
-
-        if (!spikeModules.isEmpty()) {
+        if (Arrays.stream(modules).filter((module) -> module.getCurrentAmps() > currentSpikeThreshold.get()).findAny().isPresent()) {
             currentSpikeTimer.start();
         } else {
             currentSpikeTimer.stop();
@@ -184,19 +177,19 @@ public class Drive extends VirtualSubsystem {
         } else {
             ChassisSpeeds correctedSpeeds = ChassisSpeeds.discretize(setpoint, rotationCorrection.get());
             SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(correctedSpeeds, centerOfRotation);
-            SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeedMetersPerSec);
+            SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, DriveConstants.maxDriveSpeed);
 
             // Set to last angles if zero
             if (MathExtraUtil.isNear(new ChassisSpeeds(), correctedSpeeds, 0.05, DriveConstants.headingTolerance)) {
-                for (int i = 0; i < DriveConstants.numDriveModules; i++) {
+                for (int i = 0; i < DriveConstants.modules.length; i++) {
                     setpointStates[i] = new SwerveModuleState(0.0, lastSetpointStates[i].angle);
                 }
             }
             lastSetpointStates = setpointStates;
 
             // Send setpoints to modules
-            SwerveModuleState[] optimizedStates = new SwerveModuleState[DriveConstants.numDriveModules];
-            for (int i = 0; i < DriveConstants.numDriveModules; i++) {
+            SwerveModuleState[] optimizedStates = new SwerveModuleState[DriveConstants.modules.length];
+            for (int i = 0; i < DriveConstants.modules.length; i++) {
                 optimizedStates[i] = modules[i].runSetpoint(setpointStates[i]);
             }
 
@@ -206,27 +199,8 @@ public class Drive extends VirtualSubsystem {
         }
 
         // Log measured states
-        SwerveModuleState[] measuredStates = new SwerveModuleState[DriveConstants.numDriveModules];
-        SwerveModuleState[] rotationalStates = new SwerveModuleState[DriveConstants.numDriveModules];
-        SwerveModuleState[] translationalStates = new SwerveModuleState[DriveConstants.numDriveModules];
-        for (int i = 0; i < DriveConstants.numDriveModules; i++) {
-            var measuredState = modules[i].getState();
-            var measuredVec = new Translation2d(measuredState.speedMetersPerSecond, measuredState.angle);
-            var positiveRotationAngle = DriveConstants.DriveModulePosition.moduleTranslations[i].getAngle().plus(Rotation2d.fromDegrees(90));
-            var rotationalAngle = positiveRotationAngle.minus(measuredVec.getAngle());
-            Logger.recordOutput("Drive/SwerveStates/Debug/" + i, rotationalAngle);
-            var rotationalComponent = measuredVec.getNorm() * rotationalAngle.getCos();
-            var rotationalState = new SwerveModuleState(rotationalComponent, positiveRotationAngle);
-            rotationalStates[i] = rotationalState;
-            var rotationalVec = new Translation2d(rotationalComponent, positiveRotationAngle);
-            var translationalVec = measuredVec.minus(rotationalVec);
-            var translationalState = new SwerveModuleState(translationalVec.getNorm(), translationalVec.getAngle());
-            translationalStates[i] = translationalState;
-            measuredStates[i] = measuredState;
-        }
+        SwerveModuleState[] measuredStates = Arrays.stream(modules).map(Module::getState).toArray(SwerveModuleState[]::new);
         Logger.recordOutput("Drive/SwerveStates/Measured", measuredStates);
-        Logger.recordOutput("Drive/SwerveStates/Rotational States", rotationalStates);
-        Logger.recordOutput("Drive/SwerveStates/Translational States", translationalStates);
         lastMeasuredStates = measuredStates;
 
         // Update odometry
@@ -242,19 +216,37 @@ public class Drive extends VirtualSubsystem {
         }
         RobotState.getInstance().addDriveMeasurement(gyroAngle, getModulePositions());
 
-        // Logger.recordOutput("Odometry/Robot", getPose());
-
         // Update field velocity
         ChassisSpeeds chassisSpeeds = kinematics.toChassisSpeeds(measuredStates);
-        Translation2d linearFieldVelocity = new Translation2d(chassisSpeeds.vxMetersPerSecond,
-                chassisSpeeds.vyMetersPerSecond)
-                .rotateBy(getRotation());
+        Translation2d linearFieldVelocity = 
+            new Translation2d(
+                chassisSpeeds.vxMetersPerSecond,
+                chassisSpeeds.vyMetersPerSecond
+            )
+            .rotateBy(getRotation())
+        ;
         fieldVelocity = new Twist2d(
-                linearFieldVelocity.getX(),
-                linearFieldVelocity.getY(),
-                gyroInputs.connected
-                        ? gyroInputs.yawVelocityRadPerSec
-                        : chassisSpeeds.omegaRadiansPerSecond);
+            linearFieldVelocity.getX(),
+            linearFieldVelocity.getY(),
+            (gyroInputs.connected) ? (
+                gyroInputs.yawVelocityRadPerSec
+            ) : (
+                chassisSpeeds.omegaRadiansPerSecond
+            )
+        );
+        SwerveModuleState[] rotationalStates = new SwerveModuleState[DriveConstants.modules.length];
+        SwerveModuleState[] translationalStates = new SwerveModuleState[DriveConstants.modules.length];
+
+        for (int i = 0; i < DriveConstants.modules.length; i++) {
+            var rotational = new Translation2d(DriveConstants.modules[i].positiveRotVec.times(fieldVelocity.dtheta));
+            rotationalStates[i] = new SwerveModuleState(rotational.getNorm(), rotational.getAngle());
+            var measured = new Translation2d(measuredStates[i].speedMetersPerSecond, measuredStates[i].angle);
+            var translational = measured.minus(rotational);
+            translationalStates[i] = new SwerveModuleState(translational.getNorm(), translational.getAngle());
+        }
+
+        Logger.recordOutput("Drive/SwerveStates/Rotational States", rotationalStates);
+        Logger.recordOutput("Drive/SwerveStates/Translational States", translationalStates);
 
         // Update brake mode
         // for (var module : modules) {
@@ -309,7 +301,7 @@ public class Drive extends VirtualSubsystem {
                 var fieldVec = PerspectiveType.getCurrentType().toField(
                     translationalJoystick.toVector()
                     .times(
-                        DriveConstants.maxDriveSpeedMetersPerSec * 
+                        DriveConstants.maxDriveSpeed.in(MetersPerSecond) * 
                         DriveConstants.maxDriveSpeedEnvCoef.getAsDouble() * 
                         (precisionSupplier.getAsBoolean() ? DriveConstants.precisionLinearMultiplier : 1)
                     )
@@ -375,8 +367,10 @@ public class Drive extends VirtualSubsystem {
                     if(desiredLinear.norm() > defenseSpinLinearThreshold.get()) {
                         dot = -joyVec.dot(perpendicularLinear);
                     }
-                    var omega = dot * DriveConstants.maxTurnRateRadiansPerSec * 
-                        DriveConstants.maxTurnRateEnvCoef.getAsDouble() * 0.25;
+                    var omega = dot
+                        * DriveConstants.maxTurnRate.in(RadiansPerSecond)
+                        * DriveConstants.maxTurnRateEnvCoef.getAsDouble() * 0.25
+                    ;
                     driveVelocity(omega);
                     if(desiredLinear.norm() <= defenseSpinLinearThreshold.get()) {
                         drive.setCenterOfRotation(new Translation2d());
@@ -387,8 +381,8 @@ public class Drive extends VirtualSubsystem {
                         // .plus(Rotation2d.fromDegrees(45 * Math.signum(velo)))
                     );
                     drive.setCenterOfRotation(
-                        Arrays.stream(DriveConstants.DriveModulePosition.moduleTranslations)
-                        .map((t) -> new Translation2d(t.toVector().unit().times(RobotConstants.centerToBumperCornerMeters)))
+                        Arrays.stream(DriveConstants.moduleTranslations)
+                        .map((t) -> new Translation2d(t.toVector().unit().times(RobotConstants.centerToBumperCorner.in(Meters))))
                         .sorted((a, b) -> 
                             (int) Math.signum(
                                 b.toVector().unit().dot(rotateAround) - a.toVector().unit().dot(rotateAround)
@@ -435,7 +429,7 @@ public class Drive extends VirtualSubsystem {
                         -0.5 * DriveConstants.maxTurnRateEnvCoef.getAsDouble(), 
                         +0.5 * DriveConstants.maxTurnRateEnvCoef.getAsDouble()
                     );
-                    driveVelocity(turnInput * DriveConstants.maxTurnRateRadiansPerSec);
+                    driveVelocity(turnInput * DriveConstants.maxTurnRate.in(RadiansPerSecond));
                 }
                 @Override
                 public void end(boolean interrupted) {
@@ -504,12 +498,15 @@ public class Drive extends VirtualSubsystem {
 
     public void drivePercent(ChassisSpeeds speeds) {
         driveVelocity(new ChassisSpeeds(
-                speeds.vxMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec * 
-                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble(),
-                speeds.vyMetersPerSecond * DriveConstants.maxDriveSpeedMetersPerSec * 
-                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble(),
-                speeds.omegaRadiansPerSecond * DriveConstants.maxTurnRateRadiansPerSec * 
-                        DriveConstants.maxTurnRateEnvCoef.getAsDouble()));
+            speeds.vxMetersPerSecond * DriveConstants.maxDriveSpeed.in(MetersPerSecond)
+                * DriveConstants.maxDriveSpeedEnvCoef.getAsDouble()
+            ,
+            speeds.vyMetersPerSecond * DriveConstants.maxDriveSpeed.in(MetersPerSecond)
+                * DriveConstants.maxDriveSpeedEnvCoef.getAsDouble()
+            ,
+            speeds.omegaRadiansPerSecond * DriveConstants.maxTurnRate.in(RadiansPerSecond)
+                * DriveConstants.maxTurnRateEnvCoef.getAsDouble()
+        ));
     }
 
     public void setCenterOfRotation(Translation2d cor) {
@@ -518,8 +515,8 @@ public class Drive extends VirtualSubsystem {
 
     /** Zeros the drive encoders. */
     public void zeroEncoders() {
-        for (int i = 0; i < DriveConstants.numDriveModules; i++) {
-            modules[i].zeroEncoders();
+        for(var module : modules) {
+            module.zeroEncoders();
         }
     }
 
@@ -542,22 +539,25 @@ public class Drive extends VirtualSubsystem {
      */
     public void stopWithX() {
         stop();
-        for (int i = 0; i < DriveConstants.numDriveModules; i++) {
+        for (int i = 0; i < DriveConstants.modules.length; i++) {
             lastSetpointStates[i] = new SwerveModuleState(
-                    lastSetpointStates[i].speedMetersPerSecond, DriveModulePosition.moduleTranslations[i].getAngle());
+                lastSetpointStates[i].speedMetersPerSecond, DriveConstants.modules[i].moduleTranslation.getAngle()
+            );
         }
     }
 
     /** Returns the maximum linear speed in meters per sec. */
     public double getMaxLinearSpeedMetersPerSec() {
-        return DriveConstants.maxDriveSpeedMetersPerSec * 
-                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble();
+        return DriveConstants.maxDriveSpeed.in(MetersPerSecond)
+            * DriveConstants.maxDriveSpeedEnvCoef.getAsDouble()
+        ;
     }
 
     /** Returns the maximum angular speed in radians per sec. */
     public double getMaxAngularSpeedRadiansPerSec() {
-        return DriveConstants.maxTurnRateRadiansPerSec * 
-                        DriveConstants.maxTurnRateEnvCoef.getAsDouble();
+        return DriveConstants.maxTurnRate.in(RadiansPerSecond)
+            * DriveConstants.maxTurnRateEnvCoef.getAsDouble()
+        ;
     }
 
     /**
@@ -621,17 +621,17 @@ public class Drive extends VirtualSubsystem {
 
     /** Returns an array of module positions. */
     public SwerveModulePosition[] getModulePositions() {
-        SwerveModulePosition[] modulePositions = new SwerveModulePosition[DriveConstants.numDriveModules];
-        for (int i = 0; i < DriveConstants.numDriveModules; i++) {
-            modulePositions[i] = modules[i].getPosition();
+        SwerveModulePosition[] modulePositions = new SwerveModulePosition[DriveConstants.modules.length];
+        for (int i = 0; i < DriveConstants.modules.length; i++) {
+            modulePositions[i] = modules[i].getConfig();
         }
         return modulePositions;
     }
 
     /** Returns an array of module positions. */
     public SwerveModulePosition[] getModulePositionDeltas() {
-        SwerveModulePosition[] modulePositionDeltas = new SwerveModulePosition[DriveConstants.numDriveModules];
-        for (int i = 0; i < DriveConstants.numDriveModules; i++) {
+        SwerveModulePosition[] modulePositionDeltas = new SwerveModulePosition[DriveConstants.modules.length];
+        for (int i = 0; i < DriveConstants.modules.length; i++) {
             modulePositionDeltas[i] = modules[i].getPositionDelta();
         }
         return modulePositionDeltas;
@@ -640,10 +640,10 @@ public class Drive extends VirtualSubsystem {
     /** Returns the average drive distance in radians */
     public double getAverageModuleDistance() {
         double avgDist = 0.0;
-        for (int i = 0; i < DriveConstants.numDriveModules; i++) {
+        for (int i = 0; i < DriveConstants.modules.length; i++) {
             avgDist += Math.abs(modules[i].getPositionRadians());
         }
-        return avgDist / DriveConstants.numDriveModules;
+        return avgDist / DriveConstants.modules.length;
     }
 
     public ChassisSpeeds getRobotRelativeSpeeds() {
@@ -663,10 +663,10 @@ public class Drive extends VirtualSubsystem {
     /** Returns the average drive velocity in radians/sec. */
     public double getCharacterizationVelocity() {
         double driveVelocityAverage = 0.0;
-        for (int i = 0; i < DriveConstants.numDriveModules; i++) {
+        for (int i = 0; i < DriveConstants.modules.length; i++) {
             driveVelocityAverage += modules[i].getCharacterizationVelocity();
         }
-        return driveVelocityAverage / DriveConstants.numDriveModules;
+        return driveVelocityAverage / DriveConstants.modules.length;
     }
 
     public boolean collisionDetected() {
@@ -691,9 +691,10 @@ public class Drive extends VirtualSubsystem {
                 rI.get(),
                 rD.get()
             ),
-            DriveConstants.maxDriveSpeedMetersPerSec * 
-                        DriveConstants.maxDriveSpeedEnvCoef.getAsDouble(),
-            DriveConstants.driveBaseRadius,
+            DriveConstants.maxDriveSpeed.in(MetersPerSecond)
+                * DriveConstants.maxDriveSpeedEnvCoef.getAsDouble()
+            ,
+            DriveConstants.driveBaseRadius.in(Meters),
             new ReplanningConfig()
         );
     };

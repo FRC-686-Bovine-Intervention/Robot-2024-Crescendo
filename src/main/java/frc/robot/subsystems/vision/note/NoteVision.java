@@ -1,5 +1,7 @@
 package frc.robot.subsystems.vision.note;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,11 +22,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.RobotState;
@@ -33,8 +32,6 @@ import frc.robot.subsystems.leds.Leds;
 import frc.robot.util.LazyOptional;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.VirtualSubsystem;
-import frc.robot.util.led.animation.FillAnimation;
-import frc.robot.util.led.strips.LEDStrip;
 
 public class NoteVision extends VirtualSubsystem {
     private final NoteVisionIO noteVisionIO;
@@ -105,7 +102,7 @@ public class NoteVision extends VirtualSubsystem {
             );
         }
         unusedMemories.forEach((memory) -> {
-            if(RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) > RobotConstants.robotLengthMeters*0.5) {
+            if(RobotState.getInstance().getPose().getTranslation().getDistance(memory.fieldPos) > RobotConstants.robotLength.in(Meters)*0.5) {
                 memory.decayConfidence(1);
             }
         });
