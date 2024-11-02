@@ -238,8 +238,9 @@ public class Drive extends VirtualSubsystem {
         SwerveModuleState[] translationalStates = new SwerveModuleState[DriveConstants.modules.length];
 
         for (int i = 0; i < DriveConstants.modules.length; i++) {
-            var rotational = new Translation2d(DriveConstants.modules[i].positiveRotVec.times(fieldVelocity.dtheta));
-            rotationalStates[i] = new SwerveModuleState(rotational.getNorm(), rotational.getAngle());
+            var rotationalState = new SwerveModuleState(-gyroInputs.yawVelocityRadPerSec * DriveConstants.modules[i].moduleTranslation.getNorm(), MathExtraUtil.rotationFromVector(DriveConstants.modules[i].positiveRotVec));
+            var rotational = new Translation2d(rotationalState.speedMetersPerSecond, rotationalState.angle);
+            rotationalStates[i] = rotationalState;
             var measured = new Translation2d(measuredStates[i].speedMetersPerSecond, measuredStates[i].angle);
             var translational = measured.minus(rotational);
             translationalStates[i] = new SwerveModuleState(translational.getNorm(), translational.getAngle());
@@ -247,6 +248,15 @@ public class Drive extends VirtualSubsystem {
 
         Logger.recordOutput("Drive/SwerveStates/Rotational States", rotationalStates);
         Logger.recordOutput("Drive/SwerveStates/Translational States", translationalStates);
+
+        var minTranslational = Arrays.stream(translationalStates).mapToDouble((state) -> state.speedMetersPerSecond).map(Math::abs).min().orElse(0);
+        var maxTranslational = Arrays.stream(translationalStates).mapToDouble((state) -> state.speedMetersPerSecond).map(Math::abs).max().orElse(0);
+        var averageTranslational = Arrays.stream(translationalStates).mapToDouble((state) -> state.speedMetersPerSecond).map(Math::abs).average().orElse(0);
+        var maxDistanceFromAverage = Arrays.stream(translationalStates).mapToDouble((state) -> state.speedMetersPerSecond).map(Math::abs).map((a) -> averageTranslational - a).map(Math::abs).average().orElse(0);
+        Logger.recordOutput("Drive/Skid Detection/Min Translational Speed", minTranslational);
+        Logger.recordOutput("Drive/Skid Detection/Max Translational Speed", maxTranslational);
+        Logger.recordOutput("Drive/Skid Detection/MaxMin Ratio", maxTranslational / minTranslational);
+        Logger.recordOutput("Drive/Skid Detection/Largest From Average", maxDistanceFromAverage);
 
         // Update brake mode
         // for (var module : modules) {
@@ -256,6 +266,7 @@ public class Drive extends VirtualSubsystem {
         // save values for next loop
         prevGyroYaw = gyroAngle;
 
+        Logger.recordOutput("Drive/Chassis Speeds/Measured", chassisSpeeds);
         Logger.recordOutput("Drive/Center of Rotation", getPose().transformBy(new Transform2d(centerOfRotation, new Rotation2d())));
     }
 
@@ -623,7 +634,7 @@ public class Drive extends VirtualSubsystem {
     public SwerveModulePosition[] getModulePositions() {
         SwerveModulePosition[] modulePositions = new SwerveModulePosition[DriveConstants.modules.length];
         for (int i = 0; i < DriveConstants.modules.length; i++) {
-            modulePositions[i] = modules[i].getConfig();
+            modulePositions[i] = modules[i].getPosition();
         }
         return modulePositions;
     }

@@ -173,7 +173,7 @@ public final class Constants {
 
         public static final ModuleConfig[] modules = {
             new ModuleConfig(
-                "Front Left",
+                "FRONT_LEFT",
                 CANDevices.frontLeftDriveMotorID, CANDevices.frontLeftTurnMotorID,
                 InvertedValue.CounterClockwise_Positive,
                 Rotations.of(0.75),
@@ -183,7 +183,7 @@ public final class Constants {
                 )
             ),
             new ModuleConfig(
-                "Front Right",
+                "FRONT_RIGHT",
                 CANDevices.frontRightDriveMotorID, CANDevices.frontRightTurnMotorID,
                 InvertedValue.Clockwise_Positive,
                 Rotations.of(0.5),
@@ -193,7 +193,7 @@ public final class Constants {
                 )
             ),
             new ModuleConfig(
-                "Back Left",
+                "BACK_LEFT",
                 CANDevices.backLeftDriveMotorID, CANDevices.backLeftTurnMotorID,
                 InvertedValue.CounterClockwise_Positive,
                 Rotations.of(0.5),
@@ -203,7 +203,7 @@ public final class Constants {
                 )
             ),
             new ModuleConfig(
-                "Back Right",
+                "BACK_RIGHT",
                 CANDevices.backRightDriveMotorID, CANDevices.backRightTurnMotorID,
                 InvertedValue.Clockwise_Positive,
                 Rotations.of(0.75),

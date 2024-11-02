@@ -22,6 +22,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Distance;
 import frc.robot.Constants;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.DriveConstants.ModuleConfig;
 import frc.robot.util.LoggedTunableMeasure;
 import frc.robot.util.LoggedTunableNumber;
@@ -31,7 +32,7 @@ public class Module {
     private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
     private final ModuleConfig config;
 
-    private static final LoggedTunableMeasure<Distance> wheelRadius = new LoggedTunableMeasure<>("Drive/Module/WheelRadius", Constants.DriveConstants.wheelRadius);
+    private static final LoggedTunableMeasure<Distance> wheelRadius = new LoggedTunableMeasure<>("Drive/Module/WheelRadius", Meters.of(DriveConstants.wheelRadius.in(Meters)));
     private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("Drive/Module/Drive/kP", 0.1);
     private static final LoggedTunableNumber driveKd = new LoggedTunableNumber("Drive/Module/Drive/kD", 0.0);
     private static final LoggedTunableNumber driveKs = new LoggedTunableNumber("Drive/Module/Drive/kS", 0.18507);
@@ -43,21 +44,20 @@ public class Module {
     private final PIDController driveFeedback = new PIDController(0.0, 0.0, 0.0, Constants.dtSeconds);
     private final PIDController turnFeedback = new PIDController(0.0, 0.0, 0.0, Constants.dtSeconds);
     
-    private SwerveModuleState state;
-    private SwerveModulePosition modulePosition;
-    private SwerveModulePosition prevModulePosition;
+    private SwerveModuleState state = new SwerveModuleState();
+    private SwerveModulePosition modulePosition = new SwerveModulePosition();
+    private SwerveModulePosition prevModulePosition = new SwerveModulePosition();
 
     public Module(ModuleIO io, ModuleConfig config) {
         this.io = io;
         this.config = config;
-        prevModulePosition = getConfig();
 
         turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
     }
 
     /** Updates inputs and checks tunable numbers. */
     public void periodic() {
-        prevModulePosition = getConfig();
+        prevModulePosition = getPosition();
 
         io.updateInputs(inputs);
         Logger.processInputs("Inputs/Drive/Module " + config.name, inputs);
@@ -76,6 +76,11 @@ public class Module {
         var angle = Rotation2d.fromRadians(MathUtil.angleModulus(inputs.turnMotor.position.in(Radians)));
         state = new SwerveModuleState(inputs.driveMotor.velocity.in(RadiansPerSecond) * wheelRadius.in(Meters), angle);
         modulePosition = new SwerveModulePosition(inputs.driveMotor.position.in(Radians) * wheelRadius.in(Meters), angle);
+
+        Logger.recordOutput("test/" + config.name + "/drive", inputs.driveMotor);
+        Logger.recordOutput("test/" + config.name + "/turn", inputs.turnMotor);
+        Logger.recordOutput("test/" + config.name + "/speed/angle", inputs.driveMotor.velocity.in(RadiansPerSecond));
+        Logger.recordOutput("test/" + config.name + "/speed/meter", inputs.driveMotor.velocity.in(RadiansPerSecond) * wheelRadius.in(Meters));
     }
 
     /**
@@ -139,7 +144,7 @@ public class Module {
     }
 
     /** Returns the module position (turn angle and drive position). */
-    public SwerveModulePosition getConfig() {
+    public SwerveModulePosition getPosition() {
         return modulePosition;
     }
 
@@ -150,7 +155,7 @@ public class Module {
 
     /** Returns change in module position since last tick */
     public SwerveModulePosition getPositionDelta() {
-        var currentModulePosition = getConfig();
+        var currentModulePosition = getPosition();
         return new SwerveModulePosition(currentModulePosition.distanceMeters - prevModulePosition.distanceMeters,
                 currentModulePosition.angle);
     }
@@ -170,6 +175,6 @@ public class Module {
         io.zeroEncoders();
         // need to also reset prevModulePosition because drive is driven by deltas in
         // position
-        prevModulePosition = getConfig();
+        prevModulePosition = getPosition();
     }
 }
